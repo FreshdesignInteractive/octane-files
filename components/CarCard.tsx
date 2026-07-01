@@ -26,7 +26,7 @@ export default function CarCard({ car }: { car: ModelSummary }) {
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 500ms' }}
             className={car.hero_image ? 'group-hover:scale-105' : ''}
             loading="lazy"
-            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+            onError={(e) => { const t = e.target as HTMLImageElement; if (t.src !== '/placeholder.png') t.src = '/placeholder.png'; }}
           />
         </div>
 
