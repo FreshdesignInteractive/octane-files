@@ -10,6 +10,10 @@ const PAGE    = 12
 
 export default function CarGrid() {
   const params   = useSearchParams()
+  const activeClass   = params.get('class')   ?? ''
+  const activeCountry = params.get('country') ?? ''
+  const activeSearch  = params.get('q')       ?? ''
+
   const [cars, setCars]       = useState<ModelSummary[]>([])
   const [total, setTotal]     = useState(0)
   const [loading, setLoading] = useState(true)
@@ -17,16 +21,13 @@ export default function CarGrid() {
 
   const buildUrl = useCallback((offset: number, limit: number) => {
     const p = new URLSearchParams()
-    const cls     = params.get('class')
-    const country = params.get('country')
-    const q       = params.get('q')
-    if (cls)     p.set('class',   cls)
-    if (country) p.set('country', country)
-    if (q)       p.set('q',       q)
+    if (activeClass)   p.set('class',   activeClass)
+    if (activeCountry) p.set('country', activeCountry)
+    if (activeSearch)  p.set('q',       activeSearch)
     p.set('offset', String(offset))
     p.set('limit',  String(limit))
     return `/api/models?${p}`
-  }, [params])
+  }, [activeClass, activeCountry, activeSearch])
 
   // Reload from scratch whenever filters change
   useEffect(() => {
