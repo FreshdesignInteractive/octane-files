@@ -28,19 +28,15 @@ export default function SiteHeader() {
     <header style={{ borderBottom: '1px solid var(--border)', background: '#ffffff' }}
       className="sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-        <Link href="/" className="flex items-center gap-2.5 no-underline">
-          <span style={{
-            width: 28, height: 28,
-            background: '#111111',
-            borderRadius: 4,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 800, color: '#ffffff',
-            letterSpacing: '-0.02em',
-            flexShrink: 0,
-          }}>O</span>
-          <span style={{ fontSize: 15, fontWeight: 700, color: '#111111', letterSpacing: '-0.01em' }}>
-            Octane Files
-          </span>
+        <Link href="/" className="flex items-center no-underline">
+          {/* Full wordmark — desktop */}
+          <img src="/octane-files-logo.svg" alt="Octane Files" height={32}
+            style={{ height: 32, width: 'auto', display: 'block' }}
+            className="hidden sm:block" />
+          {/* Icon mark — mobile */}
+          <img src="/of-logo.svg" alt="Octane Files" height={32}
+            style={{ height: 32, width: 'auto', display: 'block' }}
+            className="block sm:hidden" />
         </Link>
 
         <nav className="flex items-center gap-6">
