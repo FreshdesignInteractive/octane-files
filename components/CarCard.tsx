@@ -20,14 +20,21 @@ export default function CarCard({ car }: { car: ModelSummary }) {
       >
         {/* Thumbnail */}
         <div style={{ aspectRatio: '16/9', background: '#f0f0f0', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <img
-            src={car.hero_image || '/placeholder.png'}
-            alt={`${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 500ms' }}
-            className={car.hero_image ? 'group-hover:scale-105' : ''}
-            loading="lazy"
-            onError={(e) => { const t = e.target as HTMLImageElement; if (!t.src.endsWith('/placeholder.png')) t.src = '/placeholder.png'; }}
-          />
+          {car.hero_image ? (
+            <img
+              src={car.hero_image}
+              alt={`${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`}
+              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 500ms' }}
+              className="group-hover:scale-105"
+              loading="lazy"
+            />
+          ) : (
+            <img
+              src="/placeholder.png"
+              alt="Image unavailable"
+              style={{ width: '50%', height: '50%', objectFit: 'contain', display: 'block', opacity: 0.4 }}
+            />
+          )}
         </div>
 
         {/* Info */}
