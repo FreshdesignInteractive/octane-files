@@ -34,10 +34,11 @@ export default function CarGrid() {
     fetch(buildUrl(0, INITIAL))
       .then(r => r.json())
       .then(({ data, total }: { data: ModelSummary[]; total: number }) => {
-        setCars(data)
-        setTotal(total)
+        setCars(data ?? [])
+        setTotal(total ?? 0)
         setLoading(false)
       })
+      .catch(() => setLoading(false))
   }, [buildUrl])
 
   function loadMore() {

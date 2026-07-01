@@ -26,7 +26,7 @@ export async function getModels(params?: {
   limit?: number
   offset?: number
 }): Promise<{ data: ModelSummary[]; total: number }> {
-  const db = await createClient()
+  const db = buildClient()
   const limit  = params?.limit  ?? 24
   const offset = params?.offset ?? 0
 
