@@ -20,19 +20,14 @@ export default function CarCard({ car }: { car: ModelSummary }) {
       >
         {/* Thumbnail */}
         <div style={{ aspectRatio: '16/9', background: '#f0f0f0', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          {car.hero_image ? (
-            <img
-              src={car.hero_image}
-              alt={`${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 500ms' }}
-              className="group-hover:scale-105"
-              loading="lazy"
-            />
-          ) : (
-            <svg width="40" height="24" viewBox="0 0 40 24" fill="none">
-              <path d="M8 16H32M6 12l3-8h22l3 8M4 12l2 4h28l2-4H4z" stroke="#cccccc" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          )}
+          <img
+            src={car.hero_image || '/placeholder.png'}
+            alt={`${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 500ms' }}
+            className={car.hero_image ? 'group-hover:scale-105' : ''}
+            loading="lazy"
+            onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.png'; }}
+          />
         </div>
 
         {/* Info */}

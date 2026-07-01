@@ -85,19 +85,13 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           background: '#0d0d0d',
           overflow: 'hidden',
         }}>
-          {car.hero_image ? (
-            <Image src={car.hero_image} alt={name} fill className="object-cover" priority />
-          ) : (
-            <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(135deg, #111 0%, #1a1a1a 100%)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <svg width="80" height="48" viewBox="0 0 80 48" fill="none">
-                <path d="M16 32H64M12 24l6-16h44l6 16M8 24l4 8h56l4-8H8z" stroke="#2a2a2a" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-            </div>
-          )}
+          <Image
+            src={car.hero_image || '/placeholder.png'}
+            alt={name}
+            fill
+            className={car.hero_image ? 'object-cover' : 'object-contain'}
+            priority
+          />
           {/* Gradient overlay */}
           <div style={{
             position: 'absolute', inset: 0,
