@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useTransition, useCallback } from 'react'
+import { useState, useEffect, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
 import CarCard from './CarCard'
 import type { ModelSummary } from '@/lib/types'
@@ -8,8 +8,18 @@ import type { ModelSummary } from '@/lib/types'
 const INITIAL = 24
 const PAGE    = 12
 
+function makeUrl(cls: string, country: string, q: string, offset: number, limit: number) {
+  const p = new URLSearchParams()
+  if (cls)     p.set('class',   cls)
+  if (country) p.set('country', country)
+  if (q)       p.set('q',       q)
+  p.set('offset', String(offset))
+  p.set('limit',  String(limit))
+  return `/api/models?${p}`
+}
+
 export default function CarGrid() {
-  const params   = useSearchParams()
+  const params        = useSearchParams()
   const activeClass   = params.get('class')   ?? ''
   const activeCountry = params.get('country') ?? ''
   const activeSearch  = params.get('q')       ?? ''
@@ -19,32 +29,24 @@ export default function CarGrid() {
   const [loading, setLoading] = useState(true)
   const [isPending, start]    = useTransition()
 
-  const buildUrl = useCallback((offset: number, limit: number) => {
-    const p = new URLSearchParams()
-    if (activeClass)   p.set('class',   activeClass)
-    if (activeCountry) p.set('country', activeCountry)
-    if (activeSearch)  p.set('q',       activeSearch)
-    p.set('offset', String(offset))
-    p.set('limit',  String(limit))
-    return `/api/models?${p}`
-  }, [activeClass, activeCountry, activeSearch])
-
-  // Reload from scratch whenever filters change
   useEffect(() => {
+    let cancelled = false
     setLoading(true)
-    fetch(buildUrl(0, INITIAL))
+    fetch(makeUrl(activeClass, activeCountry, activeSearch, 0, INITIAL))
       .then(r => r.json())
       .then(({ data, total }: { data: ModelSummary[]; total: number }) => {
+        if (cancelled) return
         setCars(data ?? [])
         setTotal(total ?? 0)
         setLoading(false)
       })
-      .catch(() => setLoading(false))
-  }, [buildUrl])
+      .catch(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
+  }, [activeClass, activeCountry, activeSearch])
 
   function loadMore() {
     start(async () => {
-      const res  = await fetch(buildUrl(cars.length, PAGE))
+      const res  = await fetch(makeUrl(activeClass, activeCountry, activeSearch, cars.length, PAGE))
       const json = await res.json() as { data: ModelSummary[]; total: number }
       setCars(prev => [...prev, ...json.data])
     })
