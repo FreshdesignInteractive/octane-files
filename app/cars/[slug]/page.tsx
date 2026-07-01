@@ -3,6 +3,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Model } from '@/lib/types'
 
@@ -321,6 +322,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           </div>
         </div>
       </main>
+      <SiteFooter />
     </>
   )
 }

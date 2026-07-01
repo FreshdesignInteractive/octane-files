@@ -1,5 +1,6 @@
 import { Suspense } from 'react'
 import SiteHeader from '@/components/SiteHeader'
+import SiteFooter from '@/components/SiteFooter'
 import FilterBar from '@/components/FilterBar'
 import CarGrid from '@/components/CarGrid'
 
@@ -29,11 +30,7 @@ export default function HomePage() {
         </section>
       </main>
 
-      <footer style={{ borderTop: '1px solid var(--border)', padding: '24px', textAlign: 'center', background: '#ffffff' }}>
-        <p style={{ fontSize: 12, color: 'var(--text-tertiary)' }}>
-          &copy; {new Date().getFullYear()} Freshdesign Interactive, Inc.
-        </p>
-      </footer>
+      <SiteFooter />
     </>
   )
 }
