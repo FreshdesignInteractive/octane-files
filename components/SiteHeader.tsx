@@ -20,9 +20,12 @@ function GoogleIcon() {
 function SignInDialog({ onClose }: { onClose: () => void }) {
   async function signInWithGoogle() {
     const supabase = createClient()
+    const redirectTo = 'https://www.octanefiles.com/auth/callback'
+    console.log('[OctaneAuth] redirectTo:', redirectTo)
+    console.log('[OctaneAuth] window.location.href:', window.location.href)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://www.octanefiles.com/auth/callback' },
+      options: { redirectTo },
     })
   }
 
