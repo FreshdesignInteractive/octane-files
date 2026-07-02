@@ -3,9 +3,10 @@ import { cookies } from 'next/headers'
 import { NextRequest, NextResponse } from 'next/server'
 
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url)
+  const { searchParams } = new URL(request.url)
   const code = searchParams.get('code')
   const next = searchParams.get('next') ?? '/'
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://www.octanefiles.com'
 
   if (code) {
     const cookieStore = await cookies()
@@ -25,10 +26,10 @@ export async function GET(request: NextRequest) {
     )
     const { error } = await supabase.auth.exchangeCodeForSession(code)
     if (!error) {
-      return NextResponse.redirect(`${origin}${next}`)
+      return NextResponse.redirect(`${siteUrl}${next}`)
     }
-    return NextResponse.redirect(`${origin}/login?error=${encodeURIComponent(error.message)}`)
+    return NextResponse.redirect(`${siteUrl}/login?error=${encodeURIComponent(error.message)}`)
   }
 
-  return NextResponse.redirect(`${origin}/login?error=auth`)
+  return NextResponse.redirect(`${siteUrl}/login?error=auth`)
 }
