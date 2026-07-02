@@ -22,7 +22,7 @@ function SignInDialog({ onClose }: { onClose: () => void }) {
     const supabase = createClient()
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: 'https://www.octanefiles.com' },
+      options: { redirectTo: 'https://www.octanefiles.com/auth/callback' },
     })
   }
 
