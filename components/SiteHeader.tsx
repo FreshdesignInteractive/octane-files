@@ -20,19 +20,13 @@ function GoogleIcon() {
 function SignInDialog({ onClose }: { onClose: () => void }) {
   async function signInWithGoogle() {
     const supabase = createClient()
-    const { data } = await supabase.auth.signInWithOAuth({
+    await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://www.octanefiles.com',
+        redirectTo: 'https://www.octanefiles.com/auth/callback',
         queryParams: { prompt: 'select_account' },
-        skipBrowserRedirect: true,
       },
     })
-    if (data?.url) {
-      const parsed = new URL(data.url)
-      alert('redirect_to = ' + parsed.searchParams.get('redirect_to'))
-      window.location.assign(data.url)
-    }
   }
 
   // Close on Escape

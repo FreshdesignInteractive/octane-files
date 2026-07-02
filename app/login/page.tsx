@@ -14,7 +14,7 @@ function LoginForm() {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://www.octanefiles.com',
+        redirectTo: 'https://www.octanefiles.com/auth/callback',
         queryParams: { prompt: 'select_account' },
       },
     })
