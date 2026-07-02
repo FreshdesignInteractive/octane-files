@@ -40,33 +40,6 @@ export default function FilterBar() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-      {/* Search */}
-      <div style={{ display: 'flex', gap: 8 }}>
-        <div style={{ position: 'relative', flex: 1 }}>
-          <svg style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }}
-            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Make, Model or Generation..."
-            defaultValue={search}
-            onChange={e => update('q', e.target.value)}
-            style={{
-              width: '100%',
-              height: 44,
-              background: '#f5f5f5',
-              border: '1px solid var(--border)',
-              borderRadius: 8,
-              padding: '0 16px 0 40px',
-              color: '#111111',
-              fontSize: 14,
-              outline: 'none',
-            }}
-          />
-        </div>
-      </div>
-
       {/* Country filter */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
         <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginRight: 2 }}>Country:</span>

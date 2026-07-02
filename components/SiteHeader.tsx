@@ -1,7 +1,8 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import type { Profile } from '@/lib/types'
 
@@ -108,6 +109,48 @@ function SignInDialog({ onClose }: { onClose: () => void }) {
   )
 }
 
+function HeaderSearch() {
+  const router = useRouter()
+  const params = useSearchParams()
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  function handleSearch(value: string) {
+    const p = new URLSearchParams(params.toString())
+    if (value) p.set('q', value)
+    else p.delete('q')
+    router.push(`/?${p.toString()}`, { scroll: false })
+  }
+
+  return (
+    <div style={{ position: 'relative', width: '50%', maxWidth: 520, minWidth: 120 }}>
+      <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }}
+        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input
+        ref={inputRef}
+        type="text"
+        placeholder="Make, Model or Generation..."
+        defaultValue={params.get('q') ?? ''}
+        onChange={e => handleSearch(e.target.value)}
+        style={{
+          width: '100%',
+          height: 36,
+          background: '#f5f5f5',
+          border: '1px solid #e8e8e8',
+          borderRadius: 99,
+          padding: '0 16px 0 36px',
+          fontSize: 13,
+          color: '#111',
+          outline: 'none',
+        }}
+        onFocus={e => { e.target.style.borderColor = '#bbb'; e.target.style.background = '#fff' }}
+        onBlur={e => { e.target.style.borderColor = '#e8e8e8'; e.target.style.background = '#f5f5f5' }}
+      />
+    </div>
+  )
+}
+
 export default function SiteHeader() {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined)
   const [showSignIn, setShowSignIn] = useState(false)
@@ -132,17 +175,20 @@ export default function SiteHeader() {
     <>
       <header style={{ borderBottom: '1px solid var(--border)', background: '#ffffff' }}
         className="sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <Link href="/" className="flex items-center no-underline">
-            <img src="/octane-files-logo.svg" alt="Octane Files"
-              style={{ height: 32, width: 'auto' }}
-              className="hidden sm:block" />
-            <img src="/of-logo.svg" alt="Octane Files"
-              style={{ height: 32, width: 'auto' }}
-              className="sm:hidden" />
+        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center gap-4">
+          {/* Logo — always icon mark */}
+          <Link href="/" className="flex items-center no-underline flex-shrink-0">
+            <img src="/of-logo.svg" alt="Octane Files" style={{ height: 32, width: 'auto' }} />
           </Link>
 
-          <nav className="flex items-center gap-6">
+          {/* Search — centered, 50% width */}
+          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+            <Suspense fallback={<div style={{ width: '50%', height: 36, borderRadius: 99, background: '#f5f5f5' }} />}>
+              <HeaderSearch />
+            </Suspense>
+          </div>
+
+          <nav className="flex items-center gap-6 flex-shrink-0">
             <Link href="/" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
               className="hover:text-black transition-colors">
               Browse
