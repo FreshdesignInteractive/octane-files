@@ -19,14 +19,13 @@ function GoogleIcon() {
 
 function SignInDialog({ onClose }: { onClose: () => void }) {
   async function signInWithGoogle() {
-    console.log('[OF-AUTH-v4] hostname:', window.location.hostname, 'origin:', window.location.origin)
     const supabase = createClient()
-    const isLocal = window.location.hostname === 'localhost'
-    const base = isLocal ? window.location.origin : 'https://www.octanefiles.com'
-    console.log('[OF-AUTH-v4] redirectTo:', `${base}/auth/callback`)
+    const base = window.location.hostname === 'localhost'
+      ? window.location.origin
+      : 'https://www.octanefiles.com'
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${base}/auth/callback` },
+      options: { redirectTo: base },
     })
   }
 
@@ -161,12 +160,28 @@ export default function SiteHeader() {
 
   useEffect(() => {
     const supabase = createClient()
+
     supabase.auth.getUser().then(async ({ data: { user } }) => {
       if (!user) { setProfile(null); return }
       const { data } = await supabase
         .from('profiles').select('*').eq('id', user.id).single()
       setProfile(data ?? null)
     })
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const { data } = await supabase
+          .from('profiles').select('*').eq('id', session.user.id).single()
+        setProfile(data ?? null)
+        if (window.location.search.includes('code=')) {
+          window.history.replaceState({}, '', window.location.pathname)
+        }
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null)
+      }
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
   async function signOut() {

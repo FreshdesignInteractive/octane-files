@@ -11,9 +11,12 @@ function LoginForm() {
 
   async function signInWithGoogle() {
     const supabase = createClient()
+    const base = window.location.hostname === 'localhost'
+      ? window.location.origin
+      : 'https://www.octanefiles.com'
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: base },
     })
   }
 
