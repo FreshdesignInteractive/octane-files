@@ -19,9 +19,11 @@ function GoogleIcon() {
 
 function SignInDialog({ onClose }: { onClose: () => void }) {
   async function signInWithGoogle() {
+    console.log('[OF-AUTH-v4] hostname:', window.location.hostname, 'origin:', window.location.origin)
     const supabase = createClient()
     const isLocal = window.location.hostname === 'localhost'
     const base = isLocal ? window.location.origin : 'https://www.octanefiles.com'
+    console.log('[OF-AUTH-v4] redirectTo:', `${base}/auth/callback`)
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo: `${base}/auth/callback` },
