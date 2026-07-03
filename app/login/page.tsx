@@ -65,12 +65,13 @@ function LoginForm() {
 
         {error && (
           <div style={{
-            fontSize: 12, color: '#e85d5d',
+            fontSize: 11, color: '#e85d5d',
             background: 'rgba(232,93,93,0.08)',
             border: '1px solid rgba(232,93,93,0.2)',
             borderRadius: 6, padding: '10px 14px', marginBottom: 20,
+            wordBreak: 'break-all',
           }}>
-            Something went wrong. Please try again.
+            {decodeURIComponent(error)}
           </div>
         )}
 

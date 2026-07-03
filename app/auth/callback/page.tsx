@@ -10,8 +10,14 @@ function CallbackHandler() {
 
   useEffect(() => {
     const code = params.get('code')
+    const supabaseError = params.get('error')
+    const supabaseErrorDesc = params.get('error_description')
+
     if (!code) {
-      router.replace('/login?error=auth')
+      const msg = supabaseError
+        ? `${supabaseError}: ${supabaseErrorDesc ?? ''}`
+        : `no_code | url=${window.location.href}`
+      router.replace(`/login?error=${encodeURIComponent(msg)}`)
       return
     }
     const supabase = createClient()
