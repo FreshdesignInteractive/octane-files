@@ -61,38 +61,36 @@ const SOCIAL_LINKS = [
 
 export default function SiteFooter() {
   return (
-    <footer style={{ borderTop: '1px solid var(--border)', background: '#f9f9f9', padding: '32px 24px 28px' }}>
-      <div style={{ maxWidth: 960, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20 }}>
+    <footer className="border-t border-border bg-bg-elevated px-6 pt-8 pb-7">
+      <div className="site-container flex flex-col items-center gap-5">
 
         {/* Nav links */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'center' }}>
+        <div className="flex items-center gap-2 flex-wrap justify-center">
           {NAV_LINKS.map((link, i) => (
-            <span key={link.href} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Link href={link.href} style={{ fontSize: 13, color: '#444', textDecoration: 'none' }}
-                className="hover:text-black transition-colors">
+            <span key={link.href} className="flex items-center gap-2">
+              <Link href={link.href} className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
                 {link.label}
               </Link>
               {i < NAV_LINKS.length - 1 && (
-                <span style={{ color: '#ccc', fontSize: 12 }}>·</span>
+                <span className="text-border-mid text-sm">&middot;</span>
               )}
             </span>
           ))}
         </div>
 
         {/* Social icons */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+        <div className="flex items-center gap-5">
           {SOCIAL_LINKS.map(s => (
             <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer"
               aria-label={s.label}
-              style={{ color: '#111', display: 'flex', alignItems: 'center', transition: 'opacity 150ms' }}
-              className="hover:opacity-50">
+              className="text-text-primary flex items-center transition-opacity hover:opacity-50">
               {s.icon}
             </a>
           ))}
         </div>
 
         {/* Copyright */}
-        <p style={{ fontSize: 12, color: '#999', margin: 0 }}>
+        <p className="text-sm text-text-tertiary m-0">
           &copy; {new Date().getFullYear()} All Rights Reserved, Freshdesign Interactive, Inc.
         </p>
       </div>

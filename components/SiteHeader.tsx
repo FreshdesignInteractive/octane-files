@@ -40,34 +40,16 @@ function SignInDialog({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
-      style={{
-        position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.45)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: 24,
-      }}
+      className="fixed inset-0 z-[200] bg-overlay flex items-center justify-center p-6"
     >
       <div
         onClick={e => e.stopPropagation()}
-        style={{
-          background: '#ffffff',
-          borderRadius: 16,
-          padding: '36px 32px 32px',
-          width: '100%',
-          maxWidth: 400,
-          position: 'relative',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.2)',
-        }}
+        className="bg-white rounded-2xl pt-9 px-8 pb-8 w-full max-w-[400px] relative shadow-modal"
       >
         {/* Close */}
         <button
           onClick={onClose}
-          style={{
-            position: 'absolute', top: 16, right: 16,
-            background: 'none', border: 'none', cursor: 'pointer',
-            color: '#999', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            padding: 4, borderRadius: 6,
-          }}
+          className="absolute top-4 right-4 bg-transparent border-none cursor-pointer text-text-tertiary flex items-center justify-center p-1 rounded-md"
           aria-label="Close"
         >
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -75,38 +57,26 @@ function SignInDialog({ onClose }: { onClose: () => void }) {
           </svg>
         </button>
 
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111', letterSpacing: '-0.02em', marginBottom: 8 }}>
+        <h2 className="text-xl font-bold text-text-primary tracking-[-0.02em] mb-2">
           Sign in to Octane Files
         </h2>
-        <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, marginBottom: 28 }}>
+        <p className="text-body text-text-secondary leading-[1.6] mb-7">
           Sign in to post your cars, like builds, and join the community.
         </p>
 
         <button
           onClick={signInWithGoogle}
-          style={{
-            width: '100%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            height: 48,
-            background: '#ffffff',
-            border: '1px solid #e0e0e0',
-            borderRadius: 99,
-            fontSize: 14, fontWeight: 500, color: '#1a1a1a',
-            cursor: 'pointer',
-            transition: 'background 150ms, border-color 150ms',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.background = '#f5f5f5')}
-          onMouseLeave={e => (e.currentTarget.style.background = '#ffffff')}
+          className="w-full flex items-center justify-center gap-2.5 h-12 bg-white border border-border-mid rounded-full text-sm font-medium text-text-primary cursor-pointer transition-colors hover:bg-bg-elevated"
         >
           <GoogleIcon />
           Continue with Google
         </button>
 
-        <p style={{ fontSize: 11, color: '#aaa', marginTop: 20, textAlign: 'center', lineHeight: 1.6 }}>
+        <p className="text-label text-text-tertiary mt-5 text-center leading-[1.6]">
           By signing in you agree to our{' '}
-          <Link href="/terms" onClick={onClose} style={{ color: '#666', textDecoration: 'underline' }}>terms</Link>
+          <Link href="/terms" onClick={onClose} className="text-text-secondary underline">terms</Link>
           {' '}and{' '}
-          <Link href="/privacy" onClick={onClose} style={{ color: '#666', textDecoration: 'underline' }}>privacy policy</Link>.
+          <Link href="/privacy" onClick={onClose} className="text-text-secondary underline">privacy policy</Link>.
         </p>
       </div>
     </div>
@@ -126,8 +96,8 @@ function HeaderSearch() {
   }
 
   return (
-    <div style={{ position: 'relative', width: '50%', maxWidth: 520, minWidth: 120 }}>
-      <svg style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: '#aaa', pointerEvents: 'none' }}
+    <div className="relative w-1/2 max-w-130 min-w-30">
+      <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
         width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
       </svg>
@@ -137,19 +107,7 @@ function HeaderSearch() {
         placeholder="Make, Model or Generation..."
         defaultValue={params.get('q') ?? ''}
         onChange={e => handleSearch(e.target.value)}
-        style={{
-          width: '100%',
-          height: 36,
-          background: '#f5f5f5',
-          border: '1px solid #e8e8e8',
-          borderRadius: 99,
-          padding: '0 16px 0 36px',
-          fontSize: 13,
-          color: '#111',
-          outline: 'none',
-        }}
-        onFocus={e => { e.target.style.borderColor = '#bbb'; e.target.style.background = '#fff' }}
-        onBlur={e => { e.target.style.borderColor = '#e8e8e8'; e.target.style.background = '#f5f5f5' }}
+        className="w-full h-9 bg-bg-elevated border border-border rounded-full pl-9 pr-4 text-body text-text-primary outline-none transition-colors focus:border-border-mid focus:bg-white"
       />
     </div>
   )
@@ -168,45 +126,30 @@ function AvatarMenu({ profile, onSignOut }: { profile: NonNullable<Profile>, onS
   }, [])
 
   return (
-    <div ref={ref} style={{ position: 'relative' }}>
+    <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(o => !o)}
-        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
+        className="bg-transparent border-none cursor-pointer p-0 flex"
       >
         {profile.avatar_url ? (
           <img src={profile.avatar_url} alt={profile.display_name ?? profile.username}
-            width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+            width={32} height={32} className="avatar w-8 h-8" />
         ) : (
-          <div style={{
-            width: 32, height: 32, borderRadius: '50%', background: '#111',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 13, fontWeight: 600, color: '#fff',
-          }}>
+          <div className="w-8 h-8 rounded-full bg-text-primary flex items-center justify-center text-body font-semibold text-white">
             {(profile.display_name ?? profile.username).charAt(0).toUpperCase()}
           </div>
         )}
       </button>
 
       {open && (
-        <div style={{
-          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
-          background: '#fff', borderRadius: 12,
-          boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
-          minWidth: 200, zIndex: 300, overflow: 'hidden',
-        }}>
-          <div style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: '#111' }}>
+        <div className="absolute top-[calc(100%+8px)] right-0 bg-white rounded-xl shadow-dropdown min-w-[200px] z-[300] overflow-hidden">
+          <div className="p-4 text-sm font-semibold text-text-primary">
             {profile.display_name ?? profile.username}
           </div>
-          <div style={{ height: 1, background: '#f0f0f0' }} />
+          <div className="h-px bg-border" />
           <button
             onClick={() => { setOpen(false); onSignOut() }}
-            style={{
-              width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-              padding: '12px 16px', background: 'none', border: 'none',
-              cursor: 'pointer', fontSize: 14, color: '#333', textAlign: 'left',
-            }}
-            onMouseEnter={e => (e.currentTarget.style.background = '#f9f9f9')}
-            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+            className="w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-none cursor-pointer text-sm text-text-primary text-left transition-colors hover:bg-bg-elevated"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
@@ -269,42 +212,35 @@ export default function SiteHeader() {
 
   return (
     <>
-      <header style={{ borderBottom: '1px solid var(--border)', background: '#ffffff' }}
-        className="sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center gap-4">
+      <header className="sticky top-0 z-50 border-b border-border bg-white">
+        <div className="site-container h-14 flex items-center gap-4">
           {/* Logo — always icon mark */}
           <Link href="/" className="flex items-center no-underline flex-shrink-0">
-            <img src="/of-logo.svg" alt="Octane Files" style={{ height: 32, width: 'auto' }} />
+            <img src="/of-logo.svg" alt="Octane Files" className="h-8 w-auto" />
           </Link>
 
           {/* Search — centered, 50% width */}
-          <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-            <Suspense fallback={<div style={{ width: '50%', height: 36, borderRadius: 99, background: '#f5f5f5' }} />}>
+          <div className="flex-1 flex justify-center">
+            <Suspense fallback={<div className="w-1/2 h-9 rounded-full bg-bg-elevated" />}>
               <HeaderSearch />
             </Suspense>
           </div>
 
           <nav className="flex items-center gap-6 flex-shrink-0">
-            <Link href="/" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
-              className="hover:text-black transition-colors">
+            <Link href="/" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
               Browse
             </Link>
 
             {profile === undefined ? null : profile === null ? (
               <button
                 onClick={() => setShowSignIn(true)}
-                style={{
-                  fontSize: 13, fontWeight: 500, color: '#111111',
-                  border: '1px solid #d0d0d0', borderRadius: 6,
-                  padding: '5px 14px', background: 'none', cursor: 'pointer',
-                }}
+                className="btn-secondary px-3.5 py-1.5"
               >
                 Sign In
               </button>
             ) : (
               <>
-                <Link href="/garage" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
-                  className="hover:text-black transition-colors">
+                <Link href="/garage" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
                   Garage
                 </Link>
                 <AvatarMenu profile={profile} onSignOut={signOut} />
