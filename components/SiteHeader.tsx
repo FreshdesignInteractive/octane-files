@@ -225,24 +225,15 @@ export default function SiteHeader() {
   useEffect(() => {
     const supabase = createClient()
 
-    // Use getSession first (localStorage, instant) then validate with getUser
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      if (!session?.user) { setProfile(null); return }
-      const { data } = await supabase
-        .from('profiles').select('*').eq('id', session.user.id).single()
-      setProfile(data ?? null)
-      // Validate in background — signs out if token is forged/expired
-      supabase.auth.getUser().then(({ data: { user } }) => {
-        if (!user) { supabase.auth.signOut(); setProfile(null) }
-      })
-    })
-
+    // onAuthStateChange fires INITIAL_SESSION immediately on mount — handles both
+    // "already logged in" and "not logged in" cases without a separate getSession call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        if (!session?.user) { setProfile(null); return }
         const { data } = await supabase
           .from('profiles').select('*').eq('id', session.user.id).single()
         setProfile(data ?? null)
-        if (window.location.search.includes('code=')) {
+        if (event === 'SIGNED_IN' && window.location.search.includes('code=')) {
           window.history.replaceState({}, '', window.location.pathname)
         }
       } else if (event === 'SIGNED_OUT') {
@@ -250,7 +241,15 @@ export default function SiteHeader() {
       }
     })
 
-    return () => subscription.unsubscribe()
+    // Safety net: if onAuthStateChange hasn't resolved in 2s, unblock the header
+    const fallback = setTimeout(() => {
+      setProfile(prev => prev === undefined ? null : prev)
+    }, 2000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearTimeout(fallback)
+    }
   }, [])
 
   async function signOut() {
