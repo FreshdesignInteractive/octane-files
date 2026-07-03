@@ -228,14 +228,28 @@ export default function SiteHeader() {
 
     // onAuthStateChange fires INITIAL_SESSION immediately on mount — handles both
     // "already logged in" and "not logged in" cases without a separate getSession call.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
-      console.log('[auth]', event, session?.user?.id ?? 'no-user')
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (!session?.user) { setProfile(null); return }
-        const { data, error } = await supabase
-          .from('profiles').select('*').eq('id', session.user.id).single()
-        console.log('[auth] profile query:', (data as Profile | null)?.username ?? null, error?.message ?? 'ok')
-        setProfile(data ?? null)
+
+        // Show avatar immediately from Google OAuth metadata — no DB round-trip.
+        const meta = session.user.user_metadata ?? {}
+        setProfile({
+          id: session.user.id,
+          username: (session.user.email ?? '').split('@')[0],
+          display_name: meta.full_name ?? meta.name ?? null,
+          avatar_url: meta.avatar_url ?? meta.picture ?? null,
+          bio: null,
+          location: null,
+          website: null,
+          created_at: '',
+          updated_at: '',
+        })
+
+        // Update in background with the stored profile (bio, custom username, etc.)
+        supabase.from('profiles').select('*').eq('id', session.user.id).single()
+          .then(({ data }) => { if (data) setProfile(data as Profile) })
+
         if (event === 'SIGNED_IN' && window.location.search.includes('code=')) {
           window.history.replaceState({}, '', window.location.pathname)
         }
@@ -244,18 +258,7 @@ export default function SiteHeader() {
       }
     })
 
-    // Safety net: if onAuthStateChange hasn't resolved in 5s, unblock the header
-    const fallback = setTimeout(() => {
-      setProfile(prev => {
-        console.log('[auth] fallback fired, prev:', prev)
-        return prev === undefined ? null : prev
-      })
-    }, 5000)
-
-    return () => {
-      subscription.unsubscribe()
-      clearTimeout(fallback)
-    }
+    return () => subscription.unsubscribe()
   }, [])
 
   async function signOut() {
