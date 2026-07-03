@@ -7,45 +7,35 @@ function formatYears(start: number, end: number | null) {
 
 export default function CarCard({ car }: { car: ModelSummary }) {
   return (
-    <Link href={`/cars/${car.slug}`} style={{ textDecoration: 'none' }}>
-      <article style={{
-        background: '#ffffff',
-        border: '1px solid var(--border)',
-        borderRadius: 10,
-        overflow: 'hidden',
-        transition: 'box-shadow 200ms, transform 200ms',
-        cursor: 'pointer',
-      }}
-        className="group hover:shadow-md hover:-translate-y-0.5"
-      >
+    <Link href={`/cars/${car.slug}`} className="no-underline">
+      <article className="card group">
         {/* Thumbnail */}
-        <div style={{ aspectRatio: '16/9', background: '#f0f0f0', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="aspect-video bg-bg-elevated relative overflow-hidden flex items-center justify-center">
           {car.hero_image ? (
             <img
               src={car.hero_image}
               alt={`${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`}
-              style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transition: 'transform 500ms' }}
-              className="group-hover:scale-105"
+              className="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-105"
               loading="lazy"
             />
           ) : (
             <img
               src="/placeholder.png"
               alt="Image unavailable"
-              style={{ width: '50%', height: '50%', objectFit: 'contain', display: 'block', opacity: 0.4 }}
+              className="w-1/2 h-1/2 object-contain block opacity-40"
             />
           )}
         </div>
 
         {/* Info */}
-        <div style={{ padding: '14px 16px 16px' }}>
-          <div style={{ fontSize: 17, fontWeight: 700, color: '#111111', letterSpacing: '-0.02em', lineHeight: 1.2, marginBottom: 6 }}>
+        <div className="p-4">
+          <div className="text-base font-bold text-text-primary tracking-[-0.02em] leading-[1.2] mb-1.5">
             {car.make} {car.model}
             {car.generation && car.generation.toLowerCase() !== car.model.toLowerCase() && (
-              <span style={{ color: 'var(--text-secondary)', fontWeight: 400, fontSize: 15 }}> {car.generation}</span>
+              <span className="text-text-secondary font-normal text-sm"> {car.generation}</span>
             )}
           </div>
-          <div style={{ fontSize: 12, color: 'var(--text-tertiary)', display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <div className="text-xs text-text-tertiary flex gap-2 flex-wrap">
             <span>{car.country}</span>
             <span>&middot;</span>
             <span>{formatYears(car.year_start, car.year_end)}</span>

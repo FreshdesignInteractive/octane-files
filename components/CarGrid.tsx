@@ -54,17 +54,13 @@ export default function CarGrid() {
 
   if (loading) {
     return (
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 24 }}>
+      <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} style={{
-            border: '1px solid var(--border)',
-            borderRadius: 10,
-            overflow: 'hidden',
-          }}>
-            <div style={{ aspectRatio: '16/9', background: '#f0f0f0' }} />
-            <div style={{ padding: '14px 16px 16px' }}>
-              <div style={{ height: 20, width: '60%', background: '#ebebeb', borderRadius: 4, marginBottom: 8 }} />
-              <div style={{ height: 14, width: '80%', background: '#f5f5f5', borderRadius: 4 }} />
+          <div key={i} className="border border-border rounded-card overflow-hidden">
+            <div className="aspect-video bg-bg-elevated" />
+            <div className="p-4">
+              <div className="h-5 w-3/5 bg-bg-elevated rounded-sm mb-2" />
+              <div className="h-3.5 w-4/5 bg-bg-elevated rounded-sm" />
             </div>
           </div>
         ))}
@@ -74,40 +70,24 @@ export default function CarGrid() {
 
   if (cars.length === 0) {
     return (
-      <div style={{ textAlign: 'center', padding: '80px 0' }}>
-        <p style={{ fontSize: 14, color: 'var(--text-tertiary)' }}>No cars found. Try adjusting your filters.</p>
+      <div className="text-center py-20">
+        <p className="text-sm text-text-tertiary">No cars found. Try adjusting your filters.</p>
       </div>
     )
   }
 
   return (
     <div>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
-        gap: 24,
-      }}>
+      <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
         {cars.map(car => <CarCard key={car.id} car={car} />)}
       </div>
 
       {cars.length < total && (
-        <div style={{ textAlign: 'center', marginTop: 48 }}>
+        <div className="text-center mt-12">
           <button
             onClick={loadMore}
             disabled={isPending}
-            style={{
-              height: 40,
-              padding: '0 28px',
-              background: '#111111',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: 8,
-              fontSize: 13,
-              fontWeight: 500,
-              cursor: isPending ? 'default' : 'pointer',
-              opacity: isPending ? 0.6 : 1,
-              transition: 'opacity 150ms',
-            }}
+            className="btn-primary h-10 px-7"
           >
             {isPending
               ? 'Loading…'
@@ -118,7 +98,7 @@ export default function CarGrid() {
         </div>
       )}
 
-      <p style={{ textAlign: 'center', marginTop: 20, fontSize: 12, color: 'var(--text-tertiary)' }}>
+      <p className="text-center mt-5 text-xs text-text-tertiary">
         Showing {cars.length} of {total}
       </p>
     </div>

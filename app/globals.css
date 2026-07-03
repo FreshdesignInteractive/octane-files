@@ -104,8 +104,8 @@ body {
   }
 
   .card {
-    @apply bg-white border border-border rounded-card overflow-hidden
-           transition-shadow duration-200 hover:shadow-md hover:-translate-y-0.5;
+    @apply bg-white border border-border rounded-card overflow-hidden cursor-pointer
+           transition duration-200 hover:shadow-md hover:-translate-y-0.5;
   }
 
   .btn-primary {

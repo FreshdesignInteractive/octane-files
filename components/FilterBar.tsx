@@ -12,7 +12,6 @@ export default function FilterBar() {
 
   const activeClass   = params.get('class') ?? ''
   const activeCountry = params.get('country') ?? ''
-  const search        = params.get('q') ?? ''
 
   const update = useCallback((key: string, value: string) => {
     const p = new URLSearchParams(params.toString())
@@ -21,42 +20,27 @@ export default function FilterBar() {
     router.push(`/?${p.toString()}`, { scroll: false })
   }, [params, router])
 
-  const pillStyle = (active: boolean): React.CSSProperties => ({
-    display: 'inline-flex',
-    alignItems: 'center',
-    height: 30,
-    padding: '0 13px',
-    borderRadius: 99,
-    border: active ? '1.5px solid #111111' : '1px solid var(--border)',
-    background: active ? '#111111' : '#ffffff',
-    color: active ? '#ffffff' : 'var(--text-secondary)',
-    fontSize: 12,
-    fontWeight: active ? 500 : 400,
-    cursor: 'pointer',
-    whiteSpace: 'nowrap',
-    transition: 'all 150ms',
-    userSelect: 'none',
-  })
+  const pillClass = (active: boolean) => `pill ${active ? 'pill-active' : ''}`
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+    <div className="flex flex-col gap-3">
       {/* Country filter */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginRight: 2 }}>Country:</span>
-        <button style={pillStyle(!activeCountry)} onClick={() => update('country', '')}>All</button>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-text-tertiary font-medium mr-0.5">Country:</span>
+        <button className={pillClass(!activeCountry)} onClick={() => update('country', '')}>All</button>
         {COUNTRIES.map(c => (
-          <button key={c} style={pillStyle(activeCountry === c)} onClick={() => update('country', activeCountry === c ? '' : c)}>
+          <button key={c} className={pillClass(activeCountry === c)} onClick={() => update('country', activeCountry === c ? '' : c)}>
             {c}
           </button>
         ))}
       </div>
 
       {/* Class filter */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 12, color: 'var(--text-tertiary)', fontWeight: 500, marginRight: 2 }}>Class:</span>
-        <button style={pillStyle(!activeClass)} onClick={() => update('class', '')}>All</button>
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-xs text-text-tertiary font-medium mr-0.5">Class:</span>
+        <button className={pillClass(!activeClass)} onClick={() => update('class', '')}>All</button>
         {CLASSES.map(c => (
-          <button key={c} style={pillStyle(activeClass === c)} onClick={() => update('class', activeClass === c ? '' : c)}>
+          <button key={c} className={pillClass(activeClass === c)} onClick={() => update('class', activeClass === c ? '' : c)}>
             {c}
           </button>
         ))}

@@ -10,20 +10,16 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main style={{ flex: 1, background: '#ffffff' }}>
-        <section style={{
-          borderBottom: '1px solid var(--border)',
-          padding: '20px 24px',
-          background: '#ffffff',
-        }}>
-          <div style={{ maxWidth: 1280, margin: '0 auto' }}>
+      <main className="flex-1 bg-white">
+        <section className="border-b border-border bg-white py-5">
+          <div className="site-container">
             <Suspense>
               <FilterBar />
             </Suspense>
           </div>
         </section>
 
-        <section style={{ maxWidth: 1280, margin: '0 auto', padding: '32px 24px 80px', background: '#ffffff' }}>
+        <section className="site-container bg-white pt-8 pb-20">
           <Suspense>
             <CarGrid />
           </Suspense>
