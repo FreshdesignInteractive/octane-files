@@ -109,7 +109,11 @@ export default function CarGrid() {
               transition: 'opacity 150ms',
             }}
           >
-            {isPending ? 'Loading...' : `Load more  ·  ${total - cars.length} remaining`}
+            {isPending
+              ? 'Loading…'
+              : total - cars.length <= PAGE
+                ? `Load remaining ${total - cars.length}`
+                : `Load ${PAGE} more  ·  ${total - cars.length} remaining`}
           </button>
         </div>
       )}
