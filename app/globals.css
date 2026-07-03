@@ -168,8 +168,8 @@ body {
     @apply rounded-full object-cover block;
   }
 
-  .prose p { @apply mb-5 leading-loose text-text-secondary; }
+  .prose p { @apply mb-5 leading-[1.8] text-text-secondary; }
   .prose p:last-child { @apply mb-0; }
   .prose strong { @apply text-text-primary font-semibold; }
-  .prose h3 { @apply text-body font-semibold text-text-primary mt-7 mb-2 tracking-wide; }
+  .prose h3 { @apply text-base font-semibold text-text-primary mt-7 mb-2 tracking-[0.01em]; }
 }
