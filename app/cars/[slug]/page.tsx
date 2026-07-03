@@ -4,6 +4,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
+import SaveButton from '@/components/SaveButton'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Model } from '@/lib/types'
 
@@ -115,6 +116,11 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               ))}
             </div>
           </nav>
+
+          {/* Save to Garage */}
+          <div className="pt-6">
+            <SaveButton modelId={car.id} />
+          </div>
 
           {/* Quick stats bar */}
           <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] my-8">
