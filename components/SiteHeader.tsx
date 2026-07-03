@@ -154,6 +154,70 @@ function HeaderSearch() {
   )
 }
 
+function AvatarMenu({ profile, onSignOut }: { profile: NonNullable<Profile>, onSignOut: () => void }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  return (
+    <div ref={ref} style={{ position: 'relative' }}>
+      <button
+        onClick={() => setOpen(o => !o)}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}
+      >
+        {profile.avatar_url ? (
+          <img src={profile.avatar_url} alt={profile.display_name ?? profile.username}
+            width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+        ) : (
+          <div style={{
+            width: 32, height: 32, borderRadius: '50%', background: '#111',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 13, fontWeight: 600, color: '#fff',
+          }}>
+            {(profile.display_name ?? profile.username).charAt(0).toUpperCase()}
+          </div>
+        )}
+      </button>
+
+      {open && (
+        <div style={{
+          position: 'absolute', top: 'calc(100% + 8px)', right: 0,
+          background: '#fff', borderRadius: 12,
+          boxShadow: '0 4px 24px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06)',
+          minWidth: 200, zIndex: 300, overflow: 'hidden',
+        }}>
+          <div style={{ padding: '14px 16px', fontSize: 14, fontWeight: 600, color: '#111' }}>
+            {profile.display_name ?? profile.username}
+          </div>
+          <div style={{ height: 1, background: '#f0f0f0' }} />
+          <button
+            onClick={() => { setOpen(false); onSignOut() }}
+            style={{
+              width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+              padding: '12px 16px', background: 'none', border: 'none',
+              cursor: 'pointer', fontSize: 14, color: '#333', textAlign: 'left',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = '#f9f9f9')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'none')}
+          >
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+            </svg>
+            Sign out
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function SiteHeader() {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined)
   const [showSignIn, setShowSignIn] = useState(false)
@@ -230,24 +294,7 @@ export default function SiteHeader() {
                 Sign In
               </button>
             ) : (
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <a href={`/garage/${profile.username}`} style={{
-                  fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none',
-                }} className="hover:text-black transition-colors">
-                  My Garage
-                </a>
-                <button onClick={signOut} style={{
-                  fontSize: 13, color: 'var(--text-tertiary)',
-                  background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-                }} className="hover:text-black transition-colors">
-                  Sign Out
-                </button>
-                {profile.avatar_url && (
-                  <img src={profile.avatar_url} alt={profile.display_name ?? profile.username}
-                    width={28} height={28}
-                    style={{ borderRadius: '50%', objectFit: 'cover' }} />
-                )}
-              </div>
+              <AvatarMenu profile={profile} onSignOut={signOut} />
             )}
           </nav>
         </div>
