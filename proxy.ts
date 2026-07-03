@@ -1,35 +1,11 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll: () => request.cookies.getAll(),
-        setAll: (toSet) => {
-          toSet.forEach(({ name, value }) => request.cookies.set(name, value))
-          response = NextResponse.next({ request })
-          toSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
-        },
-      },
-    }
-  )
-
-  // Refreshes the session cookie on every request so it never silently expires.
-  await supabase.auth.getUser()
-  return response
+// Middleware is a no-op for now — auth is handled client-side via localStorage.
+// Protected routes (/garage, /admin) redirect unauthenticated users via page-level checks.
+export function proxy(request: NextRequest) {
+  return NextResponse.next({ request })
 }
 
-// Run on every page so the session cookie is refreshed on each navigation.
-// Exclude Next.js internals and static assets.
 export const config = {
-  matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
-  ],
+  matcher: [],
 }
