@@ -30,7 +30,7 @@ This site uses a single token-based Tailwind v4 styling system. There is exactly
 # Admin access (non-negotiable)
 
 Admin authorization is defined in TWO separate, hardcoded places — there is no single source of truth for "who is an admin," and both must be updated together:
-- `lib/admin-auth.ts` — the `ADMIN_EMAIL` constant, checked by `requireAdmin()` and `isAdminEmail()`.
+- `lib/admin-email.ts` — the `ADMIN_EMAIL` constant and `isAdminEmail()`, deliberately kept in a leaf module with no other imports so it's safe to use from client components (e.g. `SiteHeader`'s avatar menu) as well as server code (`lib/admin-auth.ts`'s `requireAdmin()`, the admin API routes) without pulling in server-only dependencies like `next/headers`.
 - `supabase-schema.sql` — the `models` table's `Admin insert`/`Admin update`/`Admin delete` RLS policies, which hardcode the same email directly in the policy SQL (`auth.jwt()->>'email' = '...'`).
 
 If the admin email ever changes, or a second admin is added, update both in the same change. Updating only one leaves them silently out of sync — e.g. the app could let a new admin through its own check while the database still refuses their writes, or vice versa.

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import { isAdminEmail } from '@/lib/admin-auth'
+import { isAdminEmail } from '@/lib/admin-email'
 import Anthropic from '@anthropic-ai/sdk'
 
 export async function POST(req: NextRequest) {

@@ -2,6 +2,7 @@ import { requireAdmin } from '@/lib/admin-auth'
 import { createClient as buildClient } from '@supabase/supabase-js'
 import { notFound } from 'next/navigation'
 import AdminModelForm from '@/components/AdminModelForm'
+import SiteHeader from '@/components/SiteHeader'
 
 function plain() {
   return buildClient(
@@ -23,5 +24,10 @@ export default async function AdminModelPage({ params }: { params: Promise<{ slu
 
   if (!model) notFound()
 
-  return <AdminModelForm model={model} />
+  return (
+    <>
+      <SiteHeader />
+      <AdminModelForm model={model} />
+    </>
+  )
 }

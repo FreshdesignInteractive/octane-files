@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createClient as buildClient } from '@supabase/supabase-js'
-import { isAdminEmail } from '@/lib/admin-auth'
+import { isAdminEmail } from '@/lib/admin-email'
 
 function plain() {
   return buildClient(

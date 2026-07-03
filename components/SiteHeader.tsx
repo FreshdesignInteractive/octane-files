@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
+import { isAdminEmail } from '@/lib/admin-email'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/types'
 
@@ -113,7 +114,7 @@ function HeaderSearch() {
   )
 }
 
-function AvatarMenu({ profile, onSignOut }: { profile: NonNullable<Profile>, onSignOut: () => void }) {
+function AvatarMenu({ profile, isAdmin, onSignOut }: { profile: NonNullable<Profile>, isAdmin: boolean, onSignOut: () => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -147,6 +148,18 @@ function AvatarMenu({ profile, onSignOut }: { profile: NonNullable<Profile>, onS
             {profile.display_name ?? profile.username}
           </div>
           <div className="h-px bg-border" />
+          {isAdmin && (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center gap-2.5 px-4 py-3 text-sm text-text-primary no-underline transition-colors hover:bg-bg-elevated"
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Admin
+            </Link>
+          )}
           <button
             onClick={() => { setOpen(false); onSignOut() }}
             className="w-full flex items-center gap-2.5 px-4 py-3 bg-transparent border-none cursor-pointer text-sm text-text-primary text-left transition-colors hover:bg-bg-elevated"
@@ -164,6 +177,7 @@ function AvatarMenu({ profile, onSignOut }: { profile: NonNullable<Profile>, onS
 
 export default function SiteHeader() {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined)
+  const [email, setEmail] = useState<string | null>(null)
   const [showSignIn, setShowSignIn] = useState(false)
 
   useEffect(() => {
@@ -173,7 +187,9 @@ export default function SiteHeader() {
     // "already logged in" and "not logged in" cases without a separate getSession call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (!session?.user) { setProfile(null); return }
+        if (!session?.user) { setProfile(null); setEmail(null); return }
+
+        setEmail(session.user.email ?? null)
 
         // Show avatar immediately from Google OAuth metadata — no DB round-trip.
         const meta = session.user.user_metadata ?? {}
@@ -198,6 +214,7 @@ export default function SiteHeader() {
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null)
+        setEmail(null)
       }
     })
 
@@ -243,7 +260,7 @@ export default function SiteHeader() {
                 <Link href="/garage" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
                   Garage
                 </Link>
-                <AvatarMenu profile={profile} onSignOut={signOut} />
+                <AvatarMenu profile={profile} isAdmin={isAdminEmail(email)} onSignOut={signOut} />
               </>
             )}
           </nav>
