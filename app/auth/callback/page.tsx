@@ -10,23 +10,13 @@ function CallbackHandler() {
 
   useEffect(() => {
     const code = params.get('code')
-    const supabaseError = params.get('error')
-    const supabaseErrorDesc = params.get('error_description')
-
     if (!code) {
-      const msg = supabaseError
-        ? `${supabaseError}: ${supabaseErrorDesc ?? ''}`
-        : `no_code | url=${window.location.href}`
-      router.replace(`/login?error=${encodeURIComponent(msg)}`)
+      router.replace('/')
       return
     }
     const supabase = createClient()
     supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
-      if (error) {
-        router.replace(`/login?error=${encodeURIComponent(error.message)}`)
-      } else {
-        router.replace('/')
-      }
+      router.replace('/')
     })
   }, [params, router])
 
