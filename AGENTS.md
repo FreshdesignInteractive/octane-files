@@ -4,6 +4,7 @@
 This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
 <!-- END:nextjs-agent-rules -->
 
+<!-- BEGIN:octanefiles-styling-rules -->
 # Styling rules (non-negotiable)
 
 This site uses a single token-based Tailwind v4 styling system. There is exactly one styling method — Tailwind utility classes plus the shared `@layer components` classes, both defined in `app/globals.css`. Follow these rules on every page and component, including new ones:
@@ -15,3 +16,12 @@ This site uses a single token-based Tailwind v4 styling system. There is exactly
 - **Don't redefine what a standard Tailwind name means.** Don't override Tailwind's own default `--breakpoint-*`, `--shadow-sm/md/lg`, or numbered `--radius-*`/`--text-*` scale keys in `@theme` — a future reader who sees `shadow-lg` or `lg:` should be able to trust it means the Tailwind-standard value everywhere in this codebase. Give a new token a distinct semantic name instead (see `--shadow-modal`, `--container-page`).
 - **Page-level containers use `.site-container`** (1440px max-width, 24px horizontal padding, fluid below that) for public content pages. Internal tooling (`/admin`) is a deliberate, disclosed exception — it uses its own narrower widths because a dense table/form stretched to the public site's content width visibly hurts usability; don't "fix" that inconsistency by forcing it to match without discussing it first.
 <!-- END:octanefiles-styling-rules -->
+
+<!-- BEGIN:octanefiles-data-rules -->
+# Data rules (non-negotiable)
+
+- Supabase is the ONLY source of truth for all site content and user data.
+- Never store or cache Supabase data in localStorage or sessionStorage. Client-side state may hold fetched data in memory for the current view only.
+- When data changes in Supabase, affected pages must show the updated data. Before adding or changing any caching behavior (Next.js fetch caching, route revalidation settings, or any client-side caching layer), explain the staleness trade-off in plain English and get approval first.
+- Always re-fetch from Supabase before any export or download of saved data — never serve from a cached copy.
+<!-- END:octanefiles-data-rules -->
