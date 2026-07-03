@@ -24,7 +24,19 @@ function CallbackHandler() {
     })
   }, [params, router])
 
-  return null
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: 'var(--bg)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 13,
+      color: 'var(--text-secondary)',
+    }}>
+      Signing you in…
+    </div>
+  )
 }
 
 export default function AuthCallbackPage() {
