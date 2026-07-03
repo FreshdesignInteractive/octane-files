@@ -24,6 +24,16 @@ export default async function AdminPage() {
     .order('make')
     .order('year_start')
 
+  // Admin-only — never shown publicly. Counted client-side from a plain
+  // SELECT rather than a GROUP BY, since the service-role grant on
+  // saved_models is deliberately SELECT-only (see supabase-schema.sql) and
+  // this table is expected to stay small enough for that to be fine.
+  const { data: saves } = await plain().from('saved_models').select('model_id')
+  const savesByModel = new Map<string, number>()
+  for (const row of saves ?? []) {
+    savesByModel.set(row.model_id, (savesByModel.get(row.model_id) ?? 0) + 1)
+  }
+
   const total      = models?.length ?? 0
   const hasImage   = models?.filter(m => m.hero_image).length ?? 0
   const hasOverview = models?.filter(m => m.overview).length ?? 0
@@ -64,6 +74,7 @@ export default async function AdminPage() {
                 <th className="py-2.5 px-4 text-left font-semibold text-text-secondary">Class</th>
                 <th className="py-2.5 px-4 text-left font-semibold text-text-secondary">Country</th>
                 <th className="py-2.5 px-4 text-center font-semibold text-text-secondary">Status</th>
+                <th className="py-2.5 px-4 text-right font-semibold text-text-secondary">Saves</th>
                 <th className="py-2.5 px-4 text-right font-semibold text-text-secondary"></th>
               </tr>
             </thead>
@@ -88,6 +99,9 @@ export default async function AdminPage() {
                       {dot(Array.isArray(m.specs) && m.specs.length > 0)}
                       {dot(!!m.market_data)}
                     </div>
+                  </td>
+                  <td className="py-2.5 px-4 text-right text-text-secondary">
+                    {savesByModel.get(m.id) ?? 0}
                   </td>
                   <td className="py-2.5 px-4 text-right">
                     <Link href={`/admin/models/${m.slug}`} className="text-xs text-text-primary no-underline border border-border-mid rounded-md py-1 px-2.5">
