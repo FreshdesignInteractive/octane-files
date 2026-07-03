@@ -145,3 +145,34 @@ CREATE POLICY "Public read"    ON comments FOR SELECT USING (true);
 CREATE POLICY "Auth insert"    ON comments FOR INSERT WITH CHECK (auth.uid() = author_id);
 CREATE POLICY "Owner update"   ON comments FOR UPDATE USING (auth.uid() = author_id);
 CREATE POLICY "Owner delete"   ON comments FOR DELETE USING (auth.uid() = author_id);
+
+-- ─── Saved Models ("My Garage") ────────────────────────────────────────────
+-- Private by design: unlike every other user-content table above, there is no
+-- "Public read" policy here at all — saves are never visible to anyone but
+-- their owner, enforced by omission (default-deny), not a `false` condition.
+CREATE TABLE IF NOT EXISTS saved_models (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id     UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  model_id    UUID NOT NULL REFERENCES models(id) ON DELETE CASCADE,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (user_id, model_id)
+);
+
+CREATE INDEX IF NOT EXISTS saved_models_user_idx  ON saved_models (user_id);
+CREATE INDEX IF NOT EXISTS saved_models_model_idx ON saved_models (model_id);
+
+ALTER TABLE saved_models ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Owner read own" ON saved_models FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Owner insert"   ON saved_models FOR INSERT WITH CHECK (auth.uid() = user_id);
+CREATE POLICY "Owner delete"   ON saved_models FOR DELETE USING (auth.uid() = user_id);
+
+-- Unlike every table above, this one needed explicit GRANTs — without them,
+-- both `authenticated` and `service_role` got "permission denied for table"
+-- before RLS was ever evaluated (a table-level grant, separate from RLS).
+-- Why the earlier tables work without an equivalent explicit GRANT is
+-- unexplained and queued as a follow-up diagnostic; this file may currently
+-- be missing whatever project-level default accounts for that.
+-- No `anon` grant: no signed-out code path ever queries this table
+-- (least privilege — nothing that never asks shouldn't be able to ask).
+GRANT SELECT, INSERT, DELETE ON saved_models TO authenticated;
+GRANT SELECT ON saved_models TO service_role;
