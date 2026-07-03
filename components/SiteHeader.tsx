@@ -161,11 +161,16 @@ export default function SiteHeader() {
   useEffect(() => {
     const supabase = createClient()
 
-    supabase.auth.getUser().then(async ({ data: { user } }) => {
-      if (!user) { setProfile(null); return }
+    // Use getSession first (localStorage, instant) then validate with getUser
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) { setProfile(null); return }
       const { data } = await supabase
-        .from('profiles').select('*').eq('id', user.id).single()
+        .from('profiles').select('*').eq('id', session.user.id).single()
       setProfile(data ?? null)
+      // Validate in background — signs out if token is forged/expired
+      supabase.auth.getUser().then(({ data: { user } }) => {
+        if (!user) { supabase.auth.signOut(); setProfile(null) }
+      })
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
