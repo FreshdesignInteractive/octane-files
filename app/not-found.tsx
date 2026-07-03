@@ -5,39 +5,17 @@ export default function NotFound() {
   return (
     <>
       <SiteHeader />
-      <main style={{
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: 'calc(100vh - 57px)',
-        padding: '0 24px',
-        textAlign: 'center',
-        background: '#f2f2f2',
-      }}>
-        <h1 style={{ fontSize: 120, fontWeight: 800, color: '#111', lineHeight: 1, marginBottom: 24 }}>
+      <main className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-57px)] px-6 text-center bg-bg-elevated">
+        <h1 className="text-display font-extrabold text-text-primary leading-none mb-6">
           404
         </h1>
-        <h2 style={{ fontSize: 32, fontWeight: 700, color: '#111', marginBottom: 16 }}>
+        <h2 className="text-heading font-bold text-text-primary mb-4">
           Page not found
         </h2>
-        <p style={{ fontSize: 18, color: '#666', marginBottom: 40, maxWidth: 480, lineHeight: 1.6 }}>
+        <p className="text-base text-text-secondary mb-10 max-w-120 leading-[1.6]">
           The page you&apos;re looking for doesn&apos;t exist or may have moved. Head back home and find what you need.
         </p>
-        <Link href="/" style={{
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 8,
-          height: 56,
-          padding: '0 36px',
-          background: '#111',
-          color: '#fff',
-          borderRadius: 999,
-          fontSize: 16,
-          fontWeight: 600,
-          textDecoration: 'none',
-        }}>
+        <Link href="/" className="btn-primary h-14 px-9 gap-2 rounded-full text-base font-semibold no-underline">
           ‹ Back to home
         </Link>
       </main>

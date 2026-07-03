@@ -21,15 +21,7 @@ function CallbackHandler() {
   }, [params, router])
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontSize: 13,
-      color: 'var(--text-secondary)',
-    }}>
+    <div className="min-h-screen bg-white flex items-center justify-center text-body text-text-secondary">
       Signing you in…
     </div>
   )

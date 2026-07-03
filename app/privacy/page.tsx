@@ -7,13 +7,15 @@ export default function PrivacyPage() {
   return (
     <>
       <SiteHeader />
-      <main style={{ maxWidth: 720, margin: '0 auto', padding: '60px 24px 80px' }}>
-        <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: '-0.03em', marginBottom: 8 }}>Privacy Policy</h1>
-        <p style={{ fontSize: 13, color: 'var(--text-tertiary)', marginBottom: 40 }}>Last updated: June 2026</p>
-        <p style={{ fontSize: 15, color: 'var(--text-secondary)', lineHeight: 1.8 }}>
-          This page is coming soon. Our privacy policy will describe how Octane Files collects,
-          uses, and protects your personal information.
-        </p>
+      <main className="site-container pt-15 pb-20">
+        <div className="max-w-180">
+          <h1 className="text-heading font-bold tracking-[-0.03em] mb-2">Privacy Policy</h1>
+          <p className="text-body text-text-tertiary mb-10">Last updated: June 2026</p>
+          <p className="text-base text-text-secondary leading-[1.8]">
+            This page is coming soon. Our privacy policy will describe how Octane Files collects,
+            uses, and protects your personal information.
+          </p>
+        </div>
       </main>
       <SiteFooter />
     </>
