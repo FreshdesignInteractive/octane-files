@@ -191,7 +191,7 @@ export default function SiteHeader() {
 
         // Update in background with the stored profile (bio, custom username, etc.)
         supabase.from('profiles').select('*').eq('id', session.user.id).single()
-          .then(({ data }) => { if (data) setProfile(data as Profile) })
+          .then(({ data }: { data: Profile | null }) => { if (data) setProfile(data) })
 
         if (event === 'SIGNED_IN' && window.location.search.includes('code=')) {
           window.history.replaceState({}, '', window.location.pathname)
