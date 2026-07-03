@@ -11,12 +11,7 @@ function plain() {
 }
 
 const dot = (filled: boolean) => (
-  <span style={{
-    display: 'inline-block', width: 8, height: 8,
-    borderRadius: '50%',
-    background: filled ? '#22c55e' : '#e5e5e5',
-    flexShrink: 0,
-  }} />
+  <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${filled ? 'bg-success' : 'bg-border'}`} />
 )
 
 export default async function AdminPage() {
@@ -34,15 +29,15 @@ export default async function AdminPage() {
   const hasSpecs   = models?.filter(m => Array.isArray(m.specs) && m.specs.length > 0).length ?? 0
 
   return (
-    <div style={{ maxWidth: 1100, margin: '0 auto', padding: '40px 24px', fontFamily: 'system-ui, sans-serif' }}>
+    <div className="max-w-275 mx-auto py-10 px-6 font-[system-ui,sans-serif]">
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 32 }}>
+      <div className="flex justify-between items-center mb-8">
         <div>
-          <Link href="/" style={{ fontSize: 12, color: '#888', textDecoration: 'none' }}>← Back to site</Link>
-          <h1 style={{ margin: '8px 0 4px', fontSize: 24, fontWeight: 700, color: '#111' }}>Admin · Models</h1>
-          <p style={{ margin: 0, fontSize: 13, color: '#888' }}>{total} cars</p>
+          <Link href="/" className="text-xs text-text-tertiary no-underline">← Back to site</Link>
+          <h1 className="mt-2 mb-1 text-2xl font-bold text-text-primary">Admin · Models</h1>
+          <p className="m-0 text-body text-text-tertiary">{total} cars</p>
         </div>
-        <div style={{ display: 'flex', gap: 20, fontSize: 12, color: '#555' }}>
+        <div className="flex gap-5 text-xs text-text-secondary">
           <span>🖼 {hasImage}/{total} images</span>
           <span>📝 {hasOverview}/{total} overviews</span>
           <span>⚙️ {hasSpecs}/{total} specs</span>
@@ -50,56 +45,49 @@ export default async function AdminPage() {
       </div>
 
       {/* Legend */}
-      <div style={{ display: 'flex', gap: 16, marginBottom: 16, fontSize: 11, color: '#888' }}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{dot(true)} filled</span>
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>{dot(false)} empty</span>
-        <span style={{ marginLeft: 8 }}>Columns: Image · Overview · Specs · Market</span>
+      <div className="flex gap-4 mb-4 text-label text-text-tertiary">
+        <span className="flex items-center gap-1">{dot(true)} filled</span>
+        <span className="flex items-center gap-1">{dot(false)} empty</span>
+        <span className="ml-2">Columns: Image · Overview · Specs · Market</span>
       </div>
 
       {/* Table */}
-      <div style={{ border: '1px solid #e8e8e8', borderRadius: 8, overflow: 'hidden' }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+      <div className="border border-border rounded-lg overflow-hidden">
+        <table className="table">
           <thead>
-            <tr style={{ background: '#f8f8f8', borderBottom: '1px solid #e8e8e8' }}>
-              <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#555' }}>Car</th>
-              <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#555' }}>Years</th>
-              <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#555' }}>Class</th>
-              <th style={{ padding: '10px 16px', textAlign: 'left', fontWeight: 600, color: '#555' }}>Country</th>
-              <th style={{ padding: '10px 16px', textAlign: 'center', fontWeight: 600, color: '#555' }}>Status</th>
-              <th style={{ padding: '10px 16px', textAlign: 'right', fontWeight: 600, color: '#555' }}></th>
+            <tr className="bg-bg-elevated border-b border-border">
+              <th className="py-2.5 px-4 text-left font-semibold text-text-secondary">Car</th>
+              <th className="py-2.5 px-4 text-left font-semibold text-text-secondary">Years</th>
+              <th className="py-2.5 px-4 text-left font-semibold text-text-secondary">Class</th>
+              <th className="py-2.5 px-4 text-left font-semibold text-text-secondary">Country</th>
+              <th className="py-2.5 px-4 text-center font-semibold text-text-secondary">Status</th>
+              <th className="py-2.5 px-4 text-right font-semibold text-text-secondary"></th>
             </tr>
           </thead>
           <tbody>
             {models?.map((m, i) => (
-              <tr key={m.id} style={{
-                borderBottom: i < total - 1 ? '1px solid #f0f0f0' : 'none',
-                background: '#ffffff',
-              }}>
-                <td style={{ padding: '10px 16px', color: '#111', fontWeight: 500 }}>
+              <tr key={m.id} className={`bg-white ${i < total - 1 ? 'border-b border-border' : ''}`}>
+                <td className="py-2.5 px-4 text-text-primary font-medium">
                   {m.make} {m.model}
                   {m.generation && m.generation.toLowerCase() !== m.model.toLowerCase() && (
-                    <span style={{ color: '#888', fontWeight: 400 }}> · {m.generation}</span>
+                    <span className="text-text-tertiary font-normal"> · {m.generation}</span>
                   )}
                 </td>
-                <td style={{ padding: '10px 16px', color: '#555' }}>
+                <td className="py-2.5 px-4 text-text-secondary">
                   {m.year_start}{m.year_end ? `–${m.year_end}` : '–'}
                 </td>
-                <td style={{ padding: '10px 16px', color: '#555' }}>{m.class}</td>
-                <td style={{ padding: '10px 16px', color: '#555' }}>{m.country}</td>
-                <td style={{ padding: '10px 16px', textAlign: 'center' }}>
-                  <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+                <td className="py-2.5 px-4 text-text-secondary">{m.class}</td>
+                <td className="py-2.5 px-4 text-text-secondary">{m.country}</td>
+                <td className="py-2.5 px-4 text-center">
+                  <div className="flex gap-2 justify-center">
                     {dot(!!m.hero_image)}
                     {dot(!!m.overview)}
                     {dot(Array.isArray(m.specs) && m.specs.length > 0)}
                     {dot(!!m.market_data)}
                   </div>
                 </td>
-                <td style={{ padding: '10px 16px', textAlign: 'right' }}>
-                  <Link href={`/admin/models/${m.slug}`} style={{
-                    fontSize: 12, color: '#111', textDecoration: 'none',
-                    border: '1px solid #e0e0e0', borderRadius: 5,
-                    padding: '4px 10px',
-                  }}>
+                <td className="py-2.5 px-4 text-right">
+                  <Link href={`/admin/models/${m.slug}`} className="text-xs text-text-primary no-underline border border-border-mid rounded-md py-1 px-2.5">
                     Edit
                   </Link>
                 </td>

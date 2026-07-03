@@ -147,7 +147,7 @@ body {
   }
 
   .field-label {
-    @apply text-xs font-semibold text-text-secondary uppercase tracking-wide;
+    @apply text-xs font-semibold text-text-secondary uppercase tracking-[0.04em];
   }
 
   .input, .select {
@@ -157,7 +157,7 @@ body {
 
   .textarea {
     @apply px-2.5 py-2 border border-border-mid rounded-md text-body text-text-primary
-           bg-white outline-none w-full resize-y leading-relaxed;
+           bg-white outline-none w-full resize-y leading-[1.6];
   }
 
   .table {
