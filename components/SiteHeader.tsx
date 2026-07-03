@@ -293,7 +293,13 @@ export default function SiteHeader() {
                 Sign In
               </button>
             ) : (
-              <AvatarMenu profile={profile} onSignOut={signOut} />
+              <>
+                <Link href="/garage" style={{ fontSize: 13, color: 'var(--text-secondary)', textDecoration: 'none' }}
+                  className="hover:text-black transition-colors">
+                  Garage
+                </Link>
+                <AvatarMenu profile={profile} onSignOut={signOut} />
+              </>
             )}
           </nav>
         </div>
