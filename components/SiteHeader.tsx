@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/types'
 
 function GoogleIcon() {
@@ -227,7 +228,7 @@ export default function SiteHeader() {
 
     // onAuthStateChange fires INITIAL_SESSION immediately on mount — handles both
     // "already logged in" and "not logged in" cases without a separate getSession call.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event: AuthChangeEvent, session: Session | null) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (!session?.user) { setProfile(null); return }
         const { data } = await supabase

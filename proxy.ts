@@ -21,12 +21,15 @@ export async function proxy(request: NextRequest) {
     }
   )
 
+  // Refreshes the session cookie on every request so it never silently expires.
   await supabase.auth.getUser()
   return response
 }
 
-// Only run middleware on routes that actually need auth state server-side.
-// Public pages (homepage, car detail) now use client-side auth — exclude them.
+// Run on every page so the session cookie is refreshed on each navigation.
+// Exclude Next.js internals and static assets.
 export const config = {
-  matcher: ['/garage/:path*', '/admin/:path*', '/auth/:path*', '/api/admin/:path*'],
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
 }

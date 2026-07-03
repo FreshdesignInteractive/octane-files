@@ -15,7 +15,7 @@ function CallbackHandler() {
       return
     }
     const supabase = createClient()
-    supabase.auth.exchangeCodeForSession(code).then(({ error }) => {
+    supabase.auth.exchangeCodeForSession(code).then(() => {
       router.replace('/')
     })
   }, [params, router])
