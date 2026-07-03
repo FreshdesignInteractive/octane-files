@@ -25,3 +25,13 @@ This site uses a single token-based Tailwind v4 styling system. There is exactly
 - When data changes in Supabase, affected pages must show the updated data. Before adding or changing any caching behavior (Next.js fetch caching, route revalidation settings, or any client-side caching layer), explain the staleness trade-off in plain English and get approval first.
 - Always re-fetch from Supabase before any export or download of saved data — never serve from a cached copy.
 <!-- END:octanefiles-data-rules -->
+
+<!-- BEGIN:octanefiles-admin-access-notes -->
+# Admin access (non-negotiable)
+
+Admin authorization is defined in TWO separate, hardcoded places — there is no single source of truth for "who is an admin," and both must be updated together:
+- `lib/admin-auth.ts` — the `ADMIN_EMAIL` constant, checked by `requireAdmin()` and `isAdminEmail()`.
+- `supabase-schema.sql` — the `models` table's `Admin insert`/`Admin update`/`Admin delete` RLS policies, which hardcode the same email directly in the policy SQL (`auth.jwt()->>'email' = '...'`).
+
+If the admin email ever changes, or a second admin is added, update both in the same change. Updating only one leaves them silently out of sync — e.g. the app could let a new admin through its own check while the database still refuses their writes, or vice versa.
+<!-- END:octanefiles-admin-access-notes -->
