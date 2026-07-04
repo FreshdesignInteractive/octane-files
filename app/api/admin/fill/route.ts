@@ -35,9 +35,8 @@ export async function POST(req: NextRequest) {
 Car: ${name}
 Years: ${years}
 Class: ${car.class}
-Country: ${car.country}
 Body styles: ${(car.body_styles ?? []).join(', ') || 'unknown'}
-Drivetrain: ${car.drivetrain ?? 'unknown'}
+Drivetrain: ${(car.drivetrain ?? []).join(', ') || 'unknown'}
 Engine layout: ${car.engine_layout ?? 'unknown'}
 
 Return this exact JSON structure:
