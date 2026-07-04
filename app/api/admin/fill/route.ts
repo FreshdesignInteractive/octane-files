@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
-import { isAdminEmail } from '@/lib/admin-email'
+import { checkIsAdmin } from '@/lib/is-admin'
 import Anthropic from '@anthropic-ai/sdk'
 
 export async function POST(req: NextRequest) {
   // Auth check
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !isAdminEmail(user.email)) {
+  if (!user || !(await checkIsAdmin(supabase))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

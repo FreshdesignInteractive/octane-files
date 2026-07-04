@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { createClient as buildClient } from '@supabase/supabase-js'
-import { isAdminEmail } from '@/lib/admin-email'
+import { checkIsAdmin } from '@/lib/is-admin'
 
 function plain() {
   return buildClient(
@@ -17,7 +17,7 @@ export async function PATCH(
 ) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
-  if (!user || !isAdminEmail(user.email)) {
+  if (!user || !(await checkIsAdmin(supabase))) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

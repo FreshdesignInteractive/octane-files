@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
-import { isAdminEmail } from '@/lib/admin-email'
+import { checkIsAdmin } from '@/lib/is-admin'
 import SignInDialog from '@/components/SignInDialog'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import type { Profile } from '@/lib/types'
@@ -102,7 +102,7 @@ function AvatarMenu({ profile, isAdmin, onSignOut }: { profile: NonNullable<Prof
 
 export default function SiteHeader() {
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined)
-  const [email, setEmail] = useState<string | null>(null)
+  const [isAdmin, setIsAdmin] = useState(false)
   const [showSignIn, setShowSignIn] = useState(false)
 
   useEffect(() => {
@@ -112,9 +112,9 @@ export default function SiteHeader() {
     // "already logged in" and "not logged in" cases without a separate getSession call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-        if (!session?.user) { setProfile(null); setEmail(null); return }
+        if (!session?.user) { setProfile(null); setIsAdmin(false); return }
 
-        setEmail(session.user.email ?? null)
+        checkIsAdmin(supabase).then(setIsAdmin)
 
         // Show avatar immediately from Google OAuth metadata — no DB round-trip.
         const meta = session.user.user_metadata ?? {}
@@ -139,7 +139,7 @@ export default function SiteHeader() {
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null)
-        setEmail(null)
+        setIsAdmin(false)
       }
     })
 
@@ -185,7 +185,7 @@ export default function SiteHeader() {
                 <Link href="/garage" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
                   Garage
                 </Link>
-                <AvatarMenu profile={profile} isAdmin={isAdminEmail(email)} onSignOut={signOut} />
+                <AvatarMenu profile={profile} isAdmin={isAdmin} onSignOut={signOut} />
               </>
             )}
           </nav>
