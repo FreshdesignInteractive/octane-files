@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react'
 import Link from 'next/link'
+import { CAR_CLASSES } from '@/lib/car-schema'
 
 export interface AdminRow {
   slug: string
@@ -89,7 +90,7 @@ export default function AdminModelsTable({ rows }: { rows: AdminRow[] }) {
                 <td className="py-2.5 px-4 text-text-secondary">
                   {r.year_start}{r.year_end ? `–${r.year_end}` : '–'}
                 </td>
-                <td className="py-2.5 px-4 text-text-secondary">{r.class}</td>
+                <td className="py-2.5 px-4 text-text-secondary">{CAR_CLASSES.find(c => c.value === r.class)?.label ?? r.class}</td>
                 <td className="py-2.5 px-4 text-center">
                   {r.archived_at ? (
                     <span className="tag" style={{ background: 'var(--color-bg-elevated)' }}>Archived</span>
