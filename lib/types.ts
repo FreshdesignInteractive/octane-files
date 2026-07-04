@@ -70,6 +70,57 @@ export type ModelSummary = Pick<
   'hero_image' | 'units_produced'
 >
 
+// ─── Cars (public encyclopedia — new makes/models/generations schema) ───────
+// Distinct from Model/ModelSummary above, which the not-yet-migrated admin
+// form still uses against the frozen models_legacy table. These two type
+// families will collapse into one once the admin form is rebuilt onto the
+// new schema.
+
+export interface CarSummary {
+  id: string
+  slug: string
+  make: string
+  model: string
+  generation: string
+  year_start: number
+  year_end: number | null
+  class: string
+  country: string
+  hero_image: string | null
+  units_produced: number | null
+}
+
+export interface Car extends CarSummary {
+  body_styles: string[]
+  drivetrain: string | null
+  engine_layout: string | null
+  overview: string | null
+  gallery_images: string[]
+  specs: CarSpecGroup[]
+  market_data: {
+    low: number | null
+    mid: number | null
+    high: number | null
+    currency: string
+    as_of: string | null
+    notes: string | null
+  } | null
+  maintenance: string | null
+  resources: Resource[]
+  is_icon: boolean
+  nickname: string | null
+  desirability_tier: string | null
+  why_collectible: string | null
+  engine_signature: string | null
+  variants_to_know: string | null
+  known_issues: string | null
+  claim_to_fame: string | null
+  buyers_flag: string | null
+  rivals_alternatives: string | null
+  designer: string | null
+  wikipedia_url: string | null
+}
+
 // ─── Profiles ─────────────────────────────────────────────────────────────────
 
 export interface Profile {

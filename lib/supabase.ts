@@ -12,55 +12,148 @@ function buildClient() {
 }
 import type {
   Model, ModelSummary,
+  Car, CarSummary,
   Profile,
   UserCar, UserCarSummary,
   Like, Comment,
 } from './types'
 
-// ─── Models ───────────────────────────────────────────────────────────────────
+// ─── Cars (public encyclopedia — makes/models/generations) ──────────────────
+// "Car" here means a generations row. Archived rows (the 130-car delta
+// dropped in bluechip curation) are always excluded — archived_at IS NULL
+// is non-negotiable on every public query below.
+
+const CLASS_ENUM_TO_LABEL: Record<string, string> = {
+  sports: 'Sports',
+  muscle: 'Muscle',
+  grand_tourer: 'Grand Tourer',
+  luxury: 'Luxury',
+  exotic: 'Exotic',
+  off_road: 'Off-Road',
+  vintage: 'Vintage',
+}
+// FilterBar still sends the old flat-schema labels (including "Icons", which
+// has no exact equivalent — closest is "vintage") until the search/filter
+// step gives it the real enum-backed options.
+const CLASS_LABEL_TO_ENUM: Record<string, string> = {
+  ...Object.fromEntries(Object.entries(CLASS_ENUM_TO_LABEL).map(([k, v]) => [v, k])),
+  Icons: 'vintage',
+}
+
+const CAR_SUMMARY_SELECT = `
+  id, slug, code, year_start, year_end, class, hero_image, units_produced,
+  models!inner(name, makes!inner(name, country))
+`
+const CAR_SELECT = `
+  id, slug, code, year_start, year_end, class, hero_image, units_produced,
+  body_styles, drivetrain, engine_layout, overview, gallery_images, specs,
+  market_data, maintenance, resources, is_icon, nickname, desirability_tier,
+  why_collectible, engine_signature, variants_to_know, known_issues,
+  claim_to_fame, buyers_flag, rivals_alternatives, designer, wikipedia_url,
+  models!inner(name, makes!inner(name, country))
+`
+
+type GenerationJoinRow = {
+  id: string
+  slug: string
+  code: string
+  year_start: number
+  year_end: number | null
+  class: string
+  hero_image: string | null
+  units_produced: number | null
+  models: { name: string; makes: { name: string; country: string } }
+}
+
+function mapCarSummary(row: GenerationJoinRow): CarSummary {
+  return {
+    id: row.id,
+    slug: row.slug,
+    make: row.models.makes.name,
+    model: row.models.name,
+    generation: row.code,
+    year_start: row.year_start,
+    year_end: row.year_end,
+    class: CLASS_ENUM_TO_LABEL[row.class] ?? row.class,
+    country: row.models.makes.country,
+    hero_image: row.hero_image,
+    units_produced: row.units_produced,
+  }
+}
+
+function mapCar(row: GenerationJoinRow & Record<string, unknown>): Car {
+  return {
+    ...mapCarSummary(row),
+    body_styles: (row.body_styles as string[]) ?? [],
+    drivetrain: Array.isArray(row.drivetrain) && row.drivetrain.length > 0
+      ? (row.drivetrain as string[]).join(' / ')
+      : null,
+    engine_layout: (row.engine_layout as string | null) ?? null,
+    overview: (row.overview as string | null) ?? null,
+    gallery_images: (row.gallery_images as string[]) ?? [],
+    specs: (row.specs as Car['specs']) ?? [],
+    market_data: (row.market_data as Car['market_data']) ?? null,
+    maintenance: (row.maintenance as string | null) ?? null,
+    resources: (row.resources as Car['resources']) ?? [],
+    is_icon: (row.is_icon as boolean) ?? false,
+    nickname: (row.nickname as string | null) ?? null,
+    desirability_tier: (row.desirability_tier as string | null) ?? null,
+    why_collectible: (row.why_collectible as string | null) ?? null,
+    engine_signature: (row.engine_signature as string | null) ?? null,
+    variants_to_know: (row.variants_to_know as string | null) ?? null,
+    known_issues: (row.known_issues as string | null) ?? null,
+    claim_to_fame: (row.claim_to_fame as string | null) ?? null,
+    buyers_flag: (row.buyers_flag as string | null) ?? null,
+    rivals_alternatives: (row.rivals_alternatives as string | null) ?? null,
+    designer: (row.designer as string | null) ?? null,
+    wikipedia_url: (row.wikipedia_url as string | null) ?? null,
+  }
+}
 
 export async function getModels(params?: {
   class?: string
   country?: string
+  make?: string
   search?: string
   limit?: number
   offset?: number
-}): Promise<{ data: ModelSummary[]; total: number }> {
+}): Promise<{ data: CarSummary[]; total: number }> {
   const db = buildClient()
   const limit  = params?.limit  ?? 24
   const offset = params?.offset ?? 0
 
   let query = db
-    .from('models')
-    .select('id, slug, make, model, generation, year_start, year_end, class, country, hero_image, units_produced', { count: 'exact' })
-    .order('make', { ascending: true })
+    .from('generations')
+    .select(CAR_SUMMARY_SELECT, { count: 'exact' })
+    .is('archived_at', null)
+    .order('year_start', { ascending: true })
     .range(offset, offset + limit - 1)
 
-  if (params?.class)   query = query.eq('class', params.class)
-  if (params?.country) query = query.eq('country', params.country)
-  if (params?.search)  query = query.or(
-    `make.ilike.%${params.search}%,model.ilike.%${params.search}%,generation.ilike.%${params.search}%`
-  )
+  if (params?.class)   query = query.eq('class', CLASS_LABEL_TO_ENUM[params.class] ?? params.class)
+  if (params?.country) query = query.eq('models.makes.country', params.country)
+  if (params?.make)    query = query.eq('models.makes.name', params.make)
+  if (params?.search)  query = query.textSearch('search_vector', params.search, { type: 'websearch' })
 
   const { data, error, count } = await query
   if (error) throw error
-  return { data: data ?? [], total: count ?? 0 }
+  return { data: (data as unknown as GenerationJoinRow[] ?? []).map(mapCarSummary), total: count ?? 0 }
 }
 
-export async function getModel(slug: string): Promise<Model | null> {
+export async function getModel(slug: string): Promise<Car | null> {
   const db = await createClient()
   const { data, error } = await db
-    .from('models')
-    .select('*')
+    .from('generations')
+    .select(CAR_SELECT)
     .eq('slug', slug)
+    .is('archived_at', null)
     .single()
   if (error) return null
-  return data
+  return mapCar(data as unknown as GenerationJoinRow & Record<string, unknown>)
 }
 
 export async function getModelSlugs(): Promise<string[]> {
   const db = buildClient()
-  const { data } = await db.from('models').select('slug')
+  const { data } = await db.from('generations').select('slug').is('archived_at', null)
   return (data ?? []).map((r) => r.slug)
 }
 

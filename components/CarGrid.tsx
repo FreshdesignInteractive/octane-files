@@ -3,7 +3,7 @@
 import { useState, useEffect, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
 import CarCard from './CarCard'
-import type { ModelSummary } from '@/lib/types'
+import type { CarSummary } from '@/lib/types'
 
 const INITIAL = 24
 const PAGE    = 12
@@ -24,7 +24,7 @@ export default function CarGrid() {
   const activeCountry = params.get('country') ?? ''
   const activeSearch  = params.get('q')       ?? ''
 
-  const [cars, setCars]       = useState<ModelSummary[]>([])
+  const [cars, setCars]       = useState<CarSummary[]>([])
   const [total, setTotal]     = useState(0)
   const [loading, setLoading] = useState(true)
   const [isPending, start]    = useTransition()
@@ -34,7 +34,7 @@ export default function CarGrid() {
     setLoading(true)
     fetch(makeUrl(activeClass, activeCountry, activeSearch, 0, INITIAL))
       .then(r => r.json())
-      .then(({ data, total }: { data: ModelSummary[]; total: number }) => {
+      .then(({ data, total }: { data: CarSummary[]; total: number }) => {
         if (cancelled) return
         setCars(data ?? [])
         setTotal(total ?? 0)
@@ -47,7 +47,7 @@ export default function CarGrid() {
   function loadMore() {
     start(async () => {
       const res  = await fetch(makeUrl(activeClass, activeCountry, activeSearch, cars.length, PAGE))
-      const json = await res.json() as { data: ModelSummary[]; total: number }
+      const json = await res.json() as { data: CarSummary[]; total: number }
       setCars(prev => [...prev, ...json.data])
     })
   }

@@ -8,13 +8,18 @@ import SignInDialog from '@/components/SignInDialog'
 import CarCard from '@/components/CarCard'
 import { createClient } from '@/lib/supabase-browser'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
-import type { ModelSummary } from '@/lib/types'
+import type { CarSummary } from '@/lib/types'
 
 // Client component, same discipline as SiteHeader/SaveButton: never queries
 // saved_models until a signed-in user is confirmed via onAuthStateChange.
+// NOTE: the query below still targets the old flat models(...) shape via
+// saved_models' FK, which per the FK-repoint plan needs to move to
+// generations(...). Left untouched here (type-only change to keep this file
+// compiling against CarCard's new prop type) — the real fix lands with the
+// saved_models/user_cars FK repoint.
 export default function GaragePage() {
   const [userId, setUserId] = useState<string | null | undefined>(undefined)
-  const [cars, setCars] = useState<ModelSummary[] | null>(null)
+  const [cars, setCars] = useState<CarSummary[] | null>(null)
   const [showSignIn, setShowSignIn] = useState(false)
 
   useEffect(() => {
@@ -28,7 +33,7 @@ export default function GaragePage() {
           .from('saved_models')
           .select('models(id, slug, make, model, generation, year_start, year_end, class, country, hero_image, units_produced)')
           .eq('user_id', session.user.id)
-          .then(({ data }: { data: { models: ModelSummary }[] | null }) => {
+          .then(({ data }: { data: { models: CarSummary }[] | null }) => {
             setCars((data ?? []).map(row => row.models).filter(Boolean))
           })
       } else if (event === 'SIGNED_OUT') {

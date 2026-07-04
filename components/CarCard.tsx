@@ -1,11 +1,11 @@
 import Link from 'next/link'
-import type { ModelSummary } from '@/lib/types'
+import type { CarSummary } from '@/lib/types'
 
 function formatYears(start: number, end: number | null) {
   return end ? `${start}–${end}` : `${start}–present`
 }
 
-export default function CarCard({ car }: { car: ModelSummary }) {
+export default function CarCard({ car }: { car: CarSummary }) {
   return (
     <Link href={`/cars/${car.slug}`} className="no-underline">
       <article className="card group">

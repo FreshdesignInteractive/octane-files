@@ -6,7 +6,7 @@ import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import SaveButton from '@/components/SaveButton'
 import { getModel, getModelSlugs } from '@/lib/supabase'
-import type { Model } from '@/lib/types'
+import type { Car } from '@/lib/types'
 
 export const revalidate = 3600
 
@@ -41,7 +41,7 @@ function Section({ id, label, children }: { id: string; label: string; children:
 
 export default async function CarPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
-  const car: Model | null = await getModel(slug)
+  const car: Car | null = await getModel(slug)
   if (!car) notFound()
 
   const name = `${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`
