@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import SaveButton from '@/components/SaveButton'
+import RadarChart from '@/components/RadarChart'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car } from '@/lib/types'
 
@@ -39,6 +40,12 @@ function Section({ id, label, children }: { id: string; label: string; children:
   )
 }
 
+const VALUE_TRAJECTORY_DISPLAY: Record<string, string> = {
+  appreciating: '↗ Appreciating',
+  stable: '→ Stable',
+  cooling: '↘ Cooling',
+}
+
 export default async function CarPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const car: Car | null = await getModel(slug)
@@ -47,11 +54,20 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const name = `${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`
   const years = car.year_end ? `${car.year_start}–${car.year_end}` : `${car.year_start}–present`
 
+  const hasGlance = car.analog_index !== null || (car.radar_scores && Object.keys(car.radar_scores).length === 7)
+  const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes || car.related_cars)
+  const hasSpecsSection = (car.specs?.length > 0) || !!car.variants_to_know
+  const hasMaintenanceSection = !!(car.maintenance || car.known_issues)
+  const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
+
   const sections = [
     { id: 'overview', label: 'Overview' },
-    { id: 'specs', label: 'Specs' },
-    car.market_data && { id: 'market', label: 'Market' },
-    car.maintenance && { id: 'maintenance', label: 'Maintenance' },
+    car.why_collectible && { id: 'why-collectible', label: 'Why Collectible' },
+    hasGlance && { id: 'glance', label: 'At a Glance' },
+    hasSpecsSection && { id: 'specs', label: 'Specs' },
+    hasCharacter && { id: 'character', label: 'Character' },
+    hasMarketSection && { id: 'market', label: 'Market' },
+    hasMaintenanceSection && { id: 'maintenance', label: 'Maintenance' },
     car.resources?.length > 0 && { id: 'resources', label: 'Resources' },
   ].filter(Boolean) as { id: string; label: string }[]
 
@@ -96,6 +112,22 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 {car.make} {car.model}
                 {car.generation && <span className="text-white/50 font-normal"> {car.generation}</span>}
               </h1>
+              {car.nickname && (
+                <div className="text-white/60 text-lg italic mt-1">&ldquo;{car.nickname}&rdquo;</div>
+              )}
+              {(car.is_icon || car.homologation_special || car.poster_car) && (
+                <div className="flex gap-2 flex-wrap mt-2.5">
+                  {car.is_icon && (
+                    <span className="text-label font-semibold uppercase tracking-wide text-white bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/25">★ Icon</span>
+                  )}
+                  {car.homologation_special && (
+                    <span className="text-label font-semibold uppercase tracking-wide text-white bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/25">Homologation Special</span>
+                  )}
+                  {car.poster_car && (
+                    <span className="text-label font-semibold uppercase tracking-wide text-white bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/25">Poster Car</span>
+                  )}
+                </div>
+              )}
               <div className="text-sm text-white/45 mt-1.5">
                 {years}
                 {car.units_produced && ` · ${car.units_produced.toLocaleString()} produced`}
@@ -128,6 +160,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               { label: 'Production', value: years },
               car.drivetrain && { label: 'Drivetrain', value: car.drivetrain },
               car.engine_layout && { label: 'Engine', value: car.engine_layout },
+              car.engine_signature && { label: 'Engine Detail', value: car.engine_signature },
               car.body_styles?.length && { label: 'Body', value: car.body_styles.join(', ') },
               car.units_produced && { label: 'Units built', value: car.units_produced.toLocaleString() },
             ].filter(Boolean).map((stat: any) => (
@@ -152,32 +185,132 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             </section>
           )}
 
-          {/* Specs */}
-          {car.specs?.length > 0 && (
-            <Section id="specs" label="Specifications">
-              <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-                {car.specs.map(group => (
-                  <div key={group.group}>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">
-                      {group.group}
+          {/* Why Collectible */}
+          {car.why_collectible && (
+            <Section id="why-collectible" label="Why Collectible">
+              <div className="max-w-170">
+                {renderText(car.why_collectible)}
+              </div>
+              {(car.claim_to_fame || car.firsts_and_lasts) && (
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] mt-6 max-w-170">
+                  {car.claim_to_fame && (
+                    <div className="stat-cell">
+                      <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">Claim to Fame</div>
+                      <div className="text-sm font-medium text-text-primary">{car.claim_to_fame}</div>
                     </div>
-                    <div className="flex flex-col gap-0">
-                      {group.specs.map(spec => (
-                        <div key={spec.label} className="flex justify-between items-baseline py-2 border-b border-border gap-3">
-                          <span className="text-body text-text-secondary flex-shrink-0">{spec.label}</span>
-                          <span className="text-body text-text-primary font-medium text-right">{spec.value}</span>
-                        </div>
-                      ))}
+                  )}
+                  {car.firsts_and_lasts && (
+                    <div className="stat-cell">
+                      <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">Firsts &amp; Lasts</div>
+                      <div className="text-sm font-medium text-text-primary">{car.firsts_and_lasts}</div>
                     </div>
+                  )}
+                </div>
+              )}
+              {car.buyers_flag && (
+                <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-border bg-accent-subtle">
+                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-1.5">Buyer&apos;s Tip</div>
+                  <p className="text-body text-text-secondary m-0">{car.buyers_flag}</p>
+                </div>
+              )}
+            </Section>
+          )}
+
+          {/* At a Glance — analog index + radar (radar only when all 7 axes set) */}
+          {hasGlance && (
+            <Section id="glance" label="At a Glance">
+              <div className="flex flex-wrap gap-10 items-center">
+                {car.analog_index !== null && (
+                  <div className="stat-cell">
+                    <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">Analog Index</div>
+                    <div className="text-xl font-semibold text-accent tracking-[-0.02em]">{car.analog_index}/10</div>
                   </div>
-                ))}
+                )}
+                <RadarChart scores={car.radar_scores} />
+              </div>
+            </Section>
+          )}
+
+          {/* Specs */}
+          {hasSpecsSection && (
+            <Section id="specs" label="Specifications">
+              {car.variants_to_know && (
+                <p className="text-body text-text-secondary leading-[1.7] max-w-170 mb-6">
+                  {car.variants_to_know}
+                </p>
+              )}
+              {car.specs?.length > 0 && (
+                <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
+                  {car.specs.map(group => (
+                    <div key={group.group}>
+                      <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">
+                        {group.group}
+                      </div>
+                      <div className="flex flex-col gap-0">
+                        {group.specs.map(spec => (
+                          <div key={spec.label} className="flex justify-between items-baseline py-2 border-b border-border gap-3">
+                            <span className="text-body text-text-secondary flex-shrink-0">{spec.label}</span>
+                            <span className="text-body text-text-primary font-medium text-right">{spec.value}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </Section>
+          )}
+
+          {/* Character */}
+          {hasCharacter && (
+            <Section id="character" label="Character">
+              <div className="grid gap-8 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
+                {car.driving_character && (
+                  <div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Driving Character</div>
+                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.driving_character}</p>
+                  </div>
+                )}
+                {car.design_notes && (
+                  <div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Design</div>
+                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.design_notes}</p>
+                  </div>
+                )}
+                {car.motorsport_pedigree && (
+                  <div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Motorsport Pedigree</div>
+                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.motorsport_pedigree}</p>
+                  </div>
+                )}
+                {car.cultural_notes && (
+                  <div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">In Culture</div>
+                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.cultural_notes}</p>
+                  </div>
+                )}
+                {car.related_cars && (
+                  <div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Related Cars</div>
+                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.related_cars}</p>
+                  </div>
+                )}
               </div>
             </Section>
           )}
 
           {/* Market */}
-          {car.market_data && (
+          {hasMarketSection && (
             <Section id="market" label="Market Data">
+              {(car.desirability_tier || car.value_trajectory) && (
+                <div className="flex gap-3 mb-5">
+                  {car.desirability_tier && <span className="pill pill-active">{car.desirability_tier}</span>}
+                  {car.value_trajectory && (
+                    <span className="pill">{VALUE_TRAJECTORY_DISPLAY[car.value_trajectory]}</span>
+                  )}
+                </div>
+              )}
+              {car.market_data && (
               <div className="stat-grid grid-cols-3 max-w-120 mb-5">
                 {[
                   { label: 'Entry / Driver', value: car.market_data.low },
@@ -194,12 +327,13 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   </div>
                 ))}
               </div>
-              {car.market_data.notes && (
+              )}
+              {car.market_data?.notes && (
                 <p className="text-body text-text-secondary leading-[1.7] max-w-150">
                   {car.market_data.notes}
                 </p>
               )}
-              {car.market_data.as_of && (
+              {car.market_data?.as_of && (
                 <p className="text-label text-text-tertiary mt-2">
                   Values as of {new Date(car.market_data.as_of).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}.
                 </p>
@@ -208,11 +342,19 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           )}
 
           {/* Maintenance */}
-          {car.maintenance && (
+          {hasMaintenanceSection && (
             <Section id="maintenance" label="Maintenance">
-              <div className="max-w-170 prose">
-                {renderText(car.maintenance)}
-              </div>
+              {car.maintenance && (
+                <div className="max-w-170 prose">
+                  {renderText(car.maintenance)}
+                </div>
+              )}
+              {car.known_issues && (
+                <div className={car.maintenance ? 'mt-6 max-w-170' : 'max-w-170'}>
+                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Known Issues</div>
+                  <p className="text-body text-text-secondary leading-[1.7] m-0">{car.known_issues}</p>
+                </div>
+              )}
             </Section>
           )}
 

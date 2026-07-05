@@ -119,6 +119,20 @@ export interface Car extends CarSummary {
   rivals_alternatives: string | null
   designer: string | null
   wikipedia_url: string | null
+  radar_scores: Partial<Record<
+    'desirability' | 'rarity' | 'driving_thrill' | 'investment_trajectory' |
+    'usability' | 'restoration_difficulty' | 'cultural_impact', number
+  >> | null
+  analog_index: number | null
+  homologation_special: boolean
+  poster_car: boolean
+  value_trajectory: 'appreciating' | 'stable' | 'cooling' | null
+  firsts_and_lasts: string | null
+  driving_character: string | null
+  design_notes: string | null
+  cultural_notes: string | null
+  related_cars: string | null
+  motorsport_pedigree: string | null
 }
 
 // ─── Profiles ─────────────────────────────────────────────────────────────────
