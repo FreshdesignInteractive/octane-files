@@ -25,6 +25,12 @@ export default async function AdminPage() {
   const { data: generations } = await supabase
     .from('generations')
     .select('id, slug, code, year_start, year_end, class, archived_at, hero_image, overview, specs, market_data, models(name, makes(name))')
+    .is('archived_at', null)
+
+  const { count: archivedCount } = await supabase
+    .from('generations')
+    .select('*', { count: 'exact', head: true })
+    .not('archived_at', 'is', null)
 
   const { data: saves } = await serviceRole().from('saved_models').select('model_id')
   const savesByModel = new Map<string, number>()
@@ -61,7 +67,7 @@ export default async function AdminPage() {
             <h1 className="mt-2 mb-1 text-2xl font-bold text-text-primary">Admin · Models</h1>
           </div>
         </div>
-        <AdminModelsTable rows={rows} />
+        <AdminModelsTable rows={rows} archivedCount={archivedCount ?? 0} />
       </div>
     </>
   )

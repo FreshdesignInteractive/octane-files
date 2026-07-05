@@ -1,6 +1,5 @@
 'use client'
 
-import { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { CAR_CLASSES } from '@/lib/car-schema'
 
@@ -24,43 +23,36 @@ const dot = (filled: boolean) => (
   <span className={`inline-block w-2 h-2 rounded-full flex-shrink-0 ${filled ? 'bg-success' : 'bg-border'}`} />
 )
 
-export default function AdminModelsTable({ rows }: { rows: AdminRow[] }) {
-  const [showArchived, setShowArchived] = useState(false)
-
-  const live = useMemo(() => rows.filter(r => !r.archived_at), [rows])
-  const archived = useMemo(() => rows.filter(r => r.archived_at), [rows])
-  const visible = showArchived ? rows : live
-
-  const hasImage = live.filter(r => r.hero_image).length
-  const hasOverview = live.filter(r => r.overview).length
-  const hasSpecs = live.filter(r => Array.isArray(r.specs) && r.specs.length > 0).length
+// Live cars only — archived cars live on their own dedicated page
+// (app/admin/archived), not bundled into this list via a toggle.
+export default function AdminModelsTable({ rows, archivedCount }: { rows: AdminRow[]; archivedCount: number }) {
+  const hasImage = rows.filter(r => r.hero_image).length
+  const hasOverview = rows.filter(r => r.overview).length
+  const hasSpecs = rows.filter(r => Array.isArray(r.specs) && r.specs.length > 0).length
 
   return (
     <>
       <div className="flex justify-between items-center mb-8">
         <div>
-          <p className="m-0 text-body text-text-tertiary">{live.length} live cars · {archived.length} archived</p>
+          <p className="m-0 text-body text-text-tertiary">{rows.length} live cars</p>
         </div>
         <div className="flex gap-5 text-xs text-text-secondary items-center">
-          <span>🖼 {hasImage}/{live.length} images</span>
-          <span>📝 {hasOverview}/{live.length} overviews</span>
-          <span>⚙️ {hasSpecs}/{live.length} specs</span>
+          <span>🖼 {hasImage}/{rows.length} images</span>
+          <span>📝 {hasOverview}/{rows.length} overviews</span>
+          <span>⚙️ {hasSpecs}/{rows.length} specs</span>
+          <Link href="/admin/archived" className="text-xs text-text-primary no-underline border border-border-mid rounded-md py-2 px-3.5">
+            View archived ({archivedCount})
+          </Link>
           <Link href="/admin/new" className="btn-primary h-9 px-4 no-underline">+ New Car</Link>
         </div>
       </div>
 
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center mb-4">
         <div className="flex gap-4 text-label text-text-tertiary">
           <span className="flex items-center gap-1">{dot(true)} filled</span>
           <span className="flex items-center gap-1">{dot(false)} empty</span>
           <span className="ml-2">Columns: Image · Overview · Specs · Market</span>
         </div>
-        <button
-          onClick={() => setShowArchived(a => !a)}
-          className={`pill ${showArchived ? 'pill-active' : ''}`}
-        >
-          {showArchived ? 'Hide' : 'Show'} archived ({archived.length})
-        </button>
       </div>
 
       <div className="border border-border rounded-lg overflow-hidden">
@@ -76,11 +68,8 @@ export default function AdminModelsTable({ rows }: { rows: AdminRow[] }) {
             </tr>
           </thead>
           <tbody>
-            {visible.map((r, i) => (
-              <tr
-                key={r.slug}
-                className={`${r.archived_at ? 'bg-bg-elevated opacity-60' : 'bg-white'} ${i < visible.length - 1 ? 'border-b border-border' : ''}`}
-              >
+            {rows.map((r, i) => (
+              <tr key={r.slug} className={`bg-white ${i < rows.length - 1 ? 'border-b border-border' : ''}`}>
                 <td className="py-2.5 px-4 text-text-primary font-medium">
                   {r.make} {r.model}
                   {r.code && r.code.toLowerCase() !== r.model.toLowerCase() && (
@@ -92,16 +81,12 @@ export default function AdminModelsTable({ rows }: { rows: AdminRow[] }) {
                 </td>
                 <td className="py-2.5 px-4 text-text-secondary">{CAR_CLASSES.find(c => c.value === r.class)?.label ?? r.class}</td>
                 <td className="py-2.5 px-4 text-center">
-                  {r.archived_at ? (
-                    <span className="tag" style={{ background: 'var(--color-bg-elevated)' }}>Archived</span>
-                  ) : (
-                    <div className="flex gap-2 justify-center">
-                      {dot(!!r.hero_image)}
-                      {dot(!!r.overview)}
-                      {dot(Array.isArray(r.specs) && r.specs.length > 0)}
-                      {dot(!!r.market_data)}
-                    </div>
-                  )}
+                  <div className="flex gap-2 justify-center">
+                    {dot(!!r.hero_image)}
+                    {dot(!!r.overview)}
+                    {dot(Array.isArray(r.specs) && r.specs.length > 0)}
+                    {dot(!!r.market_data)}
+                  </div>
                 </td>
                 <td className="py-2.5 px-4 text-right text-text-secondary">{r.saves}</td>
                 <td className="py-2.5 px-4 text-right">
