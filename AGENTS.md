@@ -29,9 +29,21 @@ This site uses a single token-based Tailwind v4 styling system. There is exactly
 <!-- BEGIN:octanefiles-admin-access-notes -->
 # Admin access (non-negotiable)
 
-Admin authorization is defined in TWO separate, hardcoded places — there is no single source of truth for "who is an admin," and both must be updated together:
-- `lib/admin-email.ts` — the `ADMIN_EMAIL` constant and `isAdminEmail()`, deliberately kept in a leaf module with no other imports so it's safe to use from client components (e.g. `SiteHeader`'s avatar menu) as well as server code (`lib/admin-auth.ts`'s `requireAdmin()`, the admin API routes) without pulling in server-only dependencies like `next/headers`.
-- `supabase-schema.sql` — the `models` table's `Admin insert`/`Admin update`/`Admin delete` RLS policies, which hardcode the same email directly in the policy SQL (`auth.jwt()->>'email' = '...'`).
+Single source of truth: the `admins` table (`user_id`, seeded as data via SQL, never a literal email in app code or policy SQL) plus the `is_admin()` Postgres function (`SECURITY DEFINER`, checks `auth.uid()` against `admins`). Nothing hardcodes an admin email anywhere anymore.
 
-If the admin email ever changes, or a second admin is added, update both in the same change. Updating only one leaves them silently out of sync — e.g. the app could let a new admin through its own check while the database still refuses their writes, or vice versa.
+- `lib/is-admin.ts` — `checkIsAdmin(supabase)` calls `supabase.rpc('is_admin')`. Dependency-free enough to use from client components (`SiteHeader`'s avatar menu) as well as server code (`lib/admin-auth.ts`'s `requireAdmin()`, the admin API routes).
+- The database independently enforces the same thing: every admin-write RLS policy (`makes`/`models`/`generations`/`trims`, the `car-images` storage bucket) checks `is_admin()` directly, not a role/grant proxy. Admin writes from the app go through the signed-in admin's own session (not a service-role bypass), so a bug in the app-level check alone can't let a write through — the database's own RLS still gates it.
+
+To add a second admin: insert a row into `admins` for their `auth.users.id`. Nothing else needs to change — no code, no policy — since both layers read from the same table.
 <!-- END:octanefiles-admin-access-notes -->
+
+<!-- BEGIN:octanefiles-car-data-model -->
+# Car data model (non-negotiable)
+
+Cars are normalized as `makes` → `models` → `generations` (`generations` is "the car" — public URLs are `/cars/[generation-slug]`, flat, never nested by make/model). `lib/car-schema.ts` is the single source of truth for every `generations` field: enum vocabularies (`CAR_CLASSES`, `BODY_STYLES`, `DRIVETRAIN_TYPES`, `ENGINE_LAYOUTS`, `DESIRABILITY_TIERS`, `VALUE_TRAJECTORIES`, `RADAR_AXES`) and the `GenerationRecord`/`GenerationInput` shape. The admin form, the public detail page, and any future CSV import all read field definitions from this one file — don't hardcode a parallel copy of an enum's values anywhere else.
+
+- **Controlled vocabularies are enforced at the DB level** (real Postgres enum types), not just in the form — `class`, `body_styles`, `drivetrain`, `engine_layout`, `desirability_tier`, `value_trajectory`. Adding a new allowed value means a migration (`ALTER TYPE ... ADD VALUE`), not just a form change.
+- **`archived_at` is the only removal mechanism.** Cars are never hard-deleted except a rare, explicitly-approved cleanup of confirmed duplicate data entry (an irreversible action requiring its own atomic migration with a before/after count gate — see `imports/step11_delete_true_duplicates.sql` for the only precedent). Archived cars are fully restorable via the admin's Unarchive action (`/admin/archived`) and excluded from every public query (`archived_at IS NULL` is non-negotiable in `lib/supabase.ts`).
+- **`desirability_tier_legacy`** holds pre-enum compound strings (e.g. "Solid, High (ZR-1)") that haven't yet been manually remapped to a single headline tier. Read-only reference for that remap, never form-editable, never shown publicly.
+- **New Car creation is deliberate, never inferred.** Adding a make or model is an explicit "+ Add new" action in the admin form, not something that happens implicitly from typing an unrecognized name. A live debounced check blocks creating a duplicate `(model, generation code)` pair before the form is even submitted.
+<!-- END:octanefiles-car-data-model -->
