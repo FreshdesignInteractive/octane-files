@@ -6,6 +6,7 @@ import {
   type GenerationInput, type BodyStyle, type DrivetrainType, type ResourceType,
 } from '@/lib/car-schema'
 import DesignerAutocomplete from '@/components/DesignerAutocomplete'
+import ImageUploadField from '@/components/ImageUploadField'
 
 const field = (label: string, children: React.ReactNode) => (
   <div className="field">
@@ -139,20 +140,25 @@ export default function GenerationFieldsEditor({
       {/* Hero image + gallery */}
       <section>
         <h2 className={sectionHeading}>Images</h2>
-        {field('Hero Image URL', <input className="input" value={value.hero_image ?? ''} onChange={e => onChange({ hero_image: e.target.value || null })} placeholder="https://..." />)}
-        {value.hero_image && (
-          <img src={value.hero_image} alt="preview" className="mt-2.5 w-full max-h-65 object-cover rounded-lg border border-border" />
+        {field('Hero Image',
+          <ImageUploadField
+            value={value.hero_image}
+            onChange={v => onChange({ hero_image: v })}
+            pathPrefix={`${value.slug || 'untitled'}/hero`}
+          />
         )}
-        <div className="mt-4">
+        <div className="mt-5">
           {field('Gallery Images', (
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               {value.gallery_images.map((url, i) => (
-                <div key={i} className="flex gap-2">
-                  <input
-                    className="input flex-1"
-                    value={url}
-                    onChange={e => onChange({ gallery_images: value.gallery_images.map((u, j) => j === i ? e.target.value : u) })}
-                  />
+                <div key={i} className="flex gap-2 items-start">
+                  <div className="flex-1">
+                    <ImageUploadField
+                      value={url}
+                      onChange={v => onChange({ gallery_images: value.gallery_images.map((u, j) => j === i ? (v ?? '') : u) })}
+                      pathPrefix={`${value.slug || 'untitled'}/gallery-${i}`}
+                    />
+                  </div>
                   <button type="button" onClick={() => onChange({ gallery_images: value.gallery_images.filter((_, j) => j !== i) })} className="btn-secondary px-3">Remove</button>
                 </div>
               ))}
