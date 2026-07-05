@@ -16,6 +16,12 @@ export const CAR_CLASSES = [
 
 export type CarClassValue = (typeof CAR_CLASSES)[number]['value']
 
+// makes.country is free TEXT, not a DB enum, but this is the fixed real-world
+// set in use today (confirmed against live data) — single source for both
+// the public Country filter and the New Car make-creation form.
+export const COUNTRIES = ['Australia', 'France', 'Germany', 'Italy', 'Japan', 'Sweden', 'UK', 'USA', 'Other'] as const
+export type Country = (typeof COUNTRIES)[number]
+
 export const BODY_STYLES = [
   'Sedan', 'Coupe', 'Convertible', 'Wagon', 'Hatchback', 'Liftback',
   'Roadster', 'Spider', 'Targa', 'Pickup', 'SUV', 'Coupe Utility', 'Fastback',

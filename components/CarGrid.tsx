@@ -8,10 +8,11 @@ import type { CarSummary } from '@/lib/types'
 const INITIAL = 24
 const PAGE    = 12
 
-function makeUrl(cls: string, country: string, q: string, offset: number, limit: number) {
+function makeUrl(cls: string, country: string, make: string, q: string, offset: number, limit: number) {
   const p = new URLSearchParams()
   if (cls)     p.set('class',   cls)
   if (country) p.set('country', country)
+  if (make)    p.set('make',    make)
   if (q)       p.set('q',       q)
   p.set('offset', String(offset))
   p.set('limit',  String(limit))
@@ -22,6 +23,7 @@ export default function CarGrid() {
   const params        = useSearchParams()
   const activeClass   = params.get('class')   ?? ''
   const activeCountry = params.get('country') ?? ''
+  const activeMake    = params.get('make')    ?? ''
   const activeSearch  = params.get('q')       ?? ''
 
   const [cars, setCars]       = useState<CarSummary[]>([])
@@ -32,7 +34,7 @@ export default function CarGrid() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetch(makeUrl(activeClass, activeCountry, activeSearch, 0, INITIAL))
+    fetch(makeUrl(activeClass, activeCountry, activeMake, activeSearch, 0, INITIAL))
       .then(r => r.json())
       .then(({ data, total }: { data: CarSummary[]; total: number }) => {
         if (cancelled) return
@@ -42,11 +44,11 @@ export default function CarGrid() {
       })
       .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [activeClass, activeCountry, activeSearch])
+  }, [activeClass, activeCountry, activeMake, activeSearch])
 
   function loadMore() {
     start(async () => {
-      const res  = await fetch(makeUrl(activeClass, activeCountry, activeSearch, cars.length, PAGE))
+      const res  = await fetch(makeUrl(activeClass, activeCountry, activeMake, activeSearch, cars.length, PAGE))
       const json = await res.json() as { data: CarSummary[]; total: number }
       setCars(prev => [...prev, ...json.data])
     })

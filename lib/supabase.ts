@@ -17,33 +17,17 @@ import type {
   UserCar, UserCarSummary,
   Like, Comment,
 } from './types'
+import { CAR_CLASSES } from './car-schema'
 
 // ─── Cars (public encyclopedia — makes/models/generations) ──────────────────
 // "Car" here means a generations row. Archived rows (the 130-car delta
 // dropped in bluechip curation) are always excluded — archived_at IS NULL
 // is non-negotiable on every public query below.
 
-const CLASS_ENUM_TO_LABEL: Record<string, string> = {
-  sports: 'Sports',
-  muscle: 'Muscle',
-  grand_tourer: 'Grand Tourer',
-  luxury: 'Luxury',
-  exotic: 'Exotic',
-  off_road: 'Off-Road',
-  vintage: 'Vintage',
-}
-// FilterBar still sends the old flat-schema labels (including "Icons", which
-// has no exact equivalent — closest is "vintage") until the search/filter
-// step gives it the real enum-backed options.
-const CLASS_LABEL_TO_ENUM: Record<string, string> = {
-  ...Object.fromEntries(Object.entries(CLASS_ENUM_TO_LABEL).map(([k, v]) => [v, k])),
-  Icons: 'vintage',
-}
+const CLASS_ENUM_TO_LABEL: Record<string, string> = Object.fromEntries(
+  CAR_CLASSES.map(c => [c.value, c.label])
+)
 
-const CAR_SUMMARY_SELECT = `
-  id, slug, code, year_start, year_end, class, hero_image, units_produced,
-  models!inner(name, makes!inner(name, country))
-`
 const CAR_SELECT = `
   id, slug, code, year_start, year_end, class, hero_image, units_produced,
   body_styles, drivetrain, engine_layout, overview, gallery_images, specs,
@@ -110,6 +94,39 @@ function mapCar(row: GenerationJoinRow & Record<string, unknown>): Car {
   }
 }
 
+type SearchRow = {
+  id: string
+  slug: string
+  code: string
+  year_start: number
+  year_end: number | null
+  class: string
+  hero_image: string | null
+  units_produced: number | null
+  make_name: string
+  model_name: string
+  country: string
+  total_count: number
+}
+
+function mapSearchRow(row: SearchRow): CarSummary {
+  return {
+    id: row.id,
+    slug: row.slug,
+    make: row.make_name,
+    model: row.model_name,
+    generation: row.code,
+    year_start: row.year_start,
+    year_end: row.year_end,
+    class: CLASS_ENUM_TO_LABEL[row.class] ?? row.class,
+    country: row.country,
+    hero_image: row.hero_image,
+    units_produced: row.units_produced,
+  }
+}
+
+// class is the raw enum value (e.g. "grand_tourer"), not the display label —
+// FilterBar sources its options directly from car-schema.ts's CAR_CLASSES.
 export async function getModels(params?: {
   class?: string
   country?: string
@@ -122,21 +139,18 @@ export async function getModels(params?: {
   const limit  = params?.limit  ?? 24
   const offset = params?.offset ?? 0
 
-  let query = db
-    .from('generations')
-    .select(CAR_SUMMARY_SELECT, { count: 'exact' })
-    .is('archived_at', null)
-    .order('year_start', { ascending: true })
-    .range(offset, offset + limit - 1)
-
-  if (params?.class)   query = query.eq('class', CLASS_LABEL_TO_ENUM[params.class] ?? params.class)
-  if (params?.country) query = query.eq('models.makes.country', params.country)
-  if (params?.make)    query = query.eq('models.makes.name', params.make)
-  if (params?.search)  query = query.textSearch('search_vector', params.search, { type: 'websearch' })
-
-  const { data, error, count } = await query
+  const { data, error } = await db.rpc('search_generations', {
+    search_query: params?.search || null,
+    filter_class: params?.class || null,
+    filter_country: params?.country || null,
+    filter_make: params?.make || null,
+    result_limit: limit,
+    result_offset: offset,
+  })
   if (error) throw error
-  return { data: (data as unknown as GenerationJoinRow[] ?? []).map(mapCarSummary), total: count ?? 0 }
+
+  const rows = (data ?? []) as SearchRow[]
+  return { data: rows.map(mapSearchRow), total: rows[0]?.total_count ?? 0 }
 }
 
 export async function getModel(slug: string): Promise<Car | null> {

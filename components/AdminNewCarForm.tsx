@@ -4,9 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import GenerationFieldsEditor from '@/components/GenerationFieldsEditor'
-import { emptyGenerationInput, type GenerationInput, type MakeRecord, type ModelRecord } from '@/lib/car-schema'
-
-const COUNTRIES = ['Australia', 'France', 'Germany', 'Italy', 'Japan', 'Sweden', 'UK', 'USA', 'Other']
+import { emptyGenerationInput, COUNTRIES, type GenerationInput, type MakeRecord, type ModelRecord } from '@/lib/car-schema'
 
 export default function AdminNewCarForm() {
   const router = useRouter()
