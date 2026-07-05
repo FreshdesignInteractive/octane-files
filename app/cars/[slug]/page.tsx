@@ -59,9 +59,11 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const hasSpecsSection = (car.specs?.length > 0) || !!car.variants_to_know
   const hasMaintenanceSection = !!(car.maintenance || car.known_issues)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
+  const galleryImages = car.gallery_images?.filter(Boolean) ?? []
 
   const sections = [
     { id: 'overview', label: 'Overview' },
+    galleryImages.length > 0 && { id: 'gallery', label: 'Gallery' },
     car.why_collectible && { id: 'why-collectible', label: 'Why Collectible' },
     hasGlance && { id: 'glance', label: 'At a Glance' },
     hasSpecsSection && { id: 'specs', label: 'Specs' },
@@ -183,6 +185,24 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 {renderText(car.overview)}
               </div>
             </section>
+          )}
+
+          {/* Gallery */}
+          {galleryImages.length > 0 && (
+            <Section id="gallery" label="Gallery">
+              <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
+                {galleryImages.map((src, i) => (
+                  <div key={src} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-border">
+                    <Image
+                      src={src}
+                      alt={`${name} — photo ${i + 1}`}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </Section>
           )}
 
           {/* Why Collectible */}
