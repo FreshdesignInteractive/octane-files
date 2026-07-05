@@ -28,6 +28,31 @@ export type DrivetrainType = (typeof DRIVETRAIN_TYPES)[number]
 export const RESOURCE_TYPES = ['club', 'registry', 'archive', 'manual', 'forum', 'other'] as const
 export type ResourceType = (typeof RESOURCE_TYPES)[number]
 
+export const ENGINE_LAYOUTS = ['Front-engine', 'Front-mid-engine', 'Mid-engine', 'Rear-engine'] as const
+export type EngineLayout = (typeof ENGINE_LAYOUTS)[number]
+
+export const DESIRABILITY_TIERS = ['Blue-chip', 'High', 'Solid', 'Entry'] as const
+export type DesirabilityTier = (typeof DESIRABILITY_TIERS)[number]
+
+export const VALUE_TRAJECTORIES = [
+  { value: 'appreciating', label: 'Appreciating' },
+  { value: 'stable', label: 'Stable' },
+  { value: 'cooling', label: 'Cooling' },
+] as const
+export type ValueTrajectory = (typeof VALUE_TRAJECTORIES)[number]['value']
+
+export const RADAR_AXES = [
+  { key: 'desirability', label: 'Desirability' },
+  { key: 'rarity', label: 'Rarity' },
+  { key: 'driving_thrill', label: 'Driving Thrill' },
+  { key: 'investment_trajectory', label: 'Investment Trajectory' },
+  { key: 'usability', label: 'Usability' },
+  { key: 'restoration_difficulty', label: 'Restoration Difficulty' },
+  { key: 'cultural_impact', label: 'Cultural Impact' },
+] as const
+export type RadarAxisKey = (typeof RADAR_AXES)[number]['key']
+export type RadarScores = Partial<Record<RadarAxisKey, number>>
+
 export interface SpecGroup {
   group: string
   specs: { label: string; value: string }[]
@@ -58,10 +83,12 @@ export interface GenerationRecord {
   year_end: number | null
   class: CarClassValue
   is_icon: boolean
-  // Free text by design, not enums — see the desirability_tier/engine_layout
-  // decision in the car-schema review. desirability_tier's compound live
-  // values ("Solid, High (ZR-1)") are a flagged future cleanup, not a bug.
-  desirability_tier: string | null
+  desirability_tier: DesirabilityTier | null
+  // Step 7 migration: the 26 pre-existing compound strings ("Solid, High
+  // (ZR-1)") that couldn't safely auto-collapse to a single headline tier.
+  // Read-only reference for the manual remap — never form-editable, and not
+  // part of GenerationInput.
+  desirability_tier_legacy: string | null
   nickname: string | null
   overview: string | null
   why_collectible: string | null
@@ -74,7 +101,7 @@ export interface GenerationRecord {
   designer: string | null
   body_styles: BodyStyle[]
   drivetrain: DrivetrainType[]
-  engine_layout: string | null
+  engine_layout: EngineLayout | null
   units_produced: number | null
   hero_image: string | null
   gallery_images: string[]
@@ -83,6 +110,17 @@ export interface GenerationRecord {
   market_data: MarketData | null
   maintenance: string | null
   resources: ResourceLink[]
+  radar_scores: RadarScores | null
+  analog_index: number | null
+  homologation_special: boolean
+  poster_car: boolean
+  value_trajectory: ValueTrajectory | null
+  firsts_and_lasts: string | null
+  driving_character: string | null
+  design_notes: string | null
+  cultural_notes: string | null
+  related_cars: string | null
+  motorsport_pedigree: string | null
   slug: string
   archived_at: string | null
   created_at: string
@@ -94,7 +132,7 @@ export interface GenerationRecord {
 // archived_at is a dedicated action, not a raw field).
 export type GenerationInput = Omit<
   GenerationRecord,
-  'id' | 'model_id' | 'created_at' | 'updated_at' | 'archived_at'
+  'id' | 'model_id' | 'created_at' | 'updated_at' | 'archived_at' | 'desirability_tier_legacy'
 >
 
 export interface MakeRecord {
@@ -153,6 +191,17 @@ export function emptyGenerationInput(): GenerationInput {
     market_data: null,
     maintenance: null,
     resources: [],
+    radar_scores: null,
+    analog_index: null,
+    homologation_special: false,
+    poster_car: false,
+    value_trajectory: null,
+    firsts_and_lasts: null,
+    driving_character: null,
+    design_notes: null,
+    cultural_notes: null,
+    related_cars: null,
+    motorsport_pedigree: null,
     slug: '',
   }
 }

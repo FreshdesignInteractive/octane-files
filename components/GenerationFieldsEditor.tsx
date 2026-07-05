@@ -2,8 +2,10 @@
 
 import {
   CAR_CLASSES, BODY_STYLES, DRIVETRAIN_TYPES, RESOURCE_TYPES,
+  ENGINE_LAYOUTS, DESIRABILITY_TIERS, VALUE_TRAJECTORIES, RADAR_AXES,
   type GenerationInput, type BodyStyle, type DrivetrainType, type ResourceType,
 } from '@/lib/car-schema'
+import DesignerAutocomplete from '@/components/DesignerAutocomplete'
 
 const field = (label: string, children: React.ReactNode) => (
   <div className="field">
@@ -38,18 +40,38 @@ export default function GenerationFieldsEditor({
           {field('Year End', <input className="input" type="number" value={value.year_end ?? ''} onChange={e => onChange({ year_end: e.target.value ? parseInt(e.target.value) : null })} placeholder="leave blank if present" />)}
           {field('Production Years (display)', <input className="input" value={value.production_years ?? ''} onChange={e => onChange({ production_years: e.target.value || null })} placeholder="auto-derived if left blank" />)}
           {field('Units Produced', <input className="input" type="number" value={value.units_produced ?? ''} onChange={e => onChange({ units_produced: e.target.value ? parseInt(e.target.value) : null })} />)}
-          {field('Engine Layout', <input className="input" value={value.engine_layout ?? ''} onChange={e => onChange({ engine_layout: e.target.value || null })} placeholder="e.g. Front-engine, Mid-engine" />)}
+          {field('Engine Layout',
+            <select className="select" value={value.engine_layout ?? ''} onChange={e => onChange({ engine_layout: (e.target.value || null) as GenerationInput['engine_layout'] })}>
+              <option value="">—</option>
+              {ENGINE_LAYOUTS.map(l => <option key={l} value={l}>{l}</option>)}
+            </select>
+          )}
           {field('Class',
             <select className="select" value={value.class} onChange={e => onChange({ class: e.target.value as GenerationInput['class'] })}>
               {CAR_CLASSES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           )}
-          {field('Icon',
-            <label className="flex items-center gap-2 h-9">
-              <input type="checkbox" checked={value.is_icon} onChange={e => onChange({ is_icon: e.target.checked })} />
-              <span className="text-body text-text-secondary">Marked as an icon</span>
-            </label>
+          {field('Value Trajectory',
+            <select className="select" value={value.value_trajectory ?? ''} onChange={e => onChange({ value_trajectory: (e.target.value || null) as GenerationInput['value_trajectory'] })}>
+              <option value="">—</option>
+              {VALUE_TRAJECTORIES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
           )}
+        </div>
+
+        <div className="flex gap-6 mt-4">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={value.is_icon} onChange={e => onChange({ is_icon: e.target.checked })} />
+            <span className="text-body text-text-secondary">Icon</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={value.homologation_special} onChange={e => onChange({ homologation_special: e.target.checked })} />
+            <span className="text-body text-text-secondary">Homologation special</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={value.poster_car} onChange={e => onChange({ poster_car: e.target.checked })} />
+            <span className="text-body text-text-secondary">Poster car</span>
+          </label>
         </div>
 
         <div className="mt-4">
@@ -89,6 +111,31 @@ export default function GenerationFieldsEditor({
         </div>
       </section>
 
+      {/* Scores */}
+      <section>
+        <h2 className={sectionHeading}>
+          Scores
+          <span className="font-normal text-label text-text-tertiary ml-2 normal-case">1–10, powers the radar chart</span>
+        </h2>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          {field('Analog Index', <input className="input" type="number" min={1} max={10} value={value.analog_index ?? ''} onChange={e => onChange({ analog_index: e.target.value ? parseInt(e.target.value) : null })} placeholder="Mechanical-purity score" />)}
+        </div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          {RADAR_AXES.map(axis => (
+            <div key={axis.key} className="flex items-center gap-4">
+              <label className="field-label w-45 flex-shrink-0">{axis.label}</label>
+              <input
+                type="range" min={1} max={10} step={1}
+                value={value.radar_scores?.[axis.key] ?? 5}
+                onChange={e => onChange({ radar_scores: { ...(value.radar_scores ?? {}), [axis.key]: parseInt(e.target.value) } })}
+                className="flex-1"
+              />
+              <span className="text-body font-medium text-text-primary w-6 text-right">{value.radar_scores?.[axis.key] ?? '—'}</span>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Hero image + gallery */}
       <section>
         <h2 className={sectionHeading}>Images</h2>
@@ -120,18 +167,29 @@ export default function GenerationFieldsEditor({
         <h2 className={sectionHeading}>Encyclopedia Content</h2>
         <div className="grid grid-cols-3 gap-4 mb-4">
           {field('Nickname', <input className="input" value={value.nickname ?? ''} onChange={e => onChange({ nickname: e.target.value || null })} />)}
-          {field('Desirability Tier', <input className="input" value={value.desirability_tier ?? ''} onChange={e => onChange({ desirability_tier: e.target.value || null })} placeholder="e.g. Blue-chip" />)}
-          {field('Designer', <input className="input" value={value.designer ?? ''} onChange={e => onChange({ designer: e.target.value || null })} />)}
+          {field('Desirability Tier',
+            <select className="select" value={value.desirability_tier ?? ''} onChange={e => onChange({ desirability_tier: (e.target.value || null) as GenerationInput['desirability_tier'] })}>
+              <option value="">—</option>
+              {DESIRABILITY_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          )}
+          {field('Designer', <DesignerAutocomplete value={value.designer} onChange={v => onChange({ designer: v })} />)}
           {field('Engine Signature', <input className="input" value={value.engine_signature ?? ''} onChange={e => onChange({ engine_signature: e.target.value || null })} />)}
           {field('Claim to Fame', <input className="input" value={value.claim_to_fame ?? ''} onChange={e => onChange({ claim_to_fame: e.target.value || null })} />)}
           {field('Wikipedia URL', <input className="input" value={value.wikipedia_url ?? ''} onChange={e => onChange({ wikipedia_url: e.target.value || null })} placeholder="https://en.wikipedia.org/..." />)}
+          {field('Firsts & Lasts', <input className="input" value={value.firsts_and_lasts ?? ''} onChange={e => onChange({ firsts_and_lasts: e.target.value || null })} placeholder='e.g. "Last front-engine Corvette"' />)}
+          {field('Related Cars', <input className="input" value={value.related_cars ?? ''} onChange={e => onChange({ related_cars: e.target.value || null })} placeholder="Platform siblings, shared-engine lineage, spiritual successor" />)}
         </div>
         {field('Overview', <textarea className="textarea min-h-40" value={value.overview ?? ''} onChange={e => onChange({ overview: e.target.value || null })} placeholder="History, significance, key highlights..." />)}
         <div className="mt-4">{field('Why Collectible', <textarea className="textarea min-h-30" value={value.why_collectible ?? ''} onChange={e => onChange({ why_collectible: e.target.value || null })} />)}</div>
         <div className="mt-4">{field('Variants to Know', <textarea className="textarea min-h-30" value={value.variants_to_know ?? ''} onChange={e => onChange({ variants_to_know: e.target.value || null })} />)}</div>
         <div className="mt-4">{field('Known Issues', <textarea className="textarea min-h-30" value={value.known_issues ?? ''} onChange={e => onChange({ known_issues: e.target.value || null })} />)}</div>
         <div className="mt-4">{field('Buyers Flag', <textarea className="textarea min-h-20" value={value.buyers_flag ?? ''} onChange={e => onChange({ buyers_flag: e.target.value || null })} />)}</div>
-        <div className="mt-4">{field('Rivals & Alternatives', <textarea className="textarea min-h-20" value={value.rivals_alternatives ?? ''} onChange={e => onChange({ rivals_alternatives: e.target.value || null })} />)}</div>
+        <div className="mt-4">{field('Rivals & Alternatives', <textarea className="textarea min-h-20" value={value.rivals_alternatives ?? ''} onChange={e => onChange({ rivals_alternatives: e.target.value || null })} placeholder="Cross-shopping alternatives, not lineage" />)}</div>
+        <div className="mt-4">{field('Driving Character', <textarea className="textarea min-h-30" value={value.driving_character ?? ''} onChange={e => onChange({ driving_character: e.target.value || null })} placeholder="Sound signature, party trick, gearbox feel, power delivery" />)}</div>
+        <div className="mt-4">{field('Design Notes', <textarea className="textarea min-h-30" value={value.design_notes ?? ''} onChange={e => onChange({ design_notes: e.target.value || null })} placeholder="Design signatures, concept-car lineage, wheel/badge iconography" />)}</div>
+        <div className="mt-4">{field('Cultural Notes', <textarea className="textarea min-h-30" value={value.cultural_notes ?? ''} onChange={e => onChange({ cultural_notes: e.target.value || null })} placeholder="Screen, music, video-game fame" />)}</div>
+        <div className="mt-4">{field('Motorsport Pedigree', <textarea className="textarea min-h-30" value={value.motorsport_pedigree ?? ''} onChange={e => onChange({ motorsport_pedigree: e.target.value || null })} placeholder="Race series, championships, signature drivers" />)}</div>
       </section>
 
       {/* Specs */}

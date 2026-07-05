@@ -5,7 +5,10 @@ import GenerationFieldsEditor from '@/components/GenerationFieldsEditor'
 import { CAR_CLASSES, deriveGenerationSlug, type GenerationRecord, type GenerationInput } from '@/lib/car-schema'
 
 function toInput(g: GenerationRecord): GenerationInput {
-  const { id: _id, model_id: _model_id, created_at: _created_at, updated_at: _updated_at, archived_at: _archived_at, ...rest } = g
+  const {
+    id: _id, model_id: _model_id, created_at: _created_at, updated_at: _updated_at,
+    archived_at: _archived_at, desirability_tier_legacy: _legacy, ...rest
+  } = g
   return rest
 }
 
