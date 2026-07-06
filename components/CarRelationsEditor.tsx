@@ -108,18 +108,19 @@ export default function CarRelationsEditor({
             <div className="flex flex-wrap gap-2">
               {entries.map(({ r, i }) => {
                 const linked = r.linked_generation_id ? catalogById.get(r.linked_generation_id) : null
-                return (
-                  <span key={i} className="pill flex items-center gap-2 pr-1.5">
-                    {linked ? (
-                      <>
-                        {linked.hero_image && (
-                          <Image src={linked.hero_image} alt="" width={20} height={20} className="rounded object-cover" />
-                        )}
-                        {linked.model.make.name} {linked.model.name} {linked.code}
-                      </>
+                return linked ? (
+                  <span key={i} className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 border border-border rounded-lg">
+                    {linked.hero_image ? (
+                      <Image src={linked.hero_image} alt="" width={28} height={28} className="rounded object-cover flex-shrink-0" />
                     ) : (
-                      r.label_text
+                      <div className="w-7 h-7 rounded bg-border flex-shrink-0" />
                     )}
+                    <span className="text-body text-text-primary">{linked.model.make.name} {linked.model.name} {linked.code}</span>
+                    <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none ml-1">×</button>
+                  </span>
+                ) : (
+                  <span key={i} className="pill flex items-center gap-2 pr-1.5">
+                    {r.label_text}
                     <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none">×</button>
                   </span>
                 )
