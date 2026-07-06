@@ -320,6 +320,103 @@ $$;
 
 GRANT EXECUTE ON FUNCTION search_generations(TEXT, TEXT, TEXT, TEXT, INT, INT) TO anon, authenticated;
 
+-- Step 16: atomic bulk-import functions for the admin CSV importer — see
+-- imports/step16_bulk_import_functions.sql for the full commented version
+-- (COALESCE(incoming, existing) empty-vs-absent handling, pre-flight
+-- generation_id existence check). SECURITY INVOKER (default): RLS still
+-- applies as the calling admin, no internal is_admin() check needed.
+CREATE OR REPLACE FUNCTION bulk_update_generation_enrichment(rows JSONB)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_missing UUID[];
+  v_updated INT;
+BEGIN
+  SELECT array_agg(e.generation_id) INTO v_missing
+  FROM jsonb_to_recordset(rows) AS e(generation_id UUID)
+  WHERE NOT EXISTS (SELECT 1 FROM generations g WHERE g.id = e.generation_id);
+
+  IF v_missing IS NOT NULL THEN
+    RAISE EXCEPTION 'bulk_update_generation_enrichment: % generation_id(s) not found: %.', array_length(v_missing, 1), v_missing;
+  END IF;
+
+  UPDATE generations g SET
+    nickname = COALESCE(e.nickname, g.nickname),
+    desirability_tier = COALESCE(e.desirability_tier::desirability_tier_type, g.desirability_tier),
+    overview = COALESCE(e.overview, g.overview),
+    why_collectible = COALESCE(e.why_collectible, g.why_collectible),
+    engine_signature = COALESCE(e.engine_signature, g.engine_signature),
+    variants_to_know = COALESCE(e.variants_to_know, g.variants_to_know),
+    known_issues = COALESCE(e.known_issues, g.known_issues),
+    claim_to_fame = COALESCE(e.claim_to_fame, g.claim_to_fame),
+    buyers_flag = COALESCE(e.buyers_flag, g.buyers_flag),
+    designer = COALESCE(e.designer, g.designer),
+    class = COALESCE(e.class::car_class, g.class),
+    is_icon = COALESCE(e.is_icon, g.is_icon),
+    body_styles = COALESCE(e.body_styles::body_style_type[], g.body_styles),
+    drivetrain = COALESCE(e.drivetrain::drivetrain_type[], g.drivetrain),
+    engine_layout = COALESCE(e.engine_layout::engine_layout_type, g.engine_layout),
+    units_produced = COALESCE(e.units_produced, g.units_produced),
+    wikipedia_url = COALESCE(e.wikipedia_url, g.wikipedia_url),
+    firsts_and_lasts = COALESCE(e.firsts_and_lasts, g.firsts_and_lasts),
+    driving_character = COALESCE(e.driving_character, g.driving_character),
+    design_notes = COALESCE(e.design_notes, g.design_notes),
+    cultural_notes = COALESCE(e.cultural_notes, g.cultural_notes),
+    motorsport_pedigree = COALESCE(e.motorsport_pedigree, g.motorsport_pedigree),
+    maintenance = COALESCE(e.maintenance, g.maintenance),
+    value_trajectory = COALESCE(e.value_trajectory::value_trajectory_type, g.value_trajectory),
+    analog_index = COALESCE(e.analog_index, g.analog_index),
+    homologation_special = COALESCE(e.homologation_special, g.homologation_special),
+    poster_car = COALESCE(e.poster_car, g.poster_car),
+    updated_at = NOW()
+  FROM jsonb_to_recordset(rows) AS e(
+    generation_id UUID, nickname TEXT, desirability_tier TEXT, overview TEXT, why_collectible TEXT,
+    engine_signature TEXT, variants_to_know TEXT, known_issues TEXT, claim_to_fame TEXT,
+    buyers_flag TEXT, designer TEXT, class TEXT, is_icon BOOLEAN, body_styles TEXT[],
+    drivetrain TEXT[], engine_layout TEXT, units_produced INTEGER, wikipedia_url TEXT,
+    firsts_and_lasts TEXT, driving_character TEXT, design_notes TEXT, cultural_notes TEXT,
+    motorsport_pedigree TEXT, maintenance TEXT, value_trajectory TEXT, analog_index INTEGER,
+    homologation_special BOOLEAN, poster_car BOOLEAN
+  )
+  WHERE g.id = e.generation_id;
+  GET DIAGNOSTICS v_updated = ROW_COUNT;
+  RETURN v_updated;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION bulk_update_generation_enrichment(JSONB) TO authenticated;
+
+CREATE OR REPLACE FUNCTION bulk_upsert_trims(rows JSONB)
+RETURNS TABLE(generation_id UUID, name TEXT, action TEXT)
+LANGUAGE plpgsql
+AS $$
+#variable_conflict use_column
+DECLARE
+  v_missing UUID[];
+BEGIN
+  SELECT array_agg(DISTINCT e.generation_id) INTO v_missing
+  FROM jsonb_to_recordset(rows) AS e(generation_id UUID)
+  WHERE NOT EXISTS (SELECT 1 FROM generations g WHERE g.id = e.generation_id);
+
+  IF v_missing IS NOT NULL THEN
+    RAISE EXCEPTION 'bulk_upsert_trims: % generation_id(s) not found: %.', array_length(v_missing, 1), v_missing;
+  END IF;
+
+  RETURN QUERY
+  INSERT INTO trims (generation_id, name, years, description, production_notes)
+  SELECT e.generation_id, e.name, e.years, e.description, e.production_notes
+  FROM jsonb_to_recordset(rows) AS e(generation_id UUID, name TEXT, years TEXT, description TEXT, production_notes TEXT)
+  ON CONFLICT (generation_id, name) DO UPDATE SET
+    years = COALESCE(NULLIF(EXCLUDED.years, ''), trims.years),
+    description = COALESCE(NULLIF(EXCLUDED.description, ''), trims.description),
+    production_notes = COALESCE(NULLIF(EXCLUDED.production_notes, ''), trims.production_notes)
+  RETURNING trims.generation_id, trims.name, 'upserted';
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION bulk_upsert_trims(JSONB) TO authenticated;
+
 -- RLS: public read, is_admin()-gated write on all five tables
 ALTER TABLE makes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE models ENABLE ROW LEVEL SECURITY;
