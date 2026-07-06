@@ -90,12 +90,35 @@ export interface CarSummary {
   units_produced: number | null
 }
 
+// A car_relations row resolved for public display — either a link to a real
+// catalog entry (linked non-null) or a plain-text label (linked null).
+export interface CarRelation {
+  id: string
+  relation_type: 'related' | 'rival'
+  label_text: string | null
+  linked: {
+    slug: string
+    code: string
+    hero_image: string | null
+    make: string
+    model: string
+  } | null
+}
+
+export interface CarTrim {
+  name: string
+  years: string | null
+  description: string | null
+}
+
 export interface Car extends CarSummary {
   body_styles: string[]
   drivetrain: string | null
   engine_layout: string | null
   overview: string | null
   gallery_images: string[]
+  relations: CarRelation[]
+  trims: CarTrim[]
   specs: CarSpecGroup[]
   market_data: {
     low: number | null
@@ -116,7 +139,6 @@ export interface Car extends CarSummary {
   known_issues: string | null
   claim_to_fame: string | null
   buyers_flag: string | null
-  rivals_alternatives: string | null
   designer: string | null
   wikipedia_url: string | null
   radar_scores: Partial<Record<
@@ -131,7 +153,6 @@ export interface Car extends CarSummary {
   driving_character: string | null
   design_notes: string | null
   cultural_notes: string | null
-  related_cars: string | null
   motorsport_pedigree: string | null
 }
 

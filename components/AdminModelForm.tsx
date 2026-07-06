@@ -2,24 +2,43 @@
 
 import { useState } from 'react'
 import GenerationFieldsEditor from '@/components/GenerationFieldsEditor'
-import { CAR_CLASSES, deriveGenerationSlug, type GenerationRecord, type GenerationInput } from '@/lib/car-schema'
+import {
+  CAR_CLASSES, deriveGenerationSlug,
+  type GenerationRecord, type GenerationInput, type TrimRecord, type TrimInput,
+  type CarRelationRecord, type CarRelationInput,
+} from '@/lib/car-schema'
 
 function toInput(g: GenerationRecord): GenerationInput {
   const {
     id: _id, model_id: _model_id, created_at: _created_at, updated_at: _updated_at,
-    archived_at: _archived_at, desirability_tier_legacy: _legacy, ...rest
+    archived_at: _archived_at, desirability_tier_legacy: _legacy,
+    rivals_alternatives: _rivals, related_cars: _related, ...rest
   } = g
   return rest
 }
 
+function toTrimInput(t: TrimRecord): TrimInput {
+  const { id: _id, generation_id: _gid, created_at: _created_at, ...rest } = t
+  return rest
+}
+
+function toRelationInput(r: CarRelationRecord): CarRelationInput {
+  const { id: _id, generation_id: _gid, created_at: _created_at, ...rest } = r
+  return rest
+}
+
 export default function AdminModelForm({
-  generation, make, modelName,
+  generation, make, modelName, trims: initialTrims, relations: initialRelations,
 }: {
   generation: GenerationRecord
   make: string
   modelName: string
+  trims: TrimRecord[]
+  relations: CarRelationRecord[]
 }) {
   const [form, setForm] = useState<GenerationInput>(toInput(generation))
+  const [trims, setTrims] = useState<TrimInput[]>(initialTrims.map(toTrimInput))
+  const [relations, setRelations] = useState<CarRelationInput[]>(initialRelations.map(toRelationInput))
   const [archivedAt, setArchivedAt] = useState(generation.archived_at)
   const [slugEditing, setSlugEditing] = useState(false)
   const [saving, setSaving] = useState(false)
@@ -31,22 +50,54 @@ export default function AdminModelForm({
     setForm(f => ({ ...f, ...updates }))
   }
 
+  // Sequential, not a single transaction: main fields, then trims, then
+  // relations. Both child-table PUTs are replace-alls (idempotent), so if
+  // one fails after the generation PATCH already committed, it's safe to
+  // just press Save again — the distinct message below says so rather than
+  // a generic error, since a partial-success state is a real possibility
+  // this codebase doesn't otherwise have a cross-table transaction for.
   async function save() {
     setSaving(true)
     setMsg('')
-    const res = await fetch(`/api/admin/models/${generation.slug}`, {
+
+    const genRes = await fetch(`/api/admin/models/${generation.slug}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(form),
     })
-    setSaving(false)
-    if (res.ok) {
-      setMsg('Saved ✓')
-      setTimeout(() => setMsg(''), 3000)
-    } else {
-      const err = await res.json().catch(() => ({}))
+    if (!genRes.ok) {
+      setSaving(false)
+      const err = await genRes.json().catch(() => ({}))
       setMsg(err.error ?? 'Error saving')
+      return
     }
+
+    const trimsRes = await fetch(`/api/admin/models/${generation.slug}/trims`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trims }),
+    })
+    if (!trimsRes.ok) {
+      setSaving(false)
+      const err = await trimsRes.json().catch(() => ({}))
+      setMsg(`Main fields saved, but trims failed to save (${err.error ?? 'unknown error'}) — press Save again`)
+      return
+    }
+
+    const relationsRes = await fetch(`/api/admin/models/${generation.slug}/relations`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ relations }),
+    })
+    setSaving(false)
+    if (!relationsRes.ok) {
+      const err = await relationsRes.json().catch(() => ({}))
+      setMsg(`Main fields and trims saved, but related cars/rivals failed to save (${err.error ?? 'unknown error'}) — press Save again`)
+      return
+    }
+
+    setMsg('Saved ✓')
+    setTimeout(() => setMsg(''), 3000)
   }
 
   async function toggleArchive() {
@@ -152,7 +203,15 @@ export default function AdminModelForm({
         )}
       </div>
 
-      <GenerationFieldsEditor value={form} onChange={update} />
+      <GenerationFieldsEditor
+        value={form}
+        onChange={update}
+        generationId={generation.id}
+        trims={trims}
+        onTrimsChange={setTrims}
+        relations={relations}
+        onRelationsChange={setRelations}
+      />
 
       <div className="mt-8 flex justify-end gap-2.5">
         {msg && <span className={`text-xs self-center ${msgClass}`}>{msg}</span>}

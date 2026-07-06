@@ -144,7 +144,15 @@ export default function AdminNewCarForm() {
               <a href={`/admin/models/${duplicateSlug}`} className="text-error underline font-medium whitespace-nowrap">Edit it instead →</a>
             </div>
           )}
-          <GenerationFieldsEditor value={generation} onChange={u => setGeneration(g => ({ ...g, ...u }))} />
+          <GenerationFieldsEditor
+            value={generation}
+            onChange={u => setGeneration(g => ({ ...g, ...u }))}
+            generationId={undefined}
+            trims={[]}
+            onTrimsChange={() => {}}
+            relations={[]}
+            onRelationsChange={() => {}}
+          />
           <div className="mt-8 flex justify-end gap-2.5 items-center">
             {msg && <span className="text-xs text-error">{msg}</span>}
             <button onClick={submit} disabled={saving || !generation.code.trim() || !!duplicateSlug} className="btn-primary h-10 px-7">

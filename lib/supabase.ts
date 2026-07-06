@@ -12,7 +12,7 @@ function buildClient() {
 }
 import type {
   Model, ModelSummary,
-  Car, CarSummary,
+  Car, CarSummary, CarRelation, CarTrim,
   Profile,
   UserCar, UserCarSummary,
   Like, Comment,
@@ -33,10 +33,10 @@ const CAR_SELECT = `
   body_styles, drivetrain, engine_layout, overview, gallery_images, specs,
   market_data, maintenance, resources, is_icon, nickname, desirability_tier,
   why_collectible, engine_signature, variants_to_know, known_issues,
-  claim_to_fame, buyers_flag, rivals_alternatives, designer, wikipedia_url,
+  claim_to_fame, buyers_flag, designer, wikipedia_url,
   radar_scores, analog_index, homologation_special, poster_car, value_trajectory,
   firsts_and_lasts, driving_character, design_notes, cultural_notes,
-  related_cars, motorsport_pedigree,
+  motorsport_pedigree,
   models!inner(name, makes!inner(name, country))
 `
 
@@ -68,7 +68,9 @@ function mapCarSummary(row: GenerationJoinRow): CarSummary {
   }
 }
 
-function mapCar(row: GenerationJoinRow & Record<string, unknown>): Car {
+// trims/relations aren't part of CAR_SELECT (separate child-table queries in
+// getModel), so this maps everything else and getModel attaches those two.
+function mapCar(row: GenerationJoinRow & Record<string, unknown>): Omit<Car, 'trims' | 'relations'> {
   return {
     ...mapCarSummary(row),
     body_styles: (row.body_styles as string[]) ?? [],
@@ -91,7 +93,6 @@ function mapCar(row: GenerationJoinRow & Record<string, unknown>): Car {
     known_issues: (row.known_issues as string | null) ?? null,
     claim_to_fame: (row.claim_to_fame as string | null) ?? null,
     buyers_flag: (row.buyers_flag as string | null) ?? null,
-    rivals_alternatives: (row.rivals_alternatives as string | null) ?? null,
     designer: (row.designer as string | null) ?? null,
     wikipedia_url: (row.wikipedia_url as string | null) ?? null,
     radar_scores: (row.radar_scores as Car['radar_scores']) ?? null,
@@ -103,7 +104,6 @@ function mapCar(row: GenerationJoinRow & Record<string, unknown>): Car {
     driving_character: (row.driving_character as string | null) ?? null,
     design_notes: (row.design_notes as string | null) ?? null,
     cultural_notes: (row.cultural_notes as string | null) ?? null,
-    related_cars: (row.related_cars as string | null) ?? null,
     motorsport_pedigree: (row.motorsport_pedigree as string | null) ?? null,
   }
 }
@@ -167,6 +167,15 @@ export async function getModels(params?: {
   return { data: rows.map(mapSearchRow), total: rows[0]?.total_count ?? 0 }
 }
 
+type TrimRow = { name: string; years: string | null; description: string | null }
+
+type RelationRow = {
+  id: string
+  relation_type: 'related' | 'rival'
+  label_text: string | null
+  linked: { slug: string; code: string; hero_image: string | null; models: { name: string; makes: { name: string } } } | null
+}
+
 export async function getModel(slug: string): Promise<Car | null> {
   const db = await createClient()
   const { data, error } = await db
@@ -176,7 +185,40 @@ export async function getModel(slug: string): Promise<Car | null> {
     .is('archived_at', null)
     .single()
   if (error) return null
-  return mapCar(data as unknown as GenerationJoinRow & Record<string, unknown>)
+
+  const car = data as unknown as GenerationJoinRow & Record<string, unknown>
+
+  const [{ data: trimRows }, { data: relationRows }] = await Promise.all([
+    db.from('trims').select('name, years, description').eq('generation_id', car.id).order('name'),
+    db
+      .from('car_relations')
+      .select(`
+        id, relation_type, label_text,
+        linked:generations!car_relations_linked_generation_id_fkey(slug, code, hero_image, models(name, makes(name)))
+      `)
+      .eq('generation_id', car.id)
+      .order('relation_type')
+      .order('sort_order'),
+  ])
+
+  const trims: CarTrim[] = (trimRows as TrimRow[] | null ?? []).map(t => ({
+    name: t.name, years: t.years, description: t.description,
+  }))
+
+  const relations: CarRelation[] = (relationRows as unknown as RelationRow[] | null ?? []).map(r => ({
+    id: r.id,
+    relation_type: r.relation_type,
+    label_text: r.label_text,
+    linked: r.linked ? {
+      slug: r.linked.slug,
+      code: r.linked.code,
+      hero_image: r.linked.hero_image,
+      make: r.linked.models.makes.name,
+      model: r.linked.models.name,
+    } : null,
+  }))
+
+  return { ...mapCar(car), trims, relations }
 }
 
 export async function getModelSlugs(): Promise<string[]> {

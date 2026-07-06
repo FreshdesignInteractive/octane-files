@@ -180,6 +180,41 @@ CREATE TABLE IF NOT EXISTS trims (
   UNIQUE (generation_id, name)
 );
 
+-- Step 13/14: replaces generations.rivals_alternatives/related_cars (both
+-- left in place, unread, as legacy TEXT) as the authoring path for linked-or-
+-- text car references. Each row is either a link to a real generation or a
+-- plain-text label — never both, never neither.
+DO $$ BEGIN
+  CREATE TYPE car_relation_type AS ENUM ('related', 'rival');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS car_relations (
+  id                   UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  generation_id        UUID NOT NULL,
+  relation_type        car_relation_type NOT NULL,
+  linked_generation_id UUID,
+  label_text           TEXT,
+  sort_order           INT NOT NULL DEFAULT 0,
+  created_at           TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT car_relations_generation_id_fkey
+    FOREIGN KEY (generation_id) REFERENCES generations(id) ON DELETE CASCADE,
+  CONSTRAINT car_relations_linked_generation_id_fkey
+    FOREIGN KEY (linked_generation_id) REFERENCES generations(id) ON DELETE CASCADE,
+  CONSTRAINT car_relations_link_xor_text CHECK (
+    (linked_generation_id IS NOT NULL AND label_text IS NULL) OR
+    (linked_generation_id IS NULL AND label_text IS NOT NULL)
+  ),
+  CONSTRAINT car_relations_no_self_link CHECK (
+    linked_generation_id IS NULL OR linked_generation_id != generation_id
+  ),
+  UNIQUE (generation_id, relation_type, linked_generation_id)
+);
+
+CREATE UNIQUE INDEX IF NOT EXISTS car_relations_label_uniq
+  ON car_relations (generation_id, relation_type, label_text)
+  WHERE linked_generation_id IS NULL;
+
 CREATE INDEX IF NOT EXISTS generations_class_idx ON generations (class);
 CREATE INDEX IF NOT EXISTS generations_year_start_idx ON generations (year_start);
 CREATE INDEX IF NOT EXISTS generations_model_idx ON generations (model_id);
@@ -285,27 +320,30 @@ $$;
 
 GRANT EXECUTE ON FUNCTION search_generations(TEXT, TEXT, TEXT, TEXT, INT, INT) TO anon, authenticated;
 
--- RLS: public read, is_admin()-gated write on all four tables
+-- RLS: public read, is_admin()-gated write on all five tables
 ALTER TABLE makes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE models ENABLE ROW LEVEL SECURITY;
 ALTER TABLE generations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trims ENABLE ROW LEVEL SECURITY;
+ALTER TABLE car_relations ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Public read" ON makes FOR SELECT USING (true);
 CREATE POLICY "Public read" ON models FOR SELECT USING (true);
 CREATE POLICY "Public read" ON generations FOR SELECT USING (true);
 CREATE POLICY "Public read" ON trims FOR SELECT USING (true);
+CREATE POLICY "Public read" ON car_relations FOR SELECT USING (true);
 
 CREATE POLICY "Admin write" ON makes FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 CREATE POLICY "Admin write" ON models FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 CREATE POLICY "Admin write" ON generations FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 CREATE POLICY "Admin write" ON trims FOR ALL USING (is_admin()) WITH CHECK (is_admin());
+CREATE POLICY "Admin write" ON car_relations FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
 -- Admin writes (the admin form) go through the signed-in admin's own
 -- session, not a service-role bypass — this grant plus the RLS policy above
 -- is what actually enforces it, in addition to the app-level checkIsAdmin().
-GRANT SELECT ON makes, models, generations, trims TO anon, authenticated;
-GRANT INSERT, UPDATE, DELETE ON makes, models, generations, trims TO authenticated;
+GRANT SELECT ON makes, models, generations, trims, car_relations TO anon, authenticated;
+GRANT INSERT, UPDATE, DELETE ON makes, models, generations, trims, car_relations TO authenticated;
 
 -- ─── Storage: car photos ──────────────────────────────────────────────────────
 -- Public bucket (true public URLs, no signed-URL complexity) — browse-and-

@@ -3,10 +3,14 @@
 import {
   CAR_CLASSES, BODY_STYLES, DRIVETRAIN_TYPES, RESOURCE_TYPES,
   ENGINE_LAYOUTS, DESIRABILITY_TIERS, VALUE_TRAJECTORIES, RADAR_AXES,
+  parseSpecGroups,
   type GenerationInput, type BodyStyle, type DrivetrainType, type ResourceType,
+  type TrimInput, type CarRelationInput,
 } from '@/lib/car-schema'
 import DesignerAutocomplete from '@/components/DesignerAutocomplete'
 import ImageUploadField from '@/components/ImageUploadField'
+import TrimsEditor from '@/components/TrimsEditor'
+import CarRelationsEditor from '@/components/CarRelationsEditor'
 
 const field = (label: string, children: React.ReactNode) => (
   <div className="field">
@@ -21,10 +25,15 @@ const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking
 // Deliberately does NOT render `slug` — each parent owns that field's own
 // display-vs-advanced-edit behavior around this component.
 export default function GenerationFieldsEditor({
-  value, onChange,
+  value, onChange, generationId, trims, onTrimsChange, relations, onRelationsChange,
 }: {
   value: GenerationInput
   onChange: (updates: Partial<GenerationInput>) => void
+  generationId: string | undefined
+  trims: TrimInput[]
+  onTrimsChange: (trims: TrimInput[]) => void
+  relations: CarRelationInput[]
+  onRelationsChange: (relations: CarRelationInput[]) => void
 }) {
   function toggleArrayValue<T extends string>(arr: T[], v: T): T[] {
     return arr.includes(v) ? arr.filter(x => x !== v) : [...arr, v]
@@ -184,40 +193,104 @@ export default function GenerationFieldsEditor({
           {field('Claim to Fame', <input className="input" value={value.claim_to_fame ?? ''} onChange={e => onChange({ claim_to_fame: e.target.value || null })} />)}
           {field('Wikipedia URL', <input className="input" value={value.wikipedia_url ?? ''} onChange={e => onChange({ wikipedia_url: e.target.value || null })} placeholder="https://en.wikipedia.org/..." />)}
           {field('Firsts & Lasts', <input className="input" value={value.firsts_and_lasts ?? ''} onChange={e => onChange({ firsts_and_lasts: e.target.value || null })} placeholder='e.g. "Last front-engine Corvette"' />)}
-          {field('Related Cars', <input className="input" value={value.related_cars ?? ''} onChange={e => onChange({ related_cars: e.target.value || null })} placeholder="Platform siblings, shared-engine lineage, spiritual successor" />)}
         </div>
         {field('Overview', <textarea className="textarea min-h-40" value={value.overview ?? ''} onChange={e => onChange({ overview: e.target.value || null })} placeholder="History, significance, key highlights..." />)}
         <div className="mt-4">{field('Why Collectible', <textarea className="textarea min-h-30" value={value.why_collectible ?? ''} onChange={e => onChange({ why_collectible: e.target.value || null })} />)}</div>
         <div className="mt-4">{field('Variants to Know', <textarea className="textarea min-h-30" value={value.variants_to_know ?? ''} onChange={e => onChange({ variants_to_know: e.target.value || null })} />)}</div>
         <div className="mt-4">{field('Known Issues', <textarea className="textarea min-h-30" value={value.known_issues ?? ''} onChange={e => onChange({ known_issues: e.target.value || null })} />)}</div>
         <div className="mt-4">{field('Buyers Flag', <textarea className="textarea min-h-20" value={value.buyers_flag ?? ''} onChange={e => onChange({ buyers_flag: e.target.value || null })} />)}</div>
-        <div className="mt-4">{field('Rivals & Alternatives', <textarea className="textarea min-h-20" value={value.rivals_alternatives ?? ''} onChange={e => onChange({ rivals_alternatives: e.target.value || null })} placeholder="Cross-shopping alternatives, not lineage" />)}</div>
         <div className="mt-4">{field('Driving Character', <textarea className="textarea min-h-30" value={value.driving_character ?? ''} onChange={e => onChange({ driving_character: e.target.value || null })} placeholder="Sound signature, party trick, gearbox feel, power delivery" />)}</div>
         <div className="mt-4">{field('Design Notes', <textarea className="textarea min-h-30" value={value.design_notes ?? ''} onChange={e => onChange({ design_notes: e.target.value || null })} placeholder="Design signatures, concept-car lineage, wheel/badge iconography" />)}</div>
         <div className="mt-4">{field('Cultural Notes', <textarea className="textarea min-h-30" value={value.cultural_notes ?? ''} onChange={e => onChange({ cultural_notes: e.target.value || null })} placeholder="Screen, music, video-game fame" />)}</div>
         <div className="mt-4">{field('Motorsport Pedigree', <textarea className="textarea min-h-30" value={value.motorsport_pedigree ?? ''} onChange={e => onChange({ motorsport_pedigree: e.target.value || null })} placeholder="Race series, championships, signature drivers" />)}</div>
       </section>
 
+      {/* Related cars & rivals */}
+      <section>
+        <h2 className={sectionHeading}>Related Cars &amp; Rivals</h2>
+        <CarRelationsEditor generationId={generationId} relations={relations} onChange={onRelationsChange} />
+      </section>
+
+      {/* Trims */}
+      <section>
+        <h2 className={sectionHeading}>Trims</h2>
+        <TrimsEditor generationId={generationId} trims={trims} onChange={onTrimsChange} />
+      </section>
+
       {/* Specs */}
       <section>
-        <h2 className={sectionHeading}>
-          Specs
-          <span className="font-normal text-label text-text-tertiary ml-2 normal-case">stored as JSON</span>
-        </h2>
-        <textarea
-          className="textarea min-h-50 font-mono text-xs"
-          value={JSON.stringify(value.specs ?? [], null, 2)}
-          onChange={e => { try { onChange({ specs: JSON.parse(e.target.value) }) } catch { /* keep typing until valid */ } }}
-        />
+        <h2 className={sectionHeading}>Specs</h2>
+        {(() => {
+          const parsed = parseSpecGroups(value.specs as unknown)
+          if (parsed === null) {
+            return (
+              <div>
+                <p className="text-body text-error mb-3">
+                  Existing specs data isn&apos;t in the expected group/label/value shape and can&apos;t be edited here safely — showing the raw value below instead of silently discarding it. Fix it in the database directly, or clear it to start fresh with the editor.
+                </p>
+                <pre className="textarea min-h-30 font-mono text-xs overflow-auto">{JSON.stringify(value.specs, null, 2)}</pre>
+                <button type="button" onClick={() => onChange({ specs: [] })} className="btn-secondary px-3 mt-3">Clear and start fresh</button>
+              </div>
+            )
+          }
+          return (
+            <div className="flex flex-col gap-5">
+              {parsed.map((group, gi) => (
+                <div key={gi} className="p-4 rounded-lg border border-border">
+                  <div className="flex gap-2 items-center mb-3">
+                    <input
+                      className="input flex-1" placeholder="Group name (e.g. Engine, Drivetrain)"
+                      value={group.group}
+                      onChange={e => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, group: e.target.value } : g) })}
+                    />
+                    <button type="button" onClick={() => onChange({ specs: parsed.filter((_, j) => j !== gi) })} className="btn-secondary px-3">Remove group</button>
+                  </div>
+                  <div className="flex flex-col gap-2">
+                    {group.specs.map((s, si) => (
+                      <div key={si} className="grid grid-cols-[1fr_1fr_auto] gap-2">
+                        <input
+                          className="input" placeholder="Label"
+                          value={s.label}
+                          onChange={e => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: g.specs.map((x, k) => k === si ? { ...x, label: e.target.value } : x) } : g) })}
+                        />
+                        <input
+                          className="input" placeholder="Value"
+                          value={s.value}
+                          onChange={e => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: g.specs.map((x, k) => k === si ? { ...x, value: e.target.value } : x) } : g) })}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: g.specs.filter((_, k) => k !== si) } : g) })}
+                          className="btn-secondary px-3"
+                        >Remove</button>
+                      </div>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: [...g.specs, { label: '', value: '' }] } : g) })}
+                      className="btn-secondary self-start px-3"
+                    >+ Add spec</button>
+                  </div>
+                </div>
+              ))}
+              <button
+                type="button"
+                onClick={() => onChange({ specs: [...parsed, { group: '', specs: [] }] })}
+                className="btn-secondary self-start px-3"
+              >+ Add group</button>
+            </div>
+          )
+        })()}
       </section>
 
       {/* Market data */}
       <section>
         <h2 className={sectionHeading}>Market Data (USD)</h2>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-4 gap-4">
           {field('Low', <input className="input" type="number" value={value.market_data?.low ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, mid: null, high: null }), low: e.target.value ? parseInt(e.target.value) : null } })} />)}
           {field('Mid', <input className="input" type="number" value={value.market_data?.mid ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, low: null, high: null }), mid: e.target.value ? parseInt(e.target.value) : null } })} />)}
           {field('High', <input className="input" type="number" value={value.market_data?.high ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, low: null, mid: null }), high: e.target.value ? parseInt(e.target.value) : null } })} />)}
+          {field('Values as of', <input className="input" type="date" value={value.market_data?.as_of ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', notes: null, low: null, mid: null, high: null }), as_of: e.target.value || null } })} />)}
         </div>
         <div className="mt-4">
           {field('Notes', <textarea className="textarea min-h-15" value={value.market_data?.notes ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, low: null, mid: null, high: null }), notes: e.target.value || null } })} />)}

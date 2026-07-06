@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase-server'
 import { notFound } from 'next/navigation'
 import AdminModelForm from '@/components/AdminModelForm'
 import SiteHeader from '@/components/SiteHeader'
-import type { GenerationRecord } from '@/lib/car-schema'
+import type { GenerationRecord, TrimRecord, CarRelationRecord } from '@/lib/car-schema'
 
 export default async function AdminModelPage({ params }: { params: Promise<{ slug: string }> }) {
   await requireAdmin()
@@ -20,6 +20,11 @@ export default async function AdminModelPage({ params }: { params: Promise<{ slu
 
   const { models, ...generation } = model as GenerationRecord & { models: { name: string; makes: { name: string } } }
 
+  const [{ data: trims }, { data: relations }] = await Promise.all([
+    supabase.from('trims').select('*').eq('generation_id', generation.id).order('name'),
+    supabase.from('car_relations').select('*').eq('generation_id', generation.id).order('relation_type').order('sort_order'),
+  ])
+
   return (
     <>
       <SiteHeader />
@@ -27,6 +32,8 @@ export default async function AdminModelPage({ params }: { params: Promise<{ slu
         generation={generation}
         make={models.makes.name}
         modelName={models.name}
+        trims={(trims as TrimRecord[]) ?? []}
+        relations={(relations as CarRelationRecord[]) ?? []}
       />
     </>
   )

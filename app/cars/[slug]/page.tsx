@@ -55,11 +55,14 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const years = car.year_end ? `${car.year_start}–${car.year_end}` : `${car.year_start}–present`
 
   const hasGlance = car.analog_index !== null || (car.radar_scores && Object.keys(car.radar_scores).length === 7)
-  const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes || car.related_cars)
-  const hasSpecsSection = (car.specs?.length > 0) || !!car.variants_to_know
+  const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
+  const hasSpecsSection = (car.specs?.length > 0) || !!car.variants_to_know || car.trims?.length > 0
   const hasMaintenanceSection = !!(car.maintenance || car.known_issues)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
+  const hasRelationsSection = car.relations?.length > 0
   const galleryImages = car.gallery_images?.filter(Boolean) ?? []
+  const relatedCars = car.relations?.filter(r => r.relation_type === 'related') ?? []
+  const rivalCars = car.relations?.filter(r => r.relation_type === 'rival') ?? []
 
   const sections = [
     { id: 'overview', label: 'Overview' },
@@ -68,6 +71,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
     hasGlance && { id: 'glance', label: 'At a Glance' },
     hasSpecsSection && { id: 'specs', label: 'Specs' },
     hasCharacter && { id: 'character', label: 'Character' },
+    hasRelationsSection && { id: 'relations', label: 'Related & Rivals' },
     hasMarketSection && { id: 'market', label: 'Market' },
     hasMaintenanceSection && { id: 'maintenance', label: 'Maintenance' },
     car.resources?.length > 0 && { id: 'resources', label: 'Resources' },
@@ -278,6 +282,21 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   ))}
                 </div>
               )}
+              {car.trims?.length > 0 && (
+                <div className={car.specs?.length > 0 ? 'mt-6' : ''}>
+                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Trim Levels</div>
+                  <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
+                    {car.trims.map(t => (
+                      <div key={t.name} className="stat-cell">
+                        <div className="text-sm font-medium text-text-primary">
+                          {t.name}{t.years && <span className="text-text-tertiary font-normal"> · {t.years}</span>}
+                        </div>
+                        {t.description && <p className="text-label text-text-secondary mt-1 m-0">{t.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </Section>
           )}
 
@@ -309,13 +328,43 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                     <p className="text-body text-text-secondary leading-[1.7] m-0">{car.cultural_notes}</p>
                   </div>
                 )}
-                {car.related_cars && (
-                  <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Related Cars</div>
-                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.related_cars}</p>
-                  </div>
-                )}
               </div>
+            </Section>
+          )}
+
+          {/* Related & Rivals */}
+          {hasRelationsSection && (
+            <Section id="relations" label="Related & Rivals">
+              {[
+                { key: 'related', title: 'Related Cars', entries: relatedCars },
+                { key: 'rival', title: 'Rivals & Alternatives', entries: rivalCars },
+              ].filter(g => g.entries.length > 0).map(group => (
+                <div key={group.key} className="mb-8 last:mb-0">
+                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">{group.title}</div>
+                  <div className="flex flex-wrap gap-3">
+                    {group.entries.map(r => r.linked ? (
+                      <Link
+                        key={r.id}
+                        href={`/cars/${r.linked.slug}`}
+                        className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg no-underline transition-colors w-60"
+                      >
+                        {r.linked.hero_image ? (
+                          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
+                            <Image src={r.linked.hero_image} alt="" fill className="object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-12 h-12 rounded bg-border flex-shrink-0" />
+                        )}
+                        <span className="text-body font-medium text-text-primary">
+                          {r.linked.make} {r.linked.model} {r.linked.code}
+                        </span>
+                      </Link>
+                    ) : (
+                      <span key={r.id} className="pill">{r.label_text}</span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </Section>
           )}
 

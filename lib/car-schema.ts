@@ -103,7 +103,13 @@ export interface GenerationRecord {
   known_issues: string | null
   claim_to_fame: string | null
   buyers_flag: string | null
+  // Step 14 migration: verbatim text moved into car_relations as plain-text
+  // ('rival'/'related') rows. Read-only legacy reference, like
+  // desirability_tier_legacy — never form-editable, not part of
+  // GenerationInput. The car-picker-driven relations editor is the
+  // authoring path now.
   rivals_alternatives: string | null
+  related_cars: string | null
   designer: string | null
   body_styles: BodyStyle[]
   drivetrain: DrivetrainType[]
@@ -125,7 +131,6 @@ export interface GenerationRecord {
   driving_character: string | null
   design_notes: string | null
   cultural_notes: string | null
-  related_cars: string | null
   motorsport_pedigree: string | null
   slug: string
   archived_at: string | null
@@ -135,10 +140,13 @@ export interface GenerationRecord {
 
 // What the admin form actually edits — everything except system/identity
 // fields that aren't directly form-editable (id, model_id, timestamps,
-// archived_at is a dedicated action, not a raw field).
+// archived_at is a dedicated action, not a raw field), plus the two legacy
+// text fields superseded by car_relations (see the comment on
+// rivals_alternatives above).
 export type GenerationInput = Omit<
   GenerationRecord,
-  'id' | 'model_id' | 'created_at' | 'updated_at' | 'archived_at' | 'desirability_tier_legacy'
+  'id' | 'model_id' | 'created_at' | 'updated_at' | 'archived_at' | 'desirability_tier_legacy' |
+  'rivals_alternatives' | 'related_cars'
 >
 
 export interface MakeRecord {
@@ -184,7 +192,6 @@ export function emptyGenerationInput(): GenerationInput {
     known_issues: null,
     claim_to_fame: null,
     buyers_flag: null,
-    rivals_alternatives: null,
     designer: null,
     body_styles: [],
     drivetrain: [],
@@ -206,8 +213,71 @@ export function emptyGenerationInput(): GenerationInput {
     driving_character: null,
     design_notes: null,
     cultural_notes: null,
-    related_cars: null,
     motorsport_pedigree: null,
     slug: '',
   }
+}
+
+// ─── Trims (child rows under a generation) ───────────────────────────────
+
+export interface TrimInput {
+  name: string
+  years: string | null
+  description: string | null
+  production_notes: string | null
+}
+
+export interface TrimRecord extends TrimInput {
+  id: string
+  generation_id: string
+  created_at: string
+}
+
+// ─── Car relations (linked-or-text references, replacing related_cars/
+// rivals_alternatives) ────────────────────────────────────────────────────
+
+export const CAR_RELATION_TYPES = ['related', 'rival'] as const
+export type CarRelationType = (typeof CAR_RELATION_TYPES)[number]
+
+// Exactly one of linked_generation_id / label_text is set — mirrors the DB's
+// XOR CHECK constraint (car_relations_link_xor_text in step13).
+export interface CarRelationInput {
+  relation_type: CarRelationType
+  linked_generation_id: string | null
+  label_text: string | null
+  sort_order: number
+}
+
+export interface CarRelationRecord extends CarRelationInput {
+  id: string
+  generation_id: string
+  created_at: string
+}
+
+// What the car-picker fetches once on mount to search/filter client-side,
+// same pattern as DesignerAutocomplete's one-shot fetch.
+export interface GenerationPickerOption {
+  id: string
+  slug: string
+  code: string
+  hero_image: string | null
+  model: { name: string; make: { name: string } }
+}
+
+// Validates specs is the shape the structured editor expects. Returns null
+// (rather than silently coercing to []) so the editor can show a warning
+// instead of quietly discarding malformed pre-existing data.
+export function parseSpecGroups(raw: unknown): SpecGroup[] | null {
+  if (!Array.isArray(raw)) return null
+  for (const group of raw) {
+    if (typeof group !== 'object' || group === null) return null
+    const g = group as Record<string, unknown>
+    if (typeof g.group !== 'string' || !Array.isArray(g.specs)) return null
+    for (const spec of g.specs) {
+      if (typeof spec !== 'object' || spec === null) return null
+      const s = spec as Record<string, unknown>
+      if (typeof s.label !== 'string' || typeof s.value !== 'string') return null
+    }
+  }
+  return raw as SpecGroup[]
 }
