@@ -359,7 +359,10 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                         </span>
                       </Link>
                     ) : (
-                      <span key={r.id} className="flex items-center px-3 py-2 bg-white border border-border rounded-lg w-60">
+                      <span key={r.id} className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg w-60">
+                        <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
+                          <Image src="/placeholder.png" alt="" fill className="object-contain" />
+                        </div>
                         <span className="text-body font-medium text-text-primary">{r.label_text}</span>
                       </span>
                     ))}

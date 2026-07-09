@@ -119,7 +119,8 @@ export default function CarRelationsEditor({
                     <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none ml-1">×</button>
                   </span>
                 ) : (
-                  <span key={i} className="flex items-center gap-2 pl-2.5 pr-2.5 py-1.5 border border-border rounded-lg">
+                  <span key={i} className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 border border-border rounded-lg">
+                    <Image src="/placeholder.png" alt="" width={28} height={28} className="rounded flex-shrink-0 object-contain bg-bg-elevated" />
                     <span className="text-body text-text-primary">{r.label_text}</span>
                     <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none ml-1">×</button>
                   </span>
