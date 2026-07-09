@@ -52,6 +52,11 @@ export default function ImageUploadField({
     deleteCarImageIfOwned(replaced)
   }
 
+  function handleRemove() {
+    deleteCarImageIfOwned(value)
+    onChange(null)
+  }
+
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-3 items-start">
@@ -59,14 +64,26 @@ export default function ImageUploadField({
           <img src={value} alt="preview" className="w-20 h-20 object-cover rounded-md border border-border flex-shrink-0" />
         )}
         <div className="flex-1 flex flex-col gap-2">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="btn-secondary h-9 px-4 self-start disabled:opacity-60"
-          >
-            {uploading ? 'Uploading...' : value ? 'Replace image' : 'Upload image'}
-          </button>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              className="btn-secondary h-9 px-4 self-start disabled:opacity-60"
+            >
+              {uploading ? 'Uploading...' : value ? 'Replace image' : 'Upload image'}
+            </button>
+            {value && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                disabled={uploading}
+                className="btn-secondary h-9 px-4 self-start disabled:opacity-60"
+              >
+                Remove image
+              </button>
+            )}
+          </div>
           <input
             ref={inputRef}
             type="file"
