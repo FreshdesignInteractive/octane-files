@@ -11,6 +11,7 @@ import DesignerAutocomplete from '@/components/DesignerAutocomplete'
 import ImageUploadField from '@/components/ImageUploadField'
 import TrimsEditor from '@/components/TrimsEditor'
 import CarRelationsEditor from '@/components/CarRelationsEditor'
+import { deleteCarImageIfOwned } from '@/lib/storage-cleanup'
 
 const field = (label: string, children: React.ReactNode) => (
   <div className="field">
@@ -168,7 +169,14 @@ export default function GenerationFieldsEditor({
                       pathPrefix={`${value.slug || 'untitled'}/gallery-${i}`}
                     />
                   </div>
-                  <button type="button" onClick={() => onChange({ gallery_images: value.gallery_images.filter((_, j) => j !== i) })} className="btn-secondary px-3">Remove</button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      deleteCarImageIfOwned(url)
+                      onChange({ gallery_images: value.gallery_images.filter((_, j) => j !== i) })
+                    }}
+                    className="btn-secondary px-3"
+                  >Remove</button>
                 </div>
               ))}
               <button type="button" onClick={() => onChange({ gallery_images: [...value.gallery_images, ''] })} className="btn-secondary self-start px-3">+ Add image</button>

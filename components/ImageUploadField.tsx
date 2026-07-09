@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import { createClient } from '@/lib/supabase-browser'
+import { deleteCarImageIfOwned } from '@/lib/storage-cleanup'
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/avif']
 const MAX_BYTES = 5 * 1024 * 1024
@@ -46,7 +47,9 @@ export default function ImageUploadField({
       return
     }
     const { data } = supabase.storage.from('car-images').getPublicUrl(path)
+    const replaced = value
     onChange(data.publicUrl)
+    deleteCarImageIfOwned(replaced)
   }
 
   return (
