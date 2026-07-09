@@ -5,6 +5,7 @@ import type { Metadata } from 'next'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import SaveButton from '@/components/SaveButton'
+import EditButton from '@/components/EditButton'
 import RadarChart from '@/components/RadarChart'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car } from '@/lib/types'
@@ -156,8 +157,9 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           </nav>
 
           {/* Save to Garage */}
-          <div className="pt-6">
+          <div className="pt-6 flex gap-2.5">
             <SaveButton modelId={car.id} />
+            <EditButton slug={car.slug} />
           </div>
 
           {/* Quick stats bar */}
