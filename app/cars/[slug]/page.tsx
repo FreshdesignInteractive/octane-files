@@ -348,19 +348,20 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                         href={`/cars/${r.linked.slug}`}
                         className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg no-underline transition-colors w-60"
                       >
-                        {r.linked.hero_image ? (
-                          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0">
-                            <Image src={r.linked.hero_image} alt="" fill className="object-cover" />
-                          </div>
-                        ) : (
-                          <div className="w-12 h-12 rounded bg-border flex-shrink-0" />
-                        )}
+                        <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
+                          <Image
+                            src={r.linked.hero_image || '/placeholder.png'} alt="" fill
+                            className={r.linked.hero_image ? 'object-cover' : 'object-contain'}
+                          />
+                        </div>
                         <span className="text-body font-medium text-text-primary">
                           {r.linked.make} {r.linked.model} {r.linked.code}
                         </span>
                       </Link>
                     ) : (
-                      <span key={r.id} className="pill">{r.label_text}</span>
+                      <span key={r.id} className="flex items-center px-3 py-2 bg-white border border-border rounded-lg w-60">
+                        <span className="text-body font-medium text-text-primary">{r.label_text}</span>
+                      </span>
                     ))}
                   </div>
                 </div>
