@@ -33,8 +33,10 @@ export default function EditButton({ slug }: { slug: string }) {
   return (
     <Link
       href={`/admin/models/${slug}`}
-      aria-label="Edit this car"
-      title="Edit this car"
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label="Edit this car (opens in a new tab)"
+      title="Edit this car (opens in a new tab)"
       className="btn-secondary w-10 h-10 flex items-center justify-center px-0 flex-shrink-0"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
