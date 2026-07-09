@@ -14,15 +14,27 @@ function HeaderSearch() {
   const params = useSearchParams()
   const inputRef = useRef<HTMLInputElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
-  const [query, setQuery] = useState(params.get('q') ?? '')
+  // Always starts empty — search is ephemeral, not something that persists
+  // across a reload. A hard refresh (or a bookmarked/shared link with a
+  // stale ?q=) strips the param below rather than restoring it into the box.
+  const [query, setQuery] = useState('')
   const [catalog, setCatalog] = useState<CarSummary[]>([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
 
-  function handleSearch(value: string) {
+  // Typing only drives the dropdown, locally — it never touches the URL or
+  // the page behind it. The page only changes on a deliberate action:
+  // picking a suggestion, or pressing Enter to run a full catalog search.
+  // (Previously this pushed a new URL on every keystroke, which made the
+  // homepage grid run its own full-text search in parallel and blank out
+  // to "No cars found" while the dropdown — correct — still showed matches.)
+  function handleType(value: string) {
     setQuery(value)
     setOpen(value.trim() !== '')
     setActiveIndex(-1)
+  }
+
+  function runFullSearch(value: string) {
     const p = new URLSearchParams(params.toString())
     if (value) p.set('q', value)
     else p.delete('q')
@@ -44,6 +56,17 @@ function HeaderSearch() {
     return () => { cancelled = true }
   }, [])
 
+  // Runs once per real page load (this component lives in the root layout,
+  // so it only remounts on a hard refresh, not on client-side navigation).
+  useEffect(() => {
+    if (params.get('q')) {
+      const p = new URLSearchParams(params.toString())
+      p.delete('q')
+      router.replace(p.toString() ? `/?${p.toString()}` : '/', { scroll: false })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only, deliberately not re-running on every params change
+  }, [])
+
   const q = query.trim().toLowerCase()
   const suggestions = q
     ? catalog.filter(c => `${c.make} ${c.model} ${c.generation}`.toLowerCase().includes(q)).slice(0, 6)
@@ -63,17 +86,24 @@ function HeaderSearch() {
   }
 
   function clearSearch() {
-    handleSearch('')
+    setQuery('')
     setOpen(false)
+    runFullSearch('') // in case a full search was already active, reset the grid too
     inputRef.current?.focus()
   }
 
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (!open || suggestions.length === 0) return
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, suggestions.length - 1)) }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0)) }
-    else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); selectCar(suggestions[activeIndex].slug) }
-    else if (e.key === 'Escape') setOpen(false)
+    if (open && suggestions.length > 0) {
+      if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, suggestions.length - 1)); return }
+      if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0)); return }
+      if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); selectCar(suggestions[activeIndex].slug); return }
+      if (e.key === 'Escape') { setOpen(false); return }
+    }
+    if (e.key === 'Enter' && query.trim()) {
+      e.preventDefault()
+      setOpen(false)
+      runFullSearch(query)
+    }
   }
 
   return (
@@ -87,7 +117,7 @@ function HeaderSearch() {
         type="text"
         placeholder="Make, Model or Generation..."
         value={query}
-        onChange={e => handleSearch(e.target.value)}
+        onChange={e => handleType(e.target.value)}
         onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
         onKeyDown={handleKeyDown}
         className="w-full h-9 bg-bg-elevated border border-border rounded-full pl-9 pr-9 text-body text-text-primary outline-none transition-colors focus:border-border-mid focus:bg-white"
