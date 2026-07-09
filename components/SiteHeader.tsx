@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
@@ -16,35 +15,39 @@ function HeaderSearch() {
   const inputRef = useRef<HTMLInputElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const [query, setQuery] = useState(params.get('q') ?? '')
-  const [suggestions, setSuggestions] = useState<CarSummary[]>([])
+  const [catalog, setCatalog] = useState<CarSummary[]>([])
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
 
   function handleSearch(value: string) {
     setQuery(value)
+    setOpen(value.trim() !== '')
+    setActiveIndex(-1)
     const p = new URLSearchParams(params.toString())
     if (value) p.set('q', value)
     else p.delete('q')
     router.push(`/?${p.toString()}`, { scroll: false })
   }
 
-  // Debounced typeahead — separate from the existing per-keystroke full-grid
-  // URL update above, which stays as-is for browsing the homepage results.
-  // All state updates are deferred inside the timeout (never synchronous in
-  // the effect body itself), including the empty-query clear.
+  // Fetches the whole (small, ~300-row) catalog once on mount and filters
+  // client-side — same pattern the admin car-picker already uses. No
+  // per-keystroke network requests, no debounce, no race conditions, and
+  // plain substring matching means "corv" finds "Corvette" immediately —
+  // full-text search (used for the homepage grid below) only matches whole
+  // stemmed words, which isn't what a typeahead should do.
   useEffect(() => {
-    const q = query.trim()
-    const timeout = setTimeout(async () => {
-      if (!q) { setSuggestions([]); setOpen(false); return }
-      const res = await fetch(`/api/models?q=${encodeURIComponent(q)}&limit=6`)
-      if (!res.ok) return
-      const { data } = await res.json()
-      setSuggestions(data ?? [])
-      setOpen(true)
-      setActiveIndex(-1)
-    }, 250)
-    return () => clearTimeout(timeout)
-  }, [query])
+    let cancelled = false
+    fetch('/api/models?limit=500')
+      .then(r => r.json())
+      .then(({ data }: { data: CarSummary[] }) => { if (!cancelled) setCatalog(data ?? []) })
+      .catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+
+  const q = query.trim().toLowerCase()
+  const suggestions = q
+    ? catalog.filter(c => `${c.make} ${c.model} ${c.generation}`.toLowerCase().includes(q)).slice(0, 6)
+    : []
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -61,7 +64,6 @@ function HeaderSearch() {
 
   function clearSearch() {
     handleSearch('')
-    setSuggestions([])
     setOpen(false)
     inputRef.current?.focus()
   }
@@ -111,11 +113,9 @@ function HeaderSearch() {
               onClick={() => setOpen(false)}
               className={`flex items-center gap-3 px-3 py-2 no-underline transition-colors ${i === activeIndex ? 'bg-bg-elevated' : ''}`}
             >
-              <div className="relative w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
-                <Image
-                  src={car.hero_image || '/placeholder.png'} alt="" fill
-                  className={car.hero_image ? 'object-cover' : 'object-contain'}
-                />
+              <div className="w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-elevated flex items-center justify-center">
+                {/* eslint-disable-next-line @next/next/no-img-element -- hero_image can be any manually-pasted external URL, not just Supabase/Wikimedia; next/image throws on unlisted hostnames, a plain img never does */}
+                <img src={car.hero_image || '/placeholder.png'} alt="" className="w-full h-full object-cover" />
               </div>
               <span className="text-body text-text-primary">
                 {car.make} {car.model} {car.generation}
