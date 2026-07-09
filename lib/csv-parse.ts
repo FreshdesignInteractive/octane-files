@@ -29,11 +29,17 @@ export function parseCsv(text: string): string[][] {
 }
 
 // Parses CSV text into an array of header-keyed row objects, plus the raw
-// header list (so callers can flag unknown columns before mapping).
+// header list (so callers can flag unknown columns before mapping). Rows
+// whose first cell starts with '#' are treated as comments — never surfaced
+// as data — so a template can embed its own field guide directly in the
+// file (e.g. "# DesirabilityTier: pick exactly one of Blue-chip/High/...")
+// without the importer ever seeing it as a bogus row to validate.
 export function parseCsvToRows(text: string): { headers: string[]; rows: Record<string, string>[] } {
   const [header, ...dataRows] = parseCsv(text)
   const headers = header ?? []
-  const rows = dataRows.map(cols => Object.fromEntries(headers.map((h, i) => [h, cols[i] ?? ''])))
+  const rows = dataRows
+    .filter(cols => !(cols[0] ?? '').trim().startsWith('#'))
+    .map(cols => Object.fromEntries(headers.map((h, i) => [h, cols[i] ?? ''])))
   return { headers, rows }
 }
 

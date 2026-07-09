@@ -85,6 +85,48 @@ function csvLine(fields: string[]): string {
   return fields.map(csvEscape).join(',')
 }
 
+// A comment line is emitted as a single (properly quoted, if it contains
+// commas) CSV cell — csvLine on a one-element array — so it reads as one
+// clean line in Excel/Sheets instead of spilling across columns. Recognized
+// by parseCsvToRows (lib/csv-parse.ts) via a leading '#' and dropped before
+// the importer ever sees it as data.
+function commentLine(text: string): string {
+  return csvLine([text])
+}
+
+function fieldGuideLine(spec: FieldSpec): string | null {
+  if (spec.type === 'enum') return `# ${spec.header}: pick exactly one — ${spec.allowedValues!.join(', ')}`
+  if (spec.type === 'enum_array') return `# ${spec.header}: pick one or more, separated by semicolons (;) — ${spec.allowedValues!.join(', ')}`
+  if (spec.type === 'boolean') return `# ${spec.header}: Yes or No`
+  if (spec.type === 'integer') return `# ${spec.header}: a whole number`
+  return null // free-text fields need no explanation
+}
+
+// Embedded directly in the CSV (as '#' comment rows) rather than a separate
+// document, so there's one file to hand off, not two that can drift apart —
+// self-contained enough for someone (or another AI) with zero access to
+// this codebase to fill the file in correctly.
+function enrichmentFieldGuide(): string[] {
+  return [
+    commentLine('# ── Field guide — lines starting with # are ignored by the importer ──'),
+    commentLine('# Make, Model, Generation must exactly match an existing car. Unmatched rows are skipped, never created.'),
+    commentLine('# Blank cells mean "leave this field unchanged" — they never erase existing content.'),
+    commentLine('# All columns not listed below are free text with no fixed format.'),
+    ...ENRICHMENT_FIELDS.map(fieldGuideLine).filter((l): l is string => l !== null),
+    commentLine('# ── End of field guide — real rows start below ──'),
+  ]
+}
+
+function trimsFieldGuide(): string[] {
+  return [
+    commentLine('# ── Field guide — lines starting with # are ignored by the importer ──'),
+    commentLine('# Make, Model, Generation must exactly match an existing car. Unmatched rows are skipped, never created.'),
+    commentLine('# Name is required and is part of the match key — one row per trim, e.g. "Hemi R/T" or "Daytona".'),
+    commentLine('# Years, Description, ProductionNotes are free text. Blank on an existing trim means "leave unchanged".'),
+    commentLine('# ── End of field guide — real rows start below ──'),
+  ]
+}
+
 // One representative value per field type, so the exact expected format
 // (enum casing, ';'-separated arrays, Yes/No booleans) is unambiguous —
 // free-text fields are left blank since there's no format to demonstrate.
@@ -104,11 +146,23 @@ function exampleValueFor(spec: FieldSpec): string {
 export function buildEnrichmentTemplateCsv(): string {
   const headers = [...KEY_COLUMNS, ...ENRICHMENT_FIELDS.map(f => f.header)]
   const example = ['ExampleMake', 'ExampleModel', '1st Gen', ...ENRICHMENT_FIELDS.map(exampleValueFor)]
-  return [csvLine(headers), csvLine(example)].join('\n') + '\n'
+  return [csvLine(headers), ...enrichmentFieldGuide(), csvLine(example)].join('\n') + '\n'
 }
 
 export function buildTrimsTemplateCsv(): string {
   const headers = [...KEY_COLUMNS, ...TRIM_FIELDS.map(f => f.header)]
   const example = ['ExampleMake', 'ExampleModel', '1st Gen', 'Example Trim Name', '1969', '', '']
-  return [csvLine(headers), csvLine(example)].join('\n') + '\n'
+  return [csvLine(headers), ...trimsFieldGuide(), csvLine(example)].join('\n') + '\n'
+}
+
+// Pre-fills Make/Model/Generation for every real car in the catalog, with
+// every content column left blank — for handing off to someone (or another
+// AI with no access to this codebase/database) to fill in en masse without
+// ever having to invent an identity, which would otherwise silently show up
+// as "Unmatched" in preview if the wording didn't exactly match a real car.
+export function buildEnrichmentCatalogCsv(cars: { make: string; model: string; generation: string }[]): string {
+  const headers = [...KEY_COLUMNS, ...ENRICHMENT_FIELDS.map(f => f.header)]
+  const blankFields = ENRICHMENT_FIELDS.map(() => '')
+  const rows = cars.map(c => csvLine([c.make, c.model, c.generation, ...blankFields]))
+  return [csvLine(headers), ...enrichmentFieldGuide(), ...rows].join('\n') + '\n'
 }

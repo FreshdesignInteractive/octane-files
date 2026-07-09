@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { parseCsvToRows, downloadCsv } from '@/lib/csv-parse'
-import { buildEnrichmentTemplateCsv } from '@/lib/bulk-import-schema'
+import { buildEnrichmentTemplateCsv, buildEnrichmentCatalogCsv } from '@/lib/bulk-import-schema'
 
 interface FieldDiff { field: string; header: string; from: unknown; to: unknown }
 interface FieldError { field: string; header: string; value: string; reason: string }
@@ -30,6 +30,19 @@ export default function BulkImportEnrichment() {
   const [previewing, setPreviewing] = useState(false)
   const [committing, setCommitting] = useState(false)
   const [msg, setMsg] = useState('')
+  const [downloadingCatalog, setDownloadingCatalog] = useState(false)
+
+  // Pre-filled with every real car's Make/Model/Generation so whoever fills
+  // the file in (including another AI with no database access) never has
+  // to invent an identity — an invented one just silently shows up as
+  // "Unmatched" in preview instead of failing loudly.
+  async function downloadCatalogTemplate() {
+    setDownloadingCatalog(true)
+    const res = await fetch('/api/models?limit=500')
+    const { data } = await res.json()
+    downloadCsv('octane-files-enrichment-all-cars.csv', buildEnrichmentCatalogCsv(data ?? []))
+    setDownloadingCatalog(false)
+  }
 
   function handleFile(file: File) {
     const reader = new FileReader()
@@ -96,13 +109,23 @@ export default function BulkImportEnrichment() {
 
   return (
     <div className="flex flex-col gap-5">
-      <button
-        type="button"
-        onClick={() => downloadCsv('octane-files-enrichment-template.csv', buildEnrichmentTemplateCsv())}
-        className="text-xs text-text-tertiary underline self-start bg-transparent border-none cursor-pointer p-0"
-      >
-        ↓ Download starter CSV template
-      </button>
+      <div className="flex gap-4">
+        <button
+          type="button"
+          onClick={() => downloadCsv('octane-files-enrichment-template.csv', buildEnrichmentTemplateCsv())}
+          className="text-xs text-text-tertiary underline self-start bg-transparent border-none cursor-pointer p-0"
+        >
+          ↓ Download starter CSV template
+        </button>
+        <button
+          type="button"
+          onClick={downloadCatalogTemplate}
+          disabled={downloadingCatalog}
+          className="text-xs text-text-tertiary underline self-start bg-transparent border-none cursor-pointer p-0 disabled:opacity-60"
+        >
+          {downloadingCatalog ? 'Loading…' : '↓ Download all cars (for mass enrichment)'}
+        </button>
+      </div>
       <div className="flex items-center gap-3">
         <input
           type="file" accept=".csv"
