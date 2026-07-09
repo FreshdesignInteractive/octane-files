@@ -1,28 +1,74 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useEffect, useState, useRef, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import { checkIsAdmin } from '@/lib/is-admin'
 import SignInDialog from '@/components/SignInDialog'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
-import type { Profile } from '@/lib/types'
+import type { Profile, CarSummary } from '@/lib/types'
 
 function HeaderSearch() {
   const router = useRouter()
   const params = useSearchParams()
   const inputRef = useRef<HTMLInputElement>(null)
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const [query, setQuery] = useState(params.get('q') ?? '')
+  const [suggestions, setSuggestions] = useState<CarSummary[]>([])
+  const [open, setOpen] = useState(false)
+  const [activeIndex, setActiveIndex] = useState(-1)
 
   function handleSearch(value: string) {
+    setQuery(value)
     const p = new URLSearchParams(params.toString())
     if (value) p.set('q', value)
     else p.delete('q')
     router.push(`/?${p.toString()}`, { scroll: false })
   }
 
+  // Debounced typeahead — separate from the existing per-keystroke full-grid
+  // URL update above, which stays as-is for browsing the homepage results.
+  // All state updates are deferred inside the timeout (never synchronous in
+  // the effect body itself), including the empty-query clear.
+  useEffect(() => {
+    const q = query.trim()
+    const timeout = setTimeout(async () => {
+      if (!q) { setSuggestions([]); setOpen(false); return }
+      const res = await fetch(`/api/models?q=${encodeURIComponent(q)}&limit=6`)
+      if (!res.ok) return
+      const { data } = await res.json()
+      setSuggestions(data ?? [])
+      setOpen(true)
+      setActiveIndex(-1)
+    }, 250)
+    return () => clearTimeout(timeout)
+  }, [query])
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  function selectCar(slug: string) {
+    setOpen(false)
+    router.push(`/cars/${slug}`)
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (!open || suggestions.length === 0) return
+    if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, suggestions.length - 1)) }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0)) }
+    else if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); selectCar(suggestions[activeIndex].slug) }
+    else if (e.key === 'Escape') setOpen(false)
+  }
+
   return (
-    <div className="relative w-1/2 max-w-130 min-w-30">
+    <div ref={wrapRef} className="relative w-1/2 max-w-130 min-w-30">
       <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
         width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
@@ -31,10 +77,34 @@ function HeaderSearch() {
         ref={inputRef}
         type="text"
         placeholder="Make, Model or Generation..."
-        defaultValue={params.get('q') ?? ''}
+        value={query}
         onChange={e => handleSearch(e.target.value)}
+        onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
+        onKeyDown={handleKeyDown}
         className="w-full h-9 bg-bg-elevated border border-border rounded-full pl-9 pr-4 text-body text-text-primary outline-none transition-colors focus:border-border-mid focus:bg-white"
       />
+      {open && suggestions.length > 0 && (
+        <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-white border border-border rounded-lg shadow-dropdown z-[200] overflow-hidden">
+          {suggestions.map((car, i) => (
+            <Link
+              key={car.id}
+              href={`/cars/${car.slug}`}
+              onClick={() => setOpen(false)}
+              className={`flex items-center gap-3 px-3 py-2 no-underline transition-colors ${i === activeIndex ? 'bg-bg-elevated' : ''}`}
+            >
+              <div className="relative w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
+                <Image
+                  src={car.hero_image || '/placeholder.png'} alt="" fill
+                  className={car.hero_image ? 'object-cover' : 'object-contain'}
+                />
+              </div>
+              <span className="text-body text-text-primary">
+                {car.make} {car.model} {car.generation}
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
