@@ -76,3 +76,39 @@ export const TRIM_FIELDS = [
 ] as const
 
 export const KNOWN_TRIM_HEADERS = new Set<string>([...KEY_COLUMNS, ...TRIM_FIELDS.map(f => f.header)])
+
+function csvEscape(v: string): string {
+  return /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
+}
+
+function csvLine(fields: string[]): string {
+  return fields.map(csvEscape).join(',')
+}
+
+// One representative value per field type, so the exact expected format
+// (enum casing, ';'-separated arrays, Yes/No booleans) is unambiguous —
+// free-text fields are left blank since there's no format to demonstrate.
+// The Make/Model/Generation on the example row deliberately don't match
+// any real car, so uploading the template unmodified is harmless (shows up
+// as "Unmatched" in preview) rather than accidentally overwriting a car.
+function exampleValueFor(spec: FieldSpec): string {
+  if (spec.type === 'enum') return spec.allowedValues![0]
+  if (spec.type === 'enum_array') return spec.allowedValues!.slice(0, 2).join(';')
+  if (spec.type === 'boolean') return 'Yes'
+  if (spec.type === 'integer') return '1'
+  return ''
+}
+
+// Generated from the same field list the importer validates against, so
+// the template can never drift out of sync with what's actually accepted.
+export function buildEnrichmentTemplateCsv(): string {
+  const headers = [...KEY_COLUMNS, ...ENRICHMENT_FIELDS.map(f => f.header)]
+  const example = ['ExampleMake', 'ExampleModel', '1st Gen', ...ENRICHMENT_FIELDS.map(exampleValueFor)]
+  return [csvLine(headers), csvLine(example)].join('\n') + '\n'
+}
+
+export function buildTrimsTemplateCsv(): string {
+  const headers = [...KEY_COLUMNS, ...TRIM_FIELDS.map(f => f.header)]
+  const example = ['ExampleMake', 'ExampleModel', '1st Gen', 'Example Trim Name', '1969', '', '']
+  return [csvLine(headers), csvLine(example)].join('\n') + '\n'
+}

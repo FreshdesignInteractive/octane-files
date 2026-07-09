@@ -36,3 +36,15 @@ export function parseCsvToRows(text: string): { headers: string[]; rows: Record<
   const rows = dataRows.map(cols => Object.fromEntries(headers.map((h, i) => [h, cols[i] ?? ''])))
   return { headers, rows }
 }
+
+// Triggers a browser download of generated CSV text — no server round-trip,
+// since the template content is just a pure function of the schema.
+export function downloadCsv(filename: string, content: string) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = filename
+  a.click()
+  URL.revokeObjectURL(url)
+}

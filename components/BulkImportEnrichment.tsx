@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { parseCsvToRows } from '@/lib/csv-parse'
+import { parseCsvToRows, downloadCsv } from '@/lib/csv-parse'
+import { buildEnrichmentTemplateCsv } from '@/lib/bulk-import-schema'
 
 interface FieldDiff { field: string; header: string; from: unknown; to: unknown }
 interface FieldError { field: string; header: string; value: string; reason: string }
@@ -95,6 +96,13 @@ export default function BulkImportEnrichment() {
 
   return (
     <div className="flex flex-col gap-5">
+      <button
+        type="button"
+        onClick={() => downloadCsv('octane-files-enrichment-template.csv', buildEnrichmentTemplateCsv())}
+        className="text-xs text-text-tertiary underline self-start bg-transparent border-none cursor-pointer p-0"
+      >
+        ↓ Download starter CSV template
+      </button>
       <div className="flex items-center gap-3">
         <input
           type="file" accept=".csv"
