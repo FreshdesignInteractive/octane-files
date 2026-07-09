@@ -59,6 +59,13 @@ function HeaderSearch() {
     router.push(`/cars/${slug}`)
   }
 
+  function clearSearch() {
+    handleSearch('')
+    setSuggestions([])
+    setOpen(false)
+    inputRef.current?.focus()
+  }
+
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
     if (!open || suggestions.length === 0) return
     if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, suggestions.length - 1)) }
@@ -81,8 +88,20 @@ function HeaderSearch() {
         onChange={e => handleSearch(e.target.value)}
         onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
         onKeyDown={handleKeyDown}
-        className="w-full h-9 bg-bg-elevated border border-border rounded-full pl-9 pr-4 text-body text-text-primary outline-none transition-colors focus:border-border-mid focus:bg-white"
+        className="w-full h-9 bg-bg-elevated border border-border rounded-full pl-9 pr-9 text-body text-text-primary outline-none transition-colors focus:border-border-mid focus:bg-white"
       />
+      {query && (
+        <button
+          type="button"
+          onClick={clearSearch}
+          aria-label="Clear search"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary bg-transparent border-none cursor-pointer p-0 flex items-center"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      )}
       {open && suggestions.length > 0 && (
         <div className="absolute top-[calc(100%+6px)] left-0 right-0 bg-white border border-border rounded-lg shadow-dropdown z-[200] overflow-hidden">
           {suggestions.map((car, i) => (
