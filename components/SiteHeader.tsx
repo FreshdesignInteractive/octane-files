@@ -141,7 +141,8 @@ function HeaderSearch() {
               key={car.id}
               href={`/cars/${car.slug}`}
               onClick={() => setOpen(false)}
-              className={`flex items-center gap-3 px-3 py-2 no-underline transition-colors ${i === activeIndex ? 'bg-bg-elevated' : ''}`}
+              onMouseEnter={() => setActiveIndex(i)}
+              className={`flex items-center gap-3 px-3 py-2 no-underline transition-colors hover:bg-bg-elevated ${i === activeIndex ? 'bg-bg-elevated' : ''}`}
             >
               <div className="w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-elevated flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element -- hero_image can be any manually-pasted external URL, not just Supabase/Wikimedia; next/image throws on unlisted hostnames, a plain img never does */}
