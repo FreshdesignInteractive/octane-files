@@ -143,7 +143,7 @@ export interface Car extends CarSummary {
   wikipedia_url: string | null
   radar_scores: Partial<Record<
     'desirability' | 'rarity' | 'driving_thrill' | 'investment_trajectory' |
-    'usability' | 'restoration_difficulty' | 'cultural_impact', number
+    'usability' | 'ease_of_restoration' | 'cultural_impact', number
   >> | null
   analog_index: number | null
   homologation_special: boolean

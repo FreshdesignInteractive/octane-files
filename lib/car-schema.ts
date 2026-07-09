@@ -53,7 +53,7 @@ export const RADAR_AXES = [
   { key: 'driving_thrill', label: 'Driving Thrill' },
   { key: 'investment_trajectory', label: 'Investment Trajectory' },
   { key: 'usability', label: 'Usability' },
-  { key: 'restoration_difficulty', label: 'Restoration Difficulty' },
+  { key: 'ease_of_restoration', label: 'Ease of Restoration' },
   { key: 'cultural_impact', label: 'Cultural Impact' },
 ] as const
 export type RadarAxisKey = (typeof RADAR_AXES)[number]['key']
