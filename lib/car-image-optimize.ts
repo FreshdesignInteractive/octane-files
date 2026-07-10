@@ -35,6 +35,22 @@ export async function optimizeAndUploadCarImage(
     .webp({ quality: QUALITY })
     .toBuffer()
 
+  // Re-verifying this under the SAME run as everything else below, not
+  // trusting the earlier isolated result: does sharp, in this Vercel
+  // function, successfully re-decode the exact buffer it just produced?
+  // Every upload-path variant tried so far (storage-js + Next fetch,
+  // storage-js + undici fetch, raw POST + undici, no client library at
+  // all) has produced byte-identical corruption — suspicious enough that
+  // the earlier "sharp's output is fine" conclusion deserves re-checking
+  // in this exact context rather than taken on faith from a prior deploy.
+  let selfDecodeResult: string
+  try {
+    const stats = await sharp(optimized).stats()
+    selfDecodeResult = `OK (channels=${stats.channels.length})`
+  } catch (err) {
+    selfDecodeResult = `FAILED: ${err instanceof Error ? err.message : String(err)}`
+  }
+
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error(`${slot}: [TEST] no session on the caller's client — can't build an authenticated one-off client`)
 
@@ -103,7 +119,8 @@ export async function optimizeAndUploadCarImage(
   // Always report in full, whether everything matched or not — this phase
   // is about visibility, not about silently succeeding.
   throw new Error(
-    `${slot}: [TEST] upload=${optimized.length}b/${hashOriginal.slice(0, 12)} | ` +
+    `${slot}: [TEST] selfDecode=${selfDecodeResult} | ` +
+    `upload=${optimized.length}b/${hashOriginal.slice(0, 12)} | ` +
     `read#1(+0s)=${buf1.length}b/${hash1.slice(0, 12)} [${headerSummary(res1)}] | ` +
     `read#2(+2.5s)=${buf2.length}b/${hash2.slice(0, 12)} [${headerSummary(res2)}] | ` +
     `upload==read#1: ${hashOriginal === hash1} (diverge@${divergePoint(optimized, buf1)}) | ` +
