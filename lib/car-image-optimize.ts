@@ -22,21 +22,16 @@ export async function optimizeAndUploadCarImage(
     .webp({ quality: QUALITY })
     .toBuffer()
 
-  // Temporary diagnostic: force a full decode of sharp's own output, right
-  // here, before it ever reaches Supabase. A production upload came back
-  // corrupt (valid RIFF/WebP header, undecodable body) even after
-  // externalizing sharp from the Turbopack bundle — this pinpoints whether
-  // the corruption happens during sharp's own encode (this throws) or
-  // afterward, e.g. during the Storage upload (this passes, but the stored
-  // file is still bad). Remove once the real cause is found.
-  try {
-    await sharp(optimized).stats()
-  } catch (err) {
-    throw new Error(`${slot}: sharp produced undecodable output for its own image (${optimized.length} bytes) — corruption is happening during encoding: ${err instanceof Error ? err.message : String(err)}`)
-  }
-
+  // A self-decode diagnostic (sharp re-reading its own output buffer,
+  // immediately after encoding, before ever reaching Supabase) confirmed
+  // sharp's encoding is fine — the corruption happened specifically during
+  // the Storage upload. supabase-js special-cases Blob/FormData bodies but
+  // falls through to a generic path for a raw Node Buffer, and that
+  // generic path isn't reliably treated as pure binary by every fetch
+  // implementation. Wrapping it in a real Blob puts it on the
+  // well-supported path instead.
   const path = `${slug}/${slot}-${Date.now()}.webp`
-  const { error } = await supabase.storage.from(BUCKET).upload(path, optimized, {
+  const { error } = await supabase.storage.from(BUCKET).upload(path, new Blob([optimized], { type: 'image/webp' }), {
     contentType: 'image/webp', upsert: false,
   })
   if (error) throw new Error(`${slot}: ${error.message}`)
