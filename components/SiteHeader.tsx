@@ -231,6 +231,16 @@ export default function SiteHeader() {
     // onAuthStateChange fires INITIAL_SESSION immediately on mount — handles both
     // "already logged in" and "not logged in" cases without a separate getSession call.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
+      // requireAdmin() (and anything else gating a page behind sign-in)
+      // redirects here with ?signin=1 since there's no dedicated /login
+      // route — this is what actually opens the dialog on arrival. Checked
+      // once, on the same INITIAL_SESSION firing used for the rest of this
+      // mount-time setup below.
+      if (event === 'INITIAL_SESSION' && window.location.search.includes('signin=1')) {
+        setShowSignIn(true)
+        window.history.replaceState({}, '', window.location.pathname)
+      }
+
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (!session?.user) { setProfile(null); setIsAdmin(false); return }
 
