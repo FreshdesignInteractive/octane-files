@@ -160,7 +160,6 @@ export default function GenerationFieldsEditor({
           <ImageUploadField
             value={value.hero_image}
             onChange={v => onChange({ hero_image: v })}
-            pathPrefix={`${value.slug || 'untitled'}/hero`}
           />
         )}
         <div className="mt-5">
@@ -172,7 +171,6 @@ export default function GenerationFieldsEditor({
                     <ImageUploadField
                       value={url}
                       onChange={v => onChange({ gallery_images: value.gallery_images.map((u, j) => j === i ? (v ?? '') : u) })}
-                      pathPrefix={`${value.slug || 'untitled'}/gallery-${i}`}
                     />
                   </div>
                   <button
