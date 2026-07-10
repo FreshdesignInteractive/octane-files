@@ -10,6 +10,8 @@ import {
 import { KNOWN_ENRICHMENT_HEADERS } from '@/lib/bulk-import-schema'
 import { parseEnrichmentFields, findUnknownColumns, applyEnrichmentValues } from '@/lib/bulk-import'
 import { parseCsvToRows } from '@/lib/csv-parse'
+import { createClient as createBrowserSupabaseClient } from '@/lib/supabase-browser'
+import { deleteCarImageIfOwned } from '@/lib/storage-cleanup'
 
 const IMAGE_SLOTS = ['hero', 'gallery-1', 'gallery-2', 'gallery-3'] as const
 
@@ -208,6 +210,12 @@ export default function AdminModelForm({
   // loose files instead of a folder since this is always exactly one car.
   // Each file is resized/uploaded immediately (so you see it land), but
   // only `form` is updated — Save still commits it.
+  // Server resizes only (sharp needs Node) and hands the bytes back — the
+  // actual Storage upload happens here, client-side. A long investigation
+  // proved a Vercel-server-to-Supabase upload of binary data comes back
+  // corrupted (sharp's output itself is fine; every client-side upload
+  // variant tried still corrupted; the identical upload from a browser is
+  // byte-perfect), so the write has to originate from the browser.
   async function importImages(fileList: FileList) {
     const bySlot = new Map<string, File>()
     for (const file of Array.from(fileList)) {
@@ -219,19 +227,37 @@ export default function AdminModelForm({
       return
     }
 
+    const oldHero = form.hero_image
+    const oldGallery = form.gallery_images
+
     setImagesUploading(true)
     setMsg(`Uploading 0/${bySlot.size}...`)
     const uploaded: Record<string, string> = {}
     const failures: string[] = []
     let done = 0
+    const browserSupabase = createBrowserSupabaseClient()
     for (const [slot, file] of bySlot) {
-      const fd = new FormData()
-      fd.append('slot', slot)
-      fd.append('file', file)
-      const res = await fetch(`/api/admin/models/${generation.slug}/image`, { method: 'POST', body: fd })
-      const data = await res.json().catch(() => ({}))
-      if (res.ok) uploaded[slot] = data.url
-      else failures.push(`${slot}: ${data.error ?? 'upload failed'}`)
+      try {
+        const fd = new FormData()
+        fd.append('file', file)
+        const resizeRes = await fetch(`/api/admin/models/${generation.slug}/image`, { method: 'POST', body: fd })
+        if (!resizeRes.ok) {
+          const err = await resizeRes.json().catch(() => ({}))
+          throw new Error(err.error ?? 'resize failed')
+        }
+        const optimizedBlob = await resizeRes.blob()
+
+        const path = `${generation.slug}/${slot}-${Date.now()}.webp`
+        const { error: uploadError } = await browserSupabase.storage.from('car-images').upload(path, optimizedBlob, {
+          contentType: 'image/webp', upsert: false,
+        })
+        if (uploadError) throw new Error(uploadError.message)
+
+        const { data: pub } = browserSupabase.storage.from('car-images').getPublicUrl(path)
+        uploaded[slot] = pub.publicUrl
+      } catch (err) {
+        failures.push(`${slot}: ${err instanceof Error ? err.message : String(err)}`)
+      }
       done++
       setMsg(`Uploading ${done}/${bySlot.size}...`)
     }
@@ -245,6 +271,14 @@ export default function AdminModelForm({
         if (galleryUrls.length > 0) next.gallery_images = galleryUrls
         return next
       })
+
+      // Best-effort cleanup of whatever these slots replaced — safe to do
+      // client-side since deletes carry no binary body and aren't subject
+      // to the upload corruption above.
+      if (uploaded.hero && oldHero) deleteCarImageIfOwned(oldHero)
+      if (IMAGE_SLOTS.some(s => s !== 'hero' && uploaded[s])) {
+        for (const old of oldGallery ?? []) deleteCarImageIfOwned(old)
+      }
     }
 
     if (failures.length > 0) setMsg(`Error: ${failures.join('; ')}`)

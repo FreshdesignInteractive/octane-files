@@ -1,29 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { checkIsAdmin } from '@/lib/is-admin'
-import { optimizeAndUploadCarImage } from '@/lib/car-image-optimize'
+import { resizeCarImage } from '@/lib/car-image-optimize'
 
-const VALID_SLOTS = ['hero', 'gallery-1', 'gallery-2', 'gallery-3']
-const BUCKET = 'car-images'
-
-function extractStoragePath(url: string): string | null {
-  const marker = `/storage/v1/object/public/${BUCKET}/`
-  const idx = url.indexOf(marker)
-  if (idx === -1) return null
-  return decodeURIComponent(url.slice(idx + marker.length))
-}
-
-// Resizes/uploads ONE image and returns its URL — does not write
-// hero_image/gallery_images itself (the client merges the URL into its
-// in-memory form state, same as "Ask AI to fill", and the existing Save
-// button is what commits it). It DOES delete whatever was previously saved
-// for this exact slot, best-effort, right here — that doesn't need to wait
-// for Save, since it only needs to read the row's *current* saved value,
-// not write a new one. Without this, re-uploading a car's photos (a normal
-// thing to do while dialing in the Quick Import workflow) orphaned a full
-// duplicate image set in storage every time instead of replacing it.
-// Gallery position 0/1/2 is treated as gallery-1/2/3 by convention — matches
-// how this endpoint and the bulk image-upload tool both write the array.
+// Resize-only — returns the optimized WebP bytes directly, does not touch
+// Supabase Storage or the generations row. The client uploads the returned
+// bytes itself (a browser-vs-server-origin test proved Storage uploads
+// from Vercel's server come back corrupted; the identical upload from a
+// browser is byte-perfect — see the comment in lib/car-image-optimize.ts)
+// and does its own cleanup of the previously-saved image via the existing
+// deleteCarImageIfOwned client helper, since it already has that URL in
+// its in-memory form state. Still gated behind admin auth even though it
+// only touches file bytes, not any database — no reason to open a resize
+// endpoint to non-admins.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -35,40 +24,20 @@ export async function POST(
   }
 
   const { slug } = await params
-  const { data: gen } = await supabase
-    .from('generations')
-    .select('id, hero_image, gallery_images')
-    .eq('slug', slug)
-    .maybeSingle()
-  if (!gen) return NextResponse.json({ error: 'Car not found' }, { status: 404 })
+  void slug // not needed for a resize-only response; kept in the route shape for consistency with the rest of /api/admin/models/[slug]/*
 
   const form = await req.formData()
-  const slot = String(form.get('slot') ?? '')
   const file = form.get('file')
-  if (!VALID_SLOTS.includes(slot)) {
-    return NextResponse.json({ error: `Invalid slot "${slot}" — expected one of ${VALID_SLOTS.join(', ')}` }, { status: 400 })
-  }
   if (!(file instanceof File)) {
     return NextResponse.json({ error: 'Missing file' }, { status: 400 })
   }
 
-  let url: string
   try {
-    url = await optimizeAndUploadCarImage(supabase, slug, slot, file)
+    const optimized = await resizeCarImage(file)
+    return new NextResponse(new Uint8Array(optimized), {
+      headers: { 'Content-Type': 'image/webp', 'Content-Length': String(optimized.length) },
+    })
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 400 })
   }
-
-  const oldUrl = slot === 'hero'
-    ? gen.hero_image
-    : (gen.gallery_images ?? [])[Number(slot.split('-')[1]) - 1]
-  if (oldUrl) {
-    const path = extractStoragePath(oldUrl)
-    if (path) {
-      const { error } = await supabase.storage.from(BUCKET).remove([path])
-      if (error) console.error('Failed to delete replaced car image:', path, error.message)
-    }
-  }
-
-  return NextResponse.json({ slot, url })
 }

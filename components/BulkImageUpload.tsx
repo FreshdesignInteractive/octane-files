@@ -94,6 +94,13 @@ export default function BulkImageUpload() {
     setPreviewing(false)
   }
 
+  // Server resizes only (sharp needs Node) and hands the bytes back — the
+  // actual Storage upload happens here, client-side. A Vercel-server-to-
+  // Supabase upload of binary data was proven to come back corrupted,
+  // while the identical upload from a browser is byte-perfect, so every
+  // write has to originate from the browser now — the commit route only
+  // gets the already-uploaded URLs and writes them to the DB (plain JSON,
+  // never subject to that corruption).
   async function commit() {
     if (!preview) return
     const toCommit = preview.filter(r => r.match.status === 'matched' && included[r.group.slug])
@@ -102,16 +109,39 @@ export default function BulkImageUpload() {
     setCommitting(true)
     setProgress({ done: 0, total: toCommit.length })
     const out: CommitResult[] = []
+    const browserSupabase = createClient()
 
     for (const row of toCommit) {
-      const fd = new FormData()
-      fd.append('slug', row.group.slug)
-      for (const slot of VALID_SLOTS) {
-        const file = row.group.files[slot]
-        if (file) fd.append(slot, file)
-      }
       try {
-        const res = await fetch('/api/admin/bulk-image-upload/commit', { method: 'POST', body: fd })
+        const urls: Partial<Record<Slot, string>> = {}
+        for (const slot of VALID_SLOTS) {
+          const file = row.group.files[slot]
+          if (!file) continue
+
+          const fd = new FormData()
+          fd.append('file', file)
+          const resizeRes = await fetch(`/api/admin/models/${row.group.slug}/image`, { method: 'POST', body: fd })
+          if (!resizeRes.ok) {
+            const err = await resizeRes.json().catch(() => ({}))
+            throw new Error(`${slot}: ${err.error ?? 'resize failed'}`)
+          }
+          const optimizedBlob = await resizeRes.blob()
+
+          const path = `${row.group.slug}/${slot}-${Date.now()}.webp`
+          const { error: uploadError } = await browserSupabase.storage.from('car-images').upload(path, optimizedBlob, {
+            contentType: 'image/webp', upsert: false,
+          })
+          if (uploadError) throw new Error(`${slot}: ${uploadError.message}`)
+
+          const { data: pub } = browserSupabase.storage.from('car-images').getPublicUrl(path)
+          urls[slot] = pub.publicUrl
+        }
+
+        const res = await fetch('/api/admin/bulk-image-upload/commit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ slug: row.group.slug, urls }),
+        })
         const data = await res.json().catch(() => ({}))
         out.push({ slug: row.group.slug, ok: res.ok, message: res.ok ? `${data.uploaded.length} image(s) attached` : (data.error ?? 'Failed') })
       } catch (err) {
