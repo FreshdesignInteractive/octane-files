@@ -21,7 +21,13 @@ export default function SignInDialog({ onClose }: { onClose: () => void }) {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://www.octanefiles.com/auth/callback',
+        // Wherever this is actually running (localhost, a Vercel preview,
+        // or eventually the live custom domain) — not hardcoded, since the
+        // custom domain isn't live yet and this must work on whatever URL
+        // is currently being tested. Supabase validates this against its
+        // own Redirect URLs allow-list (Dashboard -> Authentication -> URL
+        // Configuration), so any origin used here must be added there too.
+        redirectTo: `${window.location.origin}/auth/callback`,
         queryParams: { prompt: 'select_account' },
       },
     })
