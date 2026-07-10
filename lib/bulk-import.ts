@@ -1,13 +1,18 @@
-// Shared server-side helpers for the bulk CSV importer: resolving a CSV
-// row's (make, model, generation code) to a live generation row, parsing +
-// validating a row's enrichment fields against the schema in
-// bulk-import-schema.ts, and diffing current-vs-incoming values for the
-// preview report. Blank cell = omitted key = "leave unchanged" throughout —
-// callers never see a key for a field the CSV didn't provide.
+// Shared helpers for CSV enrichment data: resolving a CSV row's (make,
+// model, generation code) to a live generation row, parsing + validating a
+// row's enrichment fields against the schema in bulk-import-schema.ts,
+// diffing current-vs-incoming values for the bulk importer's preview
+// report, and applying parsed values onto a GenerationInput for the per-car
+// quick-import flow. Blank cell = omitted key = "leave unchanged"
+// throughout — callers never see a key for a field the CSV didn't provide.
+//
+// No server-only imports (resolveGeneration takes a SupabaseClient as a
+// parameter rather than constructing one) — safe to import from either an
+// API route or a 'use client' component.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ENRICHMENT_FIELDS, isRadarField, RADAR_FIELD_TO_AXIS, type EnrichmentFieldKey } from './bulk-import-schema'
-import type { RadarScores } from './car-schema'
+import type { RadarScores, GenerationInput } from './car-schema'
 
 export interface ResolvedGeneration {
   id: string
@@ -131,4 +136,31 @@ export function diffEnrichmentFields(
     if (changed) diffs.push({ field: spec.key, header: spec.header, from, to })
   }
   return diffs
+}
+
+// Merges parsed CSV values onto a GenerationInput for the per-car edit
+// page's quick-import flow — same "only touch provided fields" rule as
+// diffEnrichmentFields, and the same radar_scores merge-not-replace
+// behavior as bulk_update_generation_enrichment (a CSV that only supplies
+// RadarRarity doesn't clobber the other 6 already-set axes). Returns a new
+// object; doesn't mutate `current`. A targeted cast is needed to assign a
+// dynamic EnrichmentFieldKey onto GenerationInput's specifically-typed
+// fields (e.g. `class: CarClassValue`) — same pattern the edit form's own
+// <select> onChange handlers already use.
+export function applyEnrichmentValues(
+  current: GenerationInput,
+  values: Partial<Record<EnrichmentFieldKey, EnrichmentValue>>
+): GenerationInput {
+  const next = { ...current } as unknown as Record<string, unknown>
+  const radarScores: RadarScores = { ...(current.radar_scores ?? {}) }
+
+  for (const spec of ENRICHMENT_FIELDS) {
+    if (!(spec.key in values)) continue
+    const v = values[spec.key]!
+    if (isRadarField(spec.key)) radarScores[RADAR_FIELD_TO_AXIS[spec.key]] = v as number
+    else next[spec.key] = v
+  }
+
+  next.radar_scores = radarScores
+  return next as unknown as GenerationInput
 }

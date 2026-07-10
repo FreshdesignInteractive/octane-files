@@ -1,12 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import sharp from 'sharp'
 import { createClient } from '@/lib/supabase-server'
 import { checkIsAdmin } from '@/lib/is-admin'
+import { optimizeAndUploadCarImage } from '@/lib/car-image-optimize'
 
 const BUCKET = 'car-images'
 const SLOTS = ['hero', 'gallery-1', 'gallery-2', 'gallery-3'] as const
-const HERO_WIDTH = 900
-const HERO_HEIGHT = 506
 
 function extractStoragePath(url: string): string | null {
   const marker = `/storage/v1/object/public/${BUCKET}/`
@@ -47,25 +45,11 @@ export async function POST(req: NextRequest) {
     const file = form.get(slot)
     if (!(file instanceof File)) continue
 
-    const buffer = Buffer.from(await file.arrayBuffer())
-    let optimized: Buffer
     try {
-      optimized = await sharp(buffer)
-        .resize(HERO_WIDTH, HERO_HEIGHT, { fit: 'cover', position: 'attention' })
-        .webp({ quality: 80 })
-        .toBuffer()
+      uploaded[slot] = await optimizeAndUploadCarImage(supabase, slug, slot, file)
     } catch (err) {
-      return NextResponse.json({ error: `${slot}: not a readable image (${err instanceof Error ? err.message : String(err)})` }, { status: 400 })
+      return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 400 })
     }
-
-    const path = `${slug}/${slot}-${Date.now()}.webp`
-    const { error: uploadError } = await supabase.storage.from(BUCKET).upload(path, optimized, {
-      contentType: 'image/webp', upsert: false,
-    })
-    if (uploadError) return NextResponse.json({ error: `${slot}: ${uploadError.message}` }, { status: 500 })
-
-    const { data: pub } = supabase.storage.from(BUCKET).getPublicUrl(path)
-    uploaded[slot] = pub.publicUrl
   }
 
   if (Object.keys(uploaded).length === 0) {

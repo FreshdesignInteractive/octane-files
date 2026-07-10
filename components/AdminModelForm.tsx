@@ -1,12 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import GenerationFieldsEditor from '@/components/GenerationFieldsEditor'
 import {
   CAR_CLASSES, deriveGenerationSlug,
   type GenerationRecord, type GenerationInput, type TrimRecord, type TrimInput,
   type CarRelationRecord, type CarRelationInput,
 } from '@/lib/car-schema'
+import { KNOWN_ENRICHMENT_HEADERS } from '@/lib/bulk-import-schema'
+import { parseEnrichmentFields, findUnknownColumns, applyEnrichmentValues } from '@/lib/bulk-import'
+import { parseCsvToRows } from '@/lib/csv-parse'
+
+const IMAGE_SLOTS = ['hero', 'gallery-1', 'gallery-2', 'gallery-3'] as const
 
 function toInput(g: GenerationRecord): GenerationInput {
   const {
@@ -45,6 +50,10 @@ export default function AdminModelForm({
   const [filling, setFilling] = useState(false)
   const [archiving, setArchiving] = useState(false)
   const [msg, setMsg] = useState('')
+  const [csvImporting, setCsvImporting] = useState(false)
+  const [imagesUploading, setImagesUploading] = useState(false)
+  const csvInputRef = useRef<HTMLInputElement>(null)
+  const imagesInputRef = useRef<HTMLInputElement>(null)
 
   function update(updates: Partial<GenerationInput>) {
     setForm(f => ({ ...f, ...updates }))
@@ -149,6 +158,99 @@ export default function AdminModelForm({
     setMsg('AI filled — review and save ✓')
   }
 
+  // Parsed entirely client-side, same parseEnrichmentFields/validation the
+  // bulk importer uses — no server round-trip, no separate write path. This
+  // only ever touches `form` in memory; the existing Save button below is
+  // still what commits it, same as fillWithAI above.
+  async function importCsv(file: File) {
+    setCsvImporting(true)
+    setMsg('')
+    const text = await file.text()
+    const { headers, rows } = parseCsvToRows(text)
+    const unknown = findUnknownColumns(headers, KNOWN_ENRICHMENT_HEADERS)
+
+    if (rows.length === 0) {
+      setCsvImporting(false)
+      setMsg('Error: CSV has no data row')
+      return
+    }
+    const row = rows[0]
+    if (rows.length > 1) {
+      console.warn(`CSV has ${rows.length} rows — only the first is used (one car per edit page)`)
+    }
+
+    const rowMake = (row.Make ?? '').trim(), rowModel = (row.Model ?? '').trim(), rowGen = (row.Generation ?? '').trim()
+    const mismatched =
+      (rowMake && rowMake.toLowerCase() !== make.toLowerCase()) ||
+      (rowModel && rowModel.toLowerCase() !== modelName.toLowerCase()) ||
+      (rowGen && rowGen.toLowerCase() !== form.code.toLowerCase())
+    if (mismatched) {
+      const proceed = window.confirm(
+        `This CSV looks like it's for "${rowMake} ${rowModel} ${rowGen}", but you're editing "${make} ${modelName} ${form.code}". Apply it to this car anyway?`
+      )
+      if (!proceed) { setCsvImporting(false); setMsg('CSV import cancelled'); return }
+    }
+
+    const { values, errors } = parseEnrichmentFields(row)
+    setCsvImporting(false)
+    if (errors.length > 0) {
+      setMsg(`Error: ${errors.length} invalid field(s) in CSV — ${errors.map(e => `${e.header} (${e.reason})`).join('; ')}`)
+      return
+    }
+
+    setForm(f => applyEnrichmentValues(f, values))
+    const unknownNote = unknown.length > 0 ? ` (ignored unknown columns: ${unknown.join(', ')})` : ''
+    setMsg(`Applied ${Object.keys(values).length} field(s) from CSV — review and Save${unknownNote}`)
+  }
+
+  // Filename (minus extension) decides the slot — hero.jpg, gallery-1.png,
+  // etc., same convention as the bulk image-upload tool's folders, just
+  // loose files instead of a folder since this is always exactly one car.
+  // Each file is resized/uploaded immediately (so you see it land), but
+  // only `form` is updated — Save still commits it.
+  async function importImages(fileList: FileList) {
+    const bySlot = new Map<string, File>()
+    for (const file of Array.from(fileList)) {
+      const slot = file.name.replace(/\.[^.]+$/, '').toLowerCase()
+      if ((IMAGE_SLOTS as readonly string[]).includes(slot)) bySlot.set(slot, file)
+    }
+    if (bySlot.size === 0) {
+      setMsg(`Error: no recognized filenames (expected ${IMAGE_SLOTS.join(', ')})`)
+      return
+    }
+
+    setImagesUploading(true)
+    setMsg(`Uploading 0/${bySlot.size}...`)
+    const uploaded: Record<string, string> = {}
+    const failures: string[] = []
+    let done = 0
+    for (const [slot, file] of bySlot) {
+      const fd = new FormData()
+      fd.append('slot', slot)
+      fd.append('file', file)
+      const res = await fetch(`/api/admin/models/${generation.slug}/image`, { method: 'POST', body: fd })
+      const data = await res.json().catch(() => ({}))
+      if (res.ok) uploaded[slot] = data.url
+      else failures.push(`${slot}: ${data.error ?? 'upload failed'}`)
+      done++
+      setMsg(`Uploading ${done}/${bySlot.size}...`)
+    }
+    setImagesUploading(false)
+
+    if (Object.keys(uploaded).length > 0) {
+      setForm(f => {
+        const next = { ...f }
+        if (uploaded.hero) next.hero_image = uploaded.hero
+        const galleryUrls = IMAGE_SLOTS.filter(s => s !== 'hero' && uploaded[s]).map(s => uploaded[s])
+        if (galleryUrls.length > 0) next.gallery_images = galleryUrls
+        return next
+      })
+    }
+
+    if (failures.length > 0) setMsg(`Error: ${failures.join('; ')}`)
+    else setMsg(`Attached ${Object.keys(uploaded).length} image(s) — review and Save`)
+  }
+
   const title = `${make} ${modelName}${form.code && form.code.toLowerCase() !== modelName.toLowerCase() ? ' ' + form.code : ''}`
   const msgClass = msg.includes('Error') || msg.includes('failed') ? 'text-error' : 'text-success'
   const suggestedSlug = deriveGenerationSlug(make, modelName, form.code)
@@ -180,6 +282,44 @@ export default function AdminModelForm({
           Archived {new Date(archivedAt).toLocaleDateString()} — hidden from the public site. Use Unarchive above to restore it.
         </div>
       )}
+
+      <div className="mb-7 p-4 rounded-lg border border-border-mid bg-bg-elevated flex flex-col gap-2">
+        <div className="text-label font-bold tracking-[0.08em] text-text-tertiary uppercase">Quick Import</div>
+        <p className="text-label text-text-tertiary -mt-1">
+          Fills the form in memory only — review below and click Save to commit.
+        </p>
+        <div className="flex gap-3 items-center">
+          <button
+            type="button"
+            onClick={() => csvInputRef.current?.click()}
+            disabled={csvImporting}
+            className="btn-secondary h-9 px-4 disabled:opacity-60"
+          >
+            {csvImporting ? 'Importing...' : 'Import CSV'}
+          </button>
+          <input
+            ref={csvInputRef}
+            type="file" accept=".csv" className="hidden"
+            onChange={e => { const f = e.target.files?.[0]; if (f) importCsv(f); e.target.value = '' }}
+          />
+          <button
+            type="button"
+            onClick={() => imagesInputRef.current?.click()}
+            disabled={imagesUploading}
+            className="btn-secondary h-9 px-4 disabled:opacity-60"
+          >
+            {imagesUploading ? 'Uploading...' : 'Attach images'}
+          </button>
+          <input
+            ref={imagesInputRef}
+            type="file" accept="image/*" multiple className="hidden"
+            onChange={e => { if (e.target.files?.length) importImages(e.target.files); e.target.value = '' }}
+          />
+          <span className="text-label text-text-tertiary">
+            Images: filenames <code>hero</code>, <code>gallery-1</code>, <code>gallery-2</code>, <code>gallery-3</code>
+          </span>
+        </div>
+      </div>
 
       <div className="mb-7">
         <label className="field-label">Slug (public URL)</label>
