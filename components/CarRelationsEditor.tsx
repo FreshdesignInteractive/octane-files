@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { createClient } from '@/lib/supabase-browser'
 import CarAutocomplete from '@/components/CarAutocomplete'
-import { CAR_RELATION_TYPES, type CarRelationInput, type CarRelationType, type GenerationPickerOption } from '@/lib/car-schema'
+import type { CarRelationInput, CarRelationType, GenerationPickerOption } from '@/lib/car-schema'
 
 type CatalogRow = {
   id: string
@@ -14,22 +14,22 @@ type CatalogRow = {
   models: { name: string; makes: { name: string } }
 }
 
-const TYPE_LABEL: Record<CarRelationType, string> = { related: 'Related', rival: 'Rival' }
-
-// Hybrid picker for related_cars/rivals_alternatives, now car_relations rows:
-// a Related/Rival toggle picks which bucket a new entry lands in, then
-// CarAutocomplete's type-or-pick interaction either links a real catalog
-// car or appends a plain-text label. Disabled until the car itself has been
-// saved once — a relation row needs a real generation_id.
+// Scoped to ONE relation type per instance — rendered twice by
+// GenerationFieldsEditor (once for 'related' under "Where it comes from",
+// once for 'rival' under "Rivals") so each is its own independent section
+// with its own header, matching the public page's Lineage/Rivals split
+// (never a shared "Related & Rivals" group). `relations` is always the full
+// array (both types); this component filters to its own type for display
+// but onChange always receives the complete updated array.
 export default function CarRelationsEditor({
-  generationId, relations, onChange,
+  generationId, type, relations, onChange,
 }: {
   generationId: string | undefined
+  type: CarRelationType
   relations: CarRelationInput[]
   onChange: (relations: CarRelationInput[]) => void
 }) {
   const [catalog, setCatalog] = useState<GenerationPickerOption[]>([])
-  const [activeType, setActiveType] = useState<CarRelationType>('related')
 
   useEffect(() => {
     const supabase = createClient()
@@ -51,12 +51,13 @@ export default function CarRelationsEditor({
   if (!generationId) {
     return (
       <p className="text-body text-text-tertiary italic">
-        Save this car first, then add related cars and rivals from the edit page.
+        Save this car first, then add {type === 'related' ? 'related cars' : 'rivals'} from the edit page.
       </p>
     )
   }
 
   const catalogById = new Map(catalog.map(c => [c.id, c]))
+  const entries = relations.map((r, i) => ({ r, i })).filter(({ r }) => r.relation_type === type)
   const excludeIds = [
     generationId,
     ...relations.filter(r => r.linked_generation_id).map(r => r.linked_generation_id as string),
@@ -64,15 +65,15 @@ export default function CarRelationsEditor({
 
   function addLinked(option: GenerationPickerOption) {
     onChange([...relations, {
-      relation_type: activeType, linked_generation_id: option.id, label_text: null,
-      sort_order: relations.length,
+      relation_type: type, linked_generation_id: option.id, label_text: null,
+      sort_order: entries.length,
     }])
   }
 
   function addText(text: string) {
     onChange([...relations, {
-      relation_type: activeType, linked_generation_id: null, label_text: text,
-      sort_order: relations.length,
+      relation_type: type, linked_generation_id: null, label_text: text,
+      sort_order: entries.length,
     }])
   }
 
@@ -82,54 +83,31 @@ export default function CarRelationsEditor({
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex gap-2">
-        {CAR_RELATION_TYPES.map(t => (
-          <button
-            key={t}
-            type="button"
-            onClick={() => setActiveType(t)}
-            className={`pill ${activeType === t ? 'pill-active' : ''}`}
-          >
-            Add as {TYPE_LABEL[t]}
-          </button>
-        ))}
-      </div>
-
       <CarAutocomplete catalog={catalog} excludeIds={excludeIds} onPick={addLinked} onAddText={addText} />
-
-      {CAR_RELATION_TYPES.map(type => {
-        const entries = relations
-          .map((r, i) => ({ r, i }))
-          .filter(({ r }) => r.relation_type === type)
-        if (entries.length === 0) return null
-        return (
-          <div key={type}>
-            <div className="text-label font-bold tracking-[0.08em] text-text-tertiary uppercase mb-2">{TYPE_LABEL[type]}</div>
-            <div className="flex flex-wrap gap-2">
-              {entries.map(({ r, i }) => {
-                const linked = r.linked_generation_id ? catalogById.get(r.linked_generation_id) : null
-                return linked ? (
-                  <span key={i} className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 border border-border rounded-lg">
-                    <Image
-                      src={linked.hero_image || '/placeholder.png'} alt=""
-                      width={28} height={28}
-                      className={`rounded flex-shrink-0 ${linked.hero_image ? 'object-cover' : 'object-contain bg-bg-elevated'}`}
-                    />
-                    <span className="text-body text-text-primary">{linked.model.make.name} {linked.model.name} {linked.code}</span>
-                    <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none ml-1">×</button>
-                  </span>
-                ) : (
-                  <span key={i} className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 border border-border rounded-lg">
-                    <Image src="/placeholder.png" alt="" width={28} height={28} className="rounded flex-shrink-0 object-contain bg-bg-elevated" />
-                    <span className="text-body text-text-primary">{r.label_text}</span>
-                    <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none ml-1">×</button>
-                  </span>
-                )
-              })}
-            </div>
-          </div>
-        )
-      })}
+      {entries.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {entries.map(({ r, i }) => {
+            const linked = r.linked_generation_id ? catalogById.get(r.linked_generation_id) : null
+            return linked ? (
+              <span key={i} className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 border border-border rounded-lg">
+                <Image
+                  src={linked.hero_image || '/placeholder.png'} alt=""
+                  width={28} height={28}
+                  className={`rounded flex-shrink-0 ${linked.hero_image ? 'object-cover' : 'object-contain bg-bg-elevated'}`}
+                />
+                <span className="text-body text-text-primary">{linked.model.make.name} {linked.model.name} {linked.code}</span>
+                <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none ml-1">×</button>
+              </span>
+            ) : (
+              <span key={i} className="flex items-center gap-2 pl-1.5 pr-2.5 py-1.5 border border-border rounded-lg">
+                <Image src="/placeholder.png" alt="" width={28} height={28} className="rounded flex-shrink-0 object-contain bg-bg-elevated" />
+                <span className="text-body text-text-primary">{r.label_text}</span>
+                <button type="button" onClick={() => remove(i)} className="text-text-tertiary bg-transparent border-none cursor-pointer leading-none ml-1">×</button>
+              </span>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

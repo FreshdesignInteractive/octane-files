@@ -6,7 +6,8 @@
 // callers never see a key for a field the CSV didn't provide.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ENRICHMENT_FIELDS, type EnrichmentFieldKey } from './bulk-import-schema'
+import { ENRICHMENT_FIELDS, isRadarField, RADAR_FIELD_TO_AXIS, type EnrichmentFieldKey } from './bulk-import-schema'
+import type { RadarScores } from './car-schema'
 
 export interface ResolvedGeneration {
   id: string
@@ -26,7 +27,10 @@ export async function resolveGeneration(
   const { data: modelRow } = await supabase.from('models').select('id').eq('make_id', makeRow.id).ilike('name', model.trim()).maybeSingle()
   if (!modelRow) return null
 
-  const selectCols = ['id', 'slug', 'archived_at', ...ENRICHMENT_FIELDS.map(f => f.key)].join(', ')
+  // radar_* keys are synthetic (no literal generations.radar_desirability
+  // column) — select the real radar_scores JSONB column once instead.
+  const realColumns = ENRICHMENT_FIELDS.filter(f => !isRadarField(f.key)).map(f => f.key)
+  const selectCols = ['id', 'slug', 'archived_at', 'radar_scores', ...realColumns].join(', ')
   const { data: gen } = await supabase
     .from('generations')
     .select(selectCols)
@@ -85,8 +89,13 @@ export function parseEnrichmentFields(row: Record<string, string>): ParsedEnrich
       else errors.push({ field: spec.key, header: spec.header, value: raw, reason: 'must be Yes/No or true/false' })
     } else if (spec.type === 'integer') {
       const n = parseInt(raw, 10)
-      if (Number.isNaN(n)) errors.push({ field: spec.key, header: spec.header, value: raw, reason: 'must be a whole number' })
-      else values[spec.key] = n
+      if (Number.isNaN(n)) {
+        errors.push({ field: spec.key, header: spec.header, value: raw, reason: 'must be a whole number' })
+      } else if (spec.range && (n < spec.range[0] || n > spec.range[1])) {
+        errors.push({ field: spec.key, header: spec.header, value: raw, reason: `must be between ${spec.range[0]} and ${spec.range[1]}` })
+      } else {
+        values[spec.key] = n
+      }
     }
   }
 
@@ -111,10 +120,11 @@ export function diffEnrichmentFields(
   incoming: Partial<Record<EnrichmentFieldKey, EnrichmentValue>>
 ): FieldDiff[] {
   const diffs: FieldDiff[] = []
+  const radarScores = (current.radar_scores as RadarScores | null) ?? {}
   for (const spec of ENRICHMENT_FIELDS) {
     if (!(spec.key in incoming)) continue
     const to = incoming[spec.key]!
-    const from = current[spec.key]
+    const from = isRadarField(spec.key) ? radarScores[RADAR_FIELD_TO_AXIS[spec.key]] ?? null : current[spec.key]
     const changed = spec.type === 'enum_array'
       ? JSON.stringify([...(from as string[] ?? [])].sort()) !== JSON.stringify([...(to as string[])].sort())
       : from !== to

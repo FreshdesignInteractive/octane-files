@@ -127,7 +127,7 @@ export interface GenerationRecord {
   homologation_special: boolean
   poster_car: boolean
   value_trajectory: ValueTrajectory | null
-  firsts_and_lasts: string | null
+  callout: string | null
   driving_character: string | null
   design_notes: string | null
   cultural_notes: string | null
@@ -209,7 +209,7 @@ export function emptyGenerationInput(): GenerationInput {
     homologation_special: false,
     poster_car: false,
     value_trajectory: null,
-    firsts_and_lasts: null,
+    callout: null,
     driving_character: null,
     design_notes: null,
     cultural_notes: null,

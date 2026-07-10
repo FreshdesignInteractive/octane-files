@@ -22,6 +22,27 @@ const field = (label: string, children: React.ReactNode) => (
 
 const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking-[0.06em] mb-4 pb-2 border-b border-border'
 
+// Canonical section list — identical ids and order to app/cars/[slug]/page.tsx,
+// so the sticky nav below and every <section id="..."> exactly mirror the
+// public page. Identity & Classification and Images are edit-only (they
+// feed the hero/quick-stats/gallery on view rather than being their own
+// named public section).
+const SECTIONS = [
+  { id: 'identity', label: 'Identity & Classification' },
+  { id: 'images', label: 'Images' },
+  { id: 'overview', label: 'Overview' },
+  { id: 'collectibility', label: 'Why collectors want it' },
+  { id: 'ratings', label: 'How it scores' },
+  { id: 'specifications', label: 'Specifications' },
+  { id: 'variants-trims', label: 'Which one to look for' },
+  { id: 'character', label: "What it's like" },
+  { id: 'lineage', label: 'Where it comes from' },
+  { id: 'rivals', label: 'Rivals' },
+  { id: 'market-data', label: 'Market Data' },
+  { id: 'ownership', label: 'What owning one is like' },
+  { id: 'resources', label: 'Resources' },
+] as const
+
 // Shared by the existing-generation editor and the new-car create flow.
 // Deliberately does NOT render `slug` — each parent owns that field's own
 // display-vs-advanced-edit behavior around this component.
@@ -42,15 +63,29 @@ export default function GenerationFieldsEditor({
 
   return (
     <div className="flex flex-col gap-7">
-      {/* Basic info */}
-      <section>
-        <h2 className={sectionHeading}>Basic Info</h2>
+      {/* Sticky section nav — same list/order as the public page */}
+      <nav className="sticky top-14 z-40 bg-white/95 border-b border-border -mx-6 px-6 backdrop-blur-sm">
+        <div className="flex gap-0 overflow-x-auto">
+          {SECTIONS.map(s => (
+            <a key={s.id} href={`#${s.id}`} className="text-xs font-medium text-text-secondary no-underline px-4 py-3 border-b-2 border-transparent whitespace-nowrap transition-colors hover:text-text-primary">
+              {s.label}
+            </a>
+          ))}
+        </div>
+      </nav>
+
+      {/* Identity & Classification */}
+      <section id="identity">
+        <h2 className={sectionHeading}>Identity &amp; Classification</h2>
         <div className="grid grid-cols-3 gap-4">
           {field('Generation Code', <input className="input" value={value.code} onChange={e => onChange({ code: e.target.value })} placeholder="e.g. E30, Single Generation" />)}
           {field('Year Start', <input className="input" type="number" value={value.year_start} onChange={e => onChange({ year_start: parseInt(e.target.value) || 0 })} />)}
           {field('Year End', <input className="input" type="number" value={value.year_end ?? ''} onChange={e => onChange({ year_end: e.target.value ? parseInt(e.target.value) : null })} placeholder="leave blank if present" />)}
           {field('Production Years (display)', <input className="input" value={value.production_years ?? ''} onChange={e => onChange({ production_years: e.target.value || null })} placeholder="auto-derived if left blank" />)}
-          {field('Units Produced', <input className="input" type="number" value={value.units_produced ?? ''} onChange={e => onChange({ units_produced: e.target.value ? parseInt(e.target.value) : null })} />)}
+          {field('Nickname', <input className="input" value={value.nickname ?? ''} onChange={e => onChange({ nickname: e.target.value || null })} />)}
+          {field('Designer', <DesignerAutocomplete value={value.designer} onChange={v => onChange({ designer: v })} />)}
+          {field('Wikipedia URL', <input className="input" value={value.wikipedia_url ?? ''} onChange={e => onChange({ wikipedia_url: e.target.value || null })} placeholder="https://en.wikipedia.org/..." />)}
+          {field('Engine Signature', <input className="input" value={value.engine_signature ?? ''} onChange={e => onChange({ engine_signature: e.target.value || null })} />)}
           {field('Engine Layout',
             <select className="select" value={value.engine_layout ?? ''} onChange={e => onChange({ engine_layout: (e.target.value || null) as GenerationInput['engine_layout'] })}>
               <option value="">—</option>
@@ -62,12 +97,7 @@ export default function GenerationFieldsEditor({
               {CAR_CLASSES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           )}
-          {field('Value Trajectory',
-            <select className="select" value={value.value_trajectory ?? ''} onChange={e => onChange({ value_trajectory: (e.target.value || null) as GenerationInput['value_trajectory'] })}>
-              <option value="">—</option>
-              {VALUE_TRAJECTORIES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-          )}
+          {field('Units Produced', <input className="input" type="number" value={value.units_produced ?? ''} onChange={e => onChange({ units_produced: e.target.value ? parseInt(e.target.value) : null })} />)}
         </div>
 
         <div className="flex gap-6 mt-4">
@@ -122,33 +152,8 @@ export default function GenerationFieldsEditor({
         </div>
       </section>
 
-      {/* Scores */}
-      <section>
-        <h2 className={sectionHeading}>
-          Scores
-          <span className="font-normal text-label text-text-tertiary ml-2 normal-case">1–10, powers the radar chart</span>
-        </h2>
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {field('Analog Index', <input className="input" type="number" min={1} max={10} value={value.analog_index ?? ''} onChange={e => onChange({ analog_index: e.target.value ? parseInt(e.target.value) : null })} placeholder="Mechanical-purity score" />)}
-        </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-          {RADAR_AXES.map(axis => (
-            <div key={axis.key} className="flex items-center gap-4">
-              <label className="field-label w-45 flex-shrink-0">{axis.label}</label>
-              <input
-                type="range" min={1} max={10} step={1}
-                value={value.radar_scores?.[axis.key] ?? 5}
-                onChange={e => onChange({ radar_scores: { ...(value.radar_scores ?? {}), [axis.key]: parseInt(e.target.value) } })}
-                className="flex-1"
-              />
-              <span className="text-body font-medium text-text-primary w-6 text-right">{value.radar_scores?.[axis.key] ?? '—'}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Hero image + gallery */}
-      <section>
+      {/* Images */}
+      <section id="images">
         <h2 className={sectionHeading}>Images</h2>
         {field('Hero Image',
           <ImageUploadField
@@ -185,49 +190,51 @@ export default function GenerationFieldsEditor({
         </div>
       </section>
 
-      {/* Encyclopedia content */}
-      <section>
-        <h2 className={sectionHeading}>Encyclopedia Content</h2>
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {field('Nickname', <input className="input" value={value.nickname ?? ''} onChange={e => onChange({ nickname: e.target.value || null })} />)}
-          {field('Desirability Tier',
-            <select className="select" value={value.desirability_tier ?? ''} onChange={e => onChange({ desirability_tier: (e.target.value || null) as GenerationInput['desirability_tier'] })}>
-              <option value="">—</option>
-              {DESIRABILITY_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          )}
-          {field('Designer', <DesignerAutocomplete value={value.designer} onChange={v => onChange({ designer: v })} />)}
-          {field('Engine Signature', <input className="input" value={value.engine_signature ?? ''} onChange={e => onChange({ engine_signature: e.target.value || null })} />)}
+      {/* Overview */}
+      <section id="overview">
+        <h2 className={sectionHeading}>Overview</h2>
+        {field('', <textarea className="textarea min-h-40" value={value.overview ?? ''} onChange={e => onChange({ overview: e.target.value || null })} placeholder="History, significance, key highlights..." />)}
+      </section>
+
+      {/* Why collectors want it */}
+      <section id="collectibility">
+        <h2 className={sectionHeading}>Why collectors want it</h2>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {field('Callout', <input className="input" value={value.callout ?? ''} onChange={e => onChange({ callout: e.target.value || null })} placeholder='One arresting fact, e.g. "Last front-engine Corvette"' />)}
           {field('Claim to Fame', <input className="input" value={value.claim_to_fame ?? ''} onChange={e => onChange({ claim_to_fame: e.target.value || null })} />)}
-          {field('Wikipedia URL', <input className="input" value={value.wikipedia_url ?? ''} onChange={e => onChange({ wikipedia_url: e.target.value || null })} placeholder="https://en.wikipedia.org/..." />)}
-          {field('Firsts & Lasts', <input className="input" value={value.firsts_and_lasts ?? ''} onChange={e => onChange({ firsts_and_lasts: e.target.value || null })} placeholder='e.g. "Last front-engine Corvette"' />)}
         </div>
-        {field('Overview', <textarea className="textarea min-h-40" value={value.overview ?? ''} onChange={e => onChange({ overview: e.target.value || null })} placeholder="History, significance, key highlights..." />)}
-        <div className="mt-4">{field('Why Collectible', <textarea className="textarea min-h-30" value={value.why_collectible ?? ''} onChange={e => onChange({ why_collectible: e.target.value || null })} />)}</div>
-        <div className="mt-4">{field('Variants to Know', <textarea className="textarea min-h-30" value={value.variants_to_know ?? ''} onChange={e => onChange({ variants_to_know: e.target.value || null })} />)}</div>
-        <div className="mt-4">{field('Known Issues', <textarea className="textarea min-h-30" value={value.known_issues ?? ''} onChange={e => onChange({ known_issues: e.target.value || null })} />)}</div>
-        <div className="mt-4">{field('Buyers Flag', <textarea className="textarea min-h-20" value={value.buyers_flag ?? ''} onChange={e => onChange({ buyers_flag: e.target.value || null })} />)}</div>
-        <div className="mt-4">{field('Driving Character', <textarea className="textarea min-h-30" value={value.driving_character ?? ''} onChange={e => onChange({ driving_character: e.target.value || null })} placeholder="Sound signature, party trick, gearbox feel, power delivery" />)}</div>
-        <div className="mt-4">{field('Design Notes', <textarea className="textarea min-h-30" value={value.design_notes ?? ''} onChange={e => onChange({ design_notes: e.target.value || null })} placeholder="Design signatures, concept-car lineage, wheel/badge iconography" />)}</div>
-        <div className="mt-4">{field('Cultural Notes', <textarea className="textarea min-h-30" value={value.cultural_notes ?? ''} onChange={e => onChange({ cultural_notes: e.target.value || null })} placeholder="Screen, music, video-game fame" />)}</div>
-        <div className="mt-4">{field('Motorsport Pedigree', <textarea className="textarea min-h-30" value={value.motorsport_pedigree ?? ''} onChange={e => onChange({ motorsport_pedigree: e.target.value || null })} placeholder="Race series, championships, signature drivers" />)}</div>
+        {field('Why Collectible', <textarea className="textarea min-h-30" value={value.why_collectible ?? ''} onChange={e => onChange({ why_collectible: e.target.value || null })} />)}
+        <div className="mt-4">{field("Buyer's Guide", <textarea className="textarea min-h-20" value={value.buyers_flag ?? ''} onChange={e => onChange({ buyers_flag: e.target.value || null })} />)}</div>
       </section>
 
-      {/* Related cars & rivals */}
-      <section>
-        <h2 className={sectionHeading}>Related Cars &amp; Rivals</h2>
-        <CarRelationsEditor generationId={generationId} relations={relations} onChange={onRelationsChange} />
+      {/* How it scores */}
+      <section id="ratings">
+        <h2 className={sectionHeading}>
+          How it scores
+          <span className="font-normal text-label text-text-tertiary ml-2 normal-case">1–10, powers the radar chart</span>
+        </h2>
+        <div className="grid grid-cols-3 gap-4 mb-4">
+          {field('Analog Index', <input className="input" type="number" min={1} max={10} value={value.analog_index ?? ''} onChange={e => onChange({ analog_index: e.target.value ? parseInt(e.target.value) : null })} placeholder="Mechanical-purity score" />)}
+        </div>
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+          {RADAR_AXES.map(axis => (
+            <div key={axis.key} className="flex items-center gap-4">
+              <label className="field-label w-45 flex-shrink-0">{axis.label}</label>
+              <input
+                type="range" min={1} max={10} step={1}
+                value={value.radar_scores?.[axis.key] ?? 5}
+                onChange={e => onChange({ radar_scores: { ...(value.radar_scores ?? {}), [axis.key]: parseInt(e.target.value) } })}
+                className="flex-1"
+              />
+              <span className="text-body font-medium text-text-primary w-6 text-right">{value.radar_scores?.[axis.key] ?? '—'}</span>
+            </div>
+          ))}
+        </div>
       </section>
 
-      {/* Trims */}
-      <section>
-        <h2 className={sectionHeading}>Trims</h2>
-        <TrimsEditor generationId={generationId} trims={trims} onChange={onTrimsChange} />
-      </section>
-
-      {/* Specs */}
-      <section>
-        <h2 className={sectionHeading}>Specs</h2>
+      {/* Specifications — numbers only */}
+      <section id="specifications">
+        <h2 className={sectionHeading}>Specifications</h2>
         {(() => {
           const parsed = parseSpecGroups(value.specs as unknown)
           if (parsed === null) {
@@ -291,9 +298,53 @@ export default function GenerationFieldsEditor({
         })()}
       </section>
 
-      {/* Market data */}
-      <section>
-        <h2 className={sectionHeading}>Market Data (USD)</h2>
+      {/* Which one to look for — Variants & Trims */}
+      <section id="variants-trims">
+        <h2 className={sectionHeading}>Which one to look for</h2>
+        {field('Variants to Know', <textarea className="textarea min-h-30" value={value.variants_to_know ?? ''} onChange={e => onChange({ variants_to_know: e.target.value || null })} />)}
+        <div className="mt-5">
+          {field('Trim Records', <TrimsEditor generationId={generationId} trims={trims} onChange={onTrimsChange} />)}
+        </div>
+      </section>
+
+      {/* What it's like — Character */}
+      <section id="character">
+        <h2 className={sectionHeading}>What it&apos;s like</h2>
+        {field('Driving Character', <textarea className="textarea min-h-30" value={value.driving_character ?? ''} onChange={e => onChange({ driving_character: e.target.value || null })} placeholder="Sound signature, party trick, gearbox feel, power delivery" />)}
+        <div className="mt-4">{field('Design Notes', <textarea className="textarea min-h-30" value={value.design_notes ?? ''} onChange={e => onChange({ design_notes: e.target.value || null })} placeholder="Design signatures, concept-car lineage, wheel/badge iconography" />)}</div>
+        <div className="mt-4">{field('Motorsport Pedigree', <textarea className="textarea min-h-30" value={value.motorsport_pedigree ?? ''} onChange={e => onChange({ motorsport_pedigree: e.target.value || null })} placeholder="Race series, championships, signature drivers" />)}</div>
+        <div className="mt-4">{field('Cultural Notes', <textarea className="textarea min-h-30" value={value.cultural_notes ?? ''} onChange={e => onChange({ cultural_notes: e.target.value || null })} placeholder="Screen, music, video-game fame" />)}</div>
+      </section>
+
+      {/* Where it comes from — Lineage */}
+      <section id="lineage">
+        <h2 className={sectionHeading}>Where it comes from</h2>
+        <CarRelationsEditor generationId={generationId} type="related" relations={relations} onChange={onRelationsChange} />
+      </section>
+
+      {/* Rivals */}
+      <section id="rivals">
+        <h2 className={sectionHeading}>Rivals</h2>
+        <CarRelationsEditor generationId={generationId} type="rival" relations={relations} onChange={onRelationsChange} />
+      </section>
+
+      {/* Market Data */}
+      <section id="market-data">
+        <h2 className={sectionHeading}>Market Data</h2>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {field('Desirability Tier',
+            <select className="select" value={value.desirability_tier ?? ''} onChange={e => onChange({ desirability_tier: (e.target.value || null) as GenerationInput['desirability_tier'] })}>
+              <option value="">—</option>
+              {DESIRABILITY_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          )}
+          {field('Value Trajectory',
+            <select className="select" value={value.value_trajectory ?? ''} onChange={e => onChange({ value_trajectory: (e.target.value || null) as GenerationInput['value_trajectory'] })}>
+              <option value="">—</option>
+              {VALUE_TRAJECTORIES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          )}
+        </div>
         <div className="grid grid-cols-4 gap-4">
           {field('Low', <input className="input" type="number" value={value.market_data?.low ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, mid: null, high: null }), low: e.target.value ? parseInt(e.target.value) : null } })} />)}
           {field('Mid', <input className="input" type="number" value={value.market_data?.mid ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, low: null, high: null }), mid: e.target.value ? parseInt(e.target.value) : null } })} />)}
@@ -305,8 +356,17 @@ export default function GenerationFieldsEditor({
         </div>
       </section>
 
+      {/* What owning one is like — Ownership */}
+      <section id="ownership">
+        <h2 className={sectionHeading}>What owning one is like</h2>
+        {field('Known Issues', <textarea className="textarea min-h-30" value={value.known_issues ?? ''} onChange={e => onChange({ known_issues: e.target.value || null })} />)}
+        <div className="mt-4">
+          {field('Maintenance', <textarea className="textarea min-h-30" value={value.maintenance ?? ''} onChange={e => onChange({ maintenance: e.target.value || null })} placeholder="Common issues, parts availability, tips for owners..." />)}
+        </div>
+      </section>
+
       {/* Resources */}
-      <section>
+      <section id="resources">
         <h2 className={sectionHeading}>Resources</h2>
         <div className="flex flex-col gap-3">
           {value.resources.map((r, i) => (
@@ -321,12 +381,6 @@ export default function GenerationFieldsEditor({
           ))}
           <button type="button" onClick={() => onChange({ resources: [...value.resources, { title: '', url: '', type: 'other' }] })} className="btn-secondary self-start px-3">+ Add resource</button>
         </div>
-      </section>
-
-      {/* Maintenance */}
-      <section>
-        <h2 className={sectionHeading}>Maintenance Notes</h2>
-        {field('', <textarea className="textarea min-h-30" value={value.maintenance ?? ''} onChange={e => onChange({ maintenance: e.target.value || null })} placeholder="Common issues, parts availability, tips for owners..." />)}
       </section>
     </div>
   )

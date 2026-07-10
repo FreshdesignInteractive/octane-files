@@ -35,7 +35,7 @@ const CAR_SELECT = `
   why_collectible, engine_signature, variants_to_know, known_issues,
   claim_to_fame, buyers_flag, designer, wikipedia_url,
   radar_scores, analog_index, homologation_special, poster_car, value_trajectory,
-  firsts_and_lasts, driving_character, design_notes, cultural_notes,
+  callout, driving_character, design_notes, cultural_notes,
   motorsport_pedigree,
   models!inner(name, makes!inner(name, country))
 `
@@ -100,7 +100,7 @@ function mapCar(row: GenerationJoinRow & Record<string, unknown>): Omit<Car, 'tr
     homologation_special: (row.homologation_special as boolean) ?? false,
     poster_car: (row.poster_car as boolean) ?? false,
     value_trajectory: (row.value_trajectory as Car['value_trajectory']) ?? null,
-    firsts_and_lasts: (row.firsts_and_lasts as string | null) ?? null,
+    callout: (row.callout as string | null) ?? null,
     driving_character: (row.driving_character as string | null) ?? null,
     design_notes: (row.design_notes as string | null) ?? null,
     cultural_notes: (row.cultural_notes as string | null) ?? null,

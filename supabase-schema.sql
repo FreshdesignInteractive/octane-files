@@ -150,12 +150,12 @@ CREATE TABLE IF NOT EXISTS generations (
   market_data         JSONB,
   maintenance         TEXT,
   resources           JSONB DEFAULT '[]',
-  radar_scores        JSONB, -- up to 7 keys (desirability/rarity/driving_thrill/investment_trajectory/usability/restoration_difficulty/cultural_impact), 1-10 each
+  radar_scores        JSONB, -- up to 7 keys (desirability/rarity/driving_thrill/investment_trajectory/usability/ease_of_restoration/cultural_impact), 1-10 each, higher always better (step17)
   analog_index        INTEGER CHECK (analog_index BETWEEN 1 AND 10),
   homologation_special BOOLEAN NOT NULL DEFAULT FALSE,
   poster_car          BOOLEAN NOT NULL DEFAULT FALSE,
   value_trajectory    value_trajectory_type,
-  firsts_and_lasts    TEXT,
+  callout             TEXT, -- step18: renamed from firsts_and_lasts (pure rename, same meaning, broader scope)
   driving_character   TEXT,
   design_notes        TEXT,
   cultural_notes      TEXT,
@@ -359,7 +359,7 @@ BEGIN
     engine_layout = COALESCE(e.engine_layout::engine_layout_type, g.engine_layout),
     units_produced = COALESCE(e.units_produced, g.units_produced),
     wikipedia_url = COALESCE(e.wikipedia_url, g.wikipedia_url),
-    firsts_and_lasts = COALESCE(e.firsts_and_lasts, g.firsts_and_lasts),
+    callout = COALESCE(e.callout, g.callout),
     driving_character = COALESCE(e.driving_character, g.driving_character),
     design_notes = COALESCE(e.design_notes, g.design_notes),
     cultural_notes = COALESCE(e.cultural_notes, g.cultural_notes),
@@ -369,15 +369,24 @@ BEGIN
     analog_index = COALESCE(e.analog_index, g.analog_index),
     homologation_special = COALESCE(e.homologation_special, g.homologation_special),
     poster_car = COALESCE(e.poster_car, g.poster_car),
+    radar_scores = COALESCE(g.radar_scores, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object(
+      'desirability', e.radar_desirability, 'rarity', e.radar_rarity,
+      'driving_thrill', e.radar_driving_thrill, 'investment_trajectory', e.radar_investment_trajectory,
+      'usability', e.radar_usability, 'ease_of_restoration', e.radar_ease_of_restoration,
+      'cultural_impact', e.radar_cultural_impact
+    )),
     updated_at = NOW()
   FROM jsonb_to_recordset(rows) AS e(
     generation_id UUID, nickname TEXT, desirability_tier TEXT, overview TEXT, why_collectible TEXT,
     engine_signature TEXT, variants_to_know TEXT, known_issues TEXT, claim_to_fame TEXT,
     buyers_flag TEXT, designer TEXT, class TEXT, is_icon BOOLEAN, body_styles TEXT[],
     drivetrain TEXT[], engine_layout TEXT, units_produced INTEGER, wikipedia_url TEXT,
-    firsts_and_lasts TEXT, driving_character TEXT, design_notes TEXT, cultural_notes TEXT,
+    callout TEXT, driving_character TEXT, design_notes TEXT, cultural_notes TEXT,
     motorsport_pedigree TEXT, maintenance TEXT, value_trajectory TEXT, analog_index INTEGER,
-    homologation_special BOOLEAN, poster_car BOOLEAN
+    homologation_special BOOLEAN, poster_car BOOLEAN,
+    radar_desirability INTEGER, radar_rarity INTEGER, radar_driving_thrill INTEGER,
+    radar_investment_trajectory INTEGER, radar_usability INTEGER, radar_ease_of_restoration INTEGER,
+    radar_cultural_impact INTEGER
   )
   WHERE g.id = e.generation_id;
   GET DIAGNOSTICS v_updated = ROW_COUNT;

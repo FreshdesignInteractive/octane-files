@@ -8,7 +8,7 @@ import SaveButton from '@/components/SaveButton'
 import EditButton from '@/components/EditButton'
 import RadarChart from '@/components/RadarChart'
 import { getModel, getModelSlugs } from '@/lib/supabase'
-import type { Car } from '@/lib/types'
+import type { Car, CarRelation } from '@/lib/types'
 
 export const revalidate = 3600
 
@@ -41,6 +41,39 @@ function Section({ id, label, children }: { id: string; label: string; children:
   )
 }
 
+// Shared by the Lineage and Rivals sections — identical card rendering,
+// only the entries differ.
+function RelationCards({ entries }: { entries: CarRelation[] }) {
+  return (
+    <div className="flex flex-wrap gap-3">
+      {entries.map(r => r.linked ? (
+        <Link
+          key={r.id}
+          href={`/cars/${r.linked.slug}`}
+          className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg no-underline transition-colors w-60"
+        >
+          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
+            <Image
+              src={r.linked.hero_image || '/placeholder.png'} alt="" fill
+              className={r.linked.hero_image ? 'object-cover' : 'object-contain'}
+            />
+          </div>
+          <span className="text-body font-medium text-text-primary">
+            {r.linked.make} {r.linked.model} {r.linked.code}
+          </span>
+        </Link>
+      ) : (
+        <span key={r.id} className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg w-60">
+          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
+            <Image src="/placeholder.png" alt="" fill className="object-contain" />
+          </div>
+          <span className="text-body font-medium text-text-primary">{r.label_text}</span>
+        </span>
+      ))}
+    </div>
+  )
+}
+
 const VALUE_TRAJECTORY_DISPLAY: Record<string, string> = {
   appreciating: '↗ Appreciating',
   stable: '→ Stable',
@@ -55,26 +88,34 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const name = `${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`
   const years = car.year_end ? `${car.year_start}–${car.year_end}` : `${car.year_start}–present`
 
-  const hasGlance = car.analog_index !== null || (car.radar_scores && Object.keys(car.radar_scores).length === 7)
+  const hasCollectibility = !!(car.callout || car.claim_to_fame || car.why_collectible || car.buyers_flag)
+  const hasRatings = car.analog_index !== null || (car.radar_scores && Object.keys(car.radar_scores).length === 7)
+  const hasSpecifications = car.specs?.length > 0
+  const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
   const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
-  const hasSpecsSection = (car.specs?.length > 0) || !!car.variants_to_know || car.trims?.length > 0
-  const hasMaintenanceSection = !!(car.maintenance || car.known_issues)
+  const hasOwnershipSection = !!(car.maintenance || car.known_issues)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
-  const hasRelationsSection = car.relations?.length > 0
   const galleryImages = car.gallery_images?.filter(Boolean) ?? []
   const relatedCars = car.relations?.filter(r => r.relation_type === 'related') ?? []
   const rivalCars = car.relations?.filter(r => r.relation_type === 'rival') ?? []
+  const marketTiers = [
+    car.market_data?.low != null && { label: 'Entry / Driver', value: car.market_data.low },
+    car.market_data?.mid != null && { label: 'Mid / Nice', value: car.market_data.mid },
+    car.market_data?.high != null && { label: 'Show / Concours', value: car.market_data.high },
+  ].filter(Boolean) as { label: string; value: number }[]
 
   const sections = [
     { id: 'overview', label: 'Overview' },
     galleryImages.length > 0 && { id: 'gallery', label: 'Gallery' },
-    car.why_collectible && { id: 'why-collectible', label: 'Why Collectible' },
-    hasGlance && { id: 'glance', label: 'At a Glance' },
-    hasSpecsSection && { id: 'specs', label: 'Specs' },
-    hasCharacter && { id: 'character', label: 'Character' },
-    hasRelationsSection && { id: 'relations', label: 'Related & Rivals' },
-    hasMarketSection && { id: 'market', label: 'Market' },
-    hasMaintenanceSection && { id: 'maintenance', label: 'Maintenance' },
+    hasCollectibility && { id: 'collectibility', label: 'Why collectors want it' },
+    hasRatings && { id: 'ratings', label: 'How it scores' },
+    hasSpecifications && { id: 'specifications', label: 'Specifications' },
+    hasVariantsTrims && { id: 'variants-trims', label: 'Which one to look for' },
+    hasCharacter && { id: 'character', label: "What it's like" },
+    relatedCars.length > 0 && { id: 'lineage', label: 'Where it comes from' },
+    rivalCars.length > 0 && { id: 'rivals', label: 'Rivals' },
+    hasMarketSection && { id: 'market-data', label: 'Market Data' },
+    hasOwnershipSection && { id: 'ownership', label: 'What owning one is like' },
     car.resources?.length > 0 && { id: 'resources', label: 'Resources' },
   ].filter(Boolean) as { id: string; label: string }[]
 
@@ -164,23 +205,34 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
           {/* Quick stats bar */}
           <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] my-8">
-            {[
+            {([
               { label: 'Production', value: years },
-              car.drivetrain && { label: 'Drivetrain', value: car.drivetrain },
-              car.engine_layout && { label: 'Engine', value: car.engine_layout },
-              car.engine_signature && { label: 'Engine Detail', value: car.engine_signature },
-              car.body_styles?.length && { label: 'Body', value: car.body_styles.join(', ') },
-              car.units_produced && { label: 'Units built', value: car.units_produced.toLocaleString() },
-            ].filter(Boolean).map((stat: any) => (
-              <div key={stat.label} className="stat-cell">
-                <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">
-                  {stat.label}
+              car.drivetrain ? { label: 'Drivetrain', value: car.drivetrain } : null,
+              car.engine_layout ? { label: 'Engine', value: car.engine_layout } : null,
+              car.engine_signature ? { label: 'Engine Detail', value: car.engine_signature } : null,
+              car.body_styles?.length ? { label: 'Body', value: car.body_styles.join(', ') } : null,
+              car.units_produced ? { label: 'Units built', value: car.units_produced.toLocaleString() } : null,
+              car.designer ? { label: 'Designer', value: car.designer } : null,
+              car.wikipedia_url ? {
+                label: 'Wikipedia',
+                value: (
+                  <a href={car.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-accent no-underline">
+                    View ↗
+                  </a>
+                ),
+              } : null,
+            ] as ({ label: string; value: React.ReactNode } | null)[])
+              .filter((s): s is { label: string; value: React.ReactNode } => s !== null)
+              .map(stat => (
+                <div key={stat.label} className="stat-cell">
+                  <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">
+                    {stat.label}
+                  </div>
+                  <div className="text-sm font-medium text-text-primary">
+                    {stat.value}
+                  </div>
                 </div>
-                <div className="text-sm font-medium text-text-primary">
-                  {stat.value}
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
 
           {/* Overview */}
@@ -211,40 +263,40 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             </Section>
           )}
 
-          {/* Why Collectible */}
-          {car.why_collectible && (
-            <Section id="why-collectible" label="Why Collectible">
-              <div className="max-w-170">
-                {renderText(car.why_collectible)}
-              </div>
-              {(car.claim_to_fame || car.firsts_and_lasts) && (
-                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))] mt-6 max-w-170">
+          {/* Why collectors want it */}
+          {hasCollectibility && (
+            <Section id="collectibility" label="Why collectors want it">
+              {(car.callout || car.claim_to_fame) && (
+                <div className="flex gap-2 flex-wrap mb-5">
+                  {car.callout && (
+                    <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
+                      {car.callout}
+                    </span>
+                  )}
                   {car.claim_to_fame && (
-                    <div className="stat-cell">
-                      <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">Claim to Fame</div>
-                      <div className="text-sm font-medium text-text-primary">{car.claim_to_fame}</div>
-                    </div>
+                    <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
+                      {car.claim_to_fame}
+                    </span>
                   )}
-                  {car.firsts_and_lasts && (
-                    <div className="stat-cell">
-                      <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">Firsts &amp; Lasts</div>
-                      <div className="text-sm font-medium text-text-primary">{car.firsts_and_lasts}</div>
-                    </div>
-                  )}
+                </div>
+              )}
+              {car.why_collectible && (
+                <div className="max-w-170">
+                  {renderText(car.why_collectible)}
                 </div>
               )}
               {car.buyers_flag && (
                 <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-border bg-accent-subtle">
-                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-1.5">Buyer&apos;s Tip</div>
+                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-1.5">Buyer&apos;s Guide</div>
                   <p className="text-body text-text-secondary m-0">{car.buyers_flag}</p>
                 </div>
               )}
             </Section>
           )}
 
-          {/* At a Glance — analog index + radar (radar only when all 7 axes set) */}
-          {hasGlance && (
-            <Section id="glance" label="At a Glance">
+          {/* How it scores — analog index + radar (radar only when all 7 axes set) */}
+          {hasRatings && (
+            <Section id="ratings" label="How it scores">
               <div className="flex flex-wrap gap-10 items-center">
                 {car.analog_index !== null && (
                   <div className="stat-cell">
@@ -257,54 +309,55 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             </Section>
           )}
 
-          {/* Specs */}
-          {hasSpecsSection && (
-            <Section id="specs" label="Specifications">
+          {/* Specifications — numbers only */}
+          {hasSpecifications && (
+            <Section id="specifications" label="Specifications">
+              <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
+                {car.specs.map(group => (
+                  <div key={group.group}>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">
+                      {group.group}
+                    </div>
+                    <div className="flex flex-col gap-0">
+                      {group.specs.map(spec => (
+                        <div key={spec.label} className="flex justify-between items-baseline py-2 border-b border-border gap-3">
+                          <span className="text-body text-text-secondary flex-shrink-0">{spec.label}</span>
+                          <span className="text-body text-text-primary font-medium text-right">{spec.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Section>
+          )}
+
+          {/* Which one to look for — variants + trims */}
+          {hasVariantsTrims && (
+            <Section id="variants-trims" label="Which one to look for">
               {car.variants_to_know && (
                 <p className="text-body text-text-secondary leading-[1.7] max-w-170 mb-6">
                   {car.variants_to_know}
                 </p>
               )}
-              {car.specs?.length > 0 && (
-                <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-                  {car.specs.map(group => (
-                    <div key={group.group}>
-                      <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">
-                        {group.group}
+              {car.trims?.length > 0 && (
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
+                  {car.trims.map(t => (
+                    <div key={t.name} className="stat-cell">
+                      <div className="text-sm font-medium text-text-primary">
+                        {t.name}{t.years && <span className="text-text-tertiary font-normal"> · {t.years}</span>}
                       </div>
-                      <div className="flex flex-col gap-0">
-                        {group.specs.map(spec => (
-                          <div key={spec.label} className="flex justify-between items-baseline py-2 border-b border-border gap-3">
-                            <span className="text-body text-text-secondary flex-shrink-0">{spec.label}</span>
-                            <span className="text-body text-text-primary font-medium text-right">{spec.value}</span>
-                          </div>
-                        ))}
-                      </div>
+                      {t.description && <p className="text-label text-text-secondary mt-1 m-0">{t.description}</p>}
                     </div>
                   ))}
-                </div>
-              )}
-              {car.trims?.length > 0 && (
-                <div className={car.specs?.length > 0 ? 'mt-6' : ''}>
-                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Trim Levels</div>
-                  <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
-                    {car.trims.map(t => (
-                      <div key={t.name} className="stat-cell">
-                        <div className="text-sm font-medium text-text-primary">
-                          {t.name}{t.years && <span className="text-text-tertiary font-normal"> · {t.years}</span>}
-                        </div>
-                        {t.description && <p className="text-label text-text-secondary mt-1 m-0">{t.description}</p>}
-                      </div>
-                    ))}
-                  </div>
                 </div>
               )}
             </Section>
           )}
 
-          {/* Character */}
+          {/* What it's like — Character */}
           {hasCharacter && (
-            <Section id="character" label="Character">
+            <Section id="character" label="What it's like">
               <div className="grid gap-8 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
                 {car.driving_character && (
                   <div>
@@ -334,49 +387,23 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             </Section>
           )}
 
-          {/* Related & Rivals */}
-          {hasRelationsSection && (
-            <Section id="relations" label="Related & Rivals">
-              {[
-                { key: 'related', title: 'Related Cars', entries: relatedCars },
-                { key: 'rival', title: 'Rivals & Alternatives', entries: rivalCars },
-              ].filter(g => g.entries.length > 0).map(group => (
-                <div key={group.key} className="mb-8 last:mb-0">
-                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">{group.title}</div>
-                  <div className="flex flex-wrap gap-3">
-                    {group.entries.map(r => r.linked ? (
-                      <Link
-                        key={r.id}
-                        href={`/cars/${r.linked.slug}`}
-                        className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg no-underline transition-colors w-60"
-                      >
-                        <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
-                          <Image
-                            src={r.linked.hero_image || '/placeholder.png'} alt="" fill
-                            className={r.linked.hero_image ? 'object-cover' : 'object-contain'}
-                          />
-                        </div>
-                        <span className="text-body font-medium text-text-primary">
-                          {r.linked.make} {r.linked.model} {r.linked.code}
-                        </span>
-                      </Link>
-                    ) : (
-                      <span key={r.id} className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg w-60">
-                        <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
-                          <Image src="/placeholder.png" alt="" fill className="object-contain" />
-                        </div>
-                        <span className="text-body font-medium text-text-primary">{r.label_text}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
+          {/* Where it comes from — Lineage */}
+          {relatedCars.length > 0 && (
+            <Section id="lineage" label="Where it comes from">
+              <RelationCards entries={relatedCars} />
             </Section>
           )}
 
-          {/* Market */}
+          {/* Rivals */}
+          {rivalCars.length > 0 && (
+            <Section id="rivals" label="Rivals">
+              <RelationCards entries={rivalCars} />
+            </Section>
+          )}
+
+          {/* Market Data */}
           {hasMarketSection && (
-            <Section id="market" label="Market Data">
+            <Section id="market-data" label="Market Data">
               {(car.desirability_tier || car.value_trajectory) && (
                 <div className="flex gap-3 mb-5">
                   {car.desirability_tier && <span className="pill pill-active">{car.desirability_tier}</span>}
@@ -385,23 +412,19 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   )}
                 </div>
               )}
-              {car.market_data && (
-              <div className="stat-grid grid-cols-3 max-w-120 mb-5">
-                {[
-                  { label: 'Entry / Driver', value: car.market_data.low },
-                  { label: 'Mid / Nice', value: car.market_data.mid },
-                  { label: 'Show / Concours', value: car.market_data.high },
-                ].map(tier => (
-                  <div key={tier.label} className="stat-cell">
-                    <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1.5">
-                      {tier.label}
+              {marketTiers.length > 0 && (
+                <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] max-w-120 mb-5">
+                  {marketTiers.map(tier => (
+                    <div key={tier.label} className="stat-cell">
+                      <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1.5">
+                        {tier.label}
+                      </div>
+                      <div className="text-xl font-semibold text-accent tracking-[-0.02em]">
+                        {formatMoney(tier.value)}
+                      </div>
                     </div>
-                    <div className="text-xl font-semibold text-accent tracking-[-0.02em]">
-                      {tier.value ? formatMoney(tier.value) : '—'}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
               )}
               {car.market_data?.notes && (
                 <p className="text-body text-text-secondary leading-[1.7] max-w-150">
@@ -416,18 +439,18 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             </Section>
           )}
 
-          {/* Maintenance */}
-          {hasMaintenanceSection && (
-            <Section id="maintenance" label="Maintenance">
-              {car.maintenance && (
-                <div className="max-w-170 prose">
-                  {renderText(car.maintenance)}
-                </div>
-              )}
+          {/* What owning one is like — Ownership */}
+          {hasOwnershipSection && (
+            <Section id="ownership" label="What owning one is like">
               {car.known_issues && (
-                <div className={car.maintenance ? 'mt-6 max-w-170' : 'max-w-170'}>
+                <div>
                   <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Known Issues</div>
                   <p className="text-body text-text-secondary leading-[1.7] m-0">{car.known_issues}</p>
+                </div>
+              )}
+              {car.maintenance && (
+                <div className={car.known_issues ? 'mt-6 max-w-170 prose' : 'max-w-170 prose'}>
+                  {renderText(car.maintenance)}
                 </div>
               )}
             </Section>

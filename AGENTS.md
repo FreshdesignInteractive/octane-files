@@ -47,3 +47,11 @@ Cars are normalized as `makes` → `models` → `generations` (`generations` is 
 - **`desirability_tier_legacy`** holds pre-enum compound strings (e.g. "Solid, High (ZR-1)") that haven't yet been manually remapped to a single headline tier. Read-only reference for that remap, never form-editable, never shown publicly.
 - **New Car creation is deliberate, never inferred.** Adding a make or model is an explicit "+ Add new" action in the admin form, not something that happens implicitly from typing an unrecognized name. A live debounced check blocks creating a duplicate `(model, generation code)` pair before the form is even submitted.
 <!-- END:octanefiles-car-data-model -->
+
+<!-- BEGIN:octanefiles-content-tone -->
+# Content tone (non-negotiable)
+
+Free-text encyclopedia fields — Overview, Why Collectible, Buyer's Guide, Callout, Claim to Fame, Variants to Know, Driving Character, Design Notes, Motorsport Pedigree, Cultural Notes, Known Issues, Maintenance — are written in Octane Files' voice: direct, specific, enthusiast-to-enthusiast. Never marketing copy, never a paraphrased Wikipedia summary. Say what makes the car matter, not just what it is. Short paragraphs over long ones.
+
+This applies identically whether content is entered through the admin edit form or a bulk CSV import — see `imports/CSV_TEMPLATE_GUIDE.md` for the CSV-specific version of this note.
+<!-- END:octanefiles-content-tone -->

@@ -149,7 +149,7 @@ export interface Car extends CarSummary {
   homologation_special: boolean
   poster_car: boolean
   value_trajectory: 'appreciating' | 'stable' | 'cooling' | null
-  firsts_and_lasts: string | null
+  callout: string | null
   driving_character: string | null
   design_notes: string | null
   cultural_notes: string | null
