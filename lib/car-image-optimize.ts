@@ -15,10 +15,6 @@ const WIDTH = 900
 const HEIGHT = 506
 const QUALITY = 80
 
-function hex(buf: Buffer, start: number, len: number): string {
-  return buf.subarray(Math.max(0, start), Math.max(0, start) + len).toString('hex')
-}
-
 // TEMPORARY TEST — not the permanent shape. Isolating one variable: does
 // bypassing Next's ambient global fetch (via an explicit undici fetch on a
 // one-off Supabase client) produce a byte-identical upload? A self-decode
@@ -60,30 +56,44 @@ export async function optimizeAndUploadCarImage(
 
   const { data: pub } = testClient.storage.from(BUCKET).getPublicUrl(path)
 
-  // Download it straight back (via undici, not Next's fetch, to keep the
-  // download side out of this specific experiment) and hash-compare
-  // against the buffer sharp actually produced in this same run.
-  const verifyRes = await undiciFetch(pub.publicUrl)
-  const verifyBuf = Buffer.from(await verifyRes.arrayBuffer())
-  const hashOriginal = createHash('sha256').update(optimized).digest('hex')
-  const hashDownloaded = createHash('sha256').update(verifyBuf).digest('hex')
-
-  if (hashOriginal !== hashDownloaded) {
-    let divergeAt = -1
-    const minLen = Math.min(optimized.length, verifyBuf.length)
-    for (let i = 0; i < minLen; i++) {
-      if (optimized[i] !== verifyBuf[i]) { divergeAt = i; break }
-    }
-    throw new Error(
-      `${slot}: [TEST] HASH MISMATCH even with undici fetch — ` +
-      `original ${optimized.length}b (sha256 ${hashOriginal.slice(0, 12)}...), ` +
-      `downloaded ${verifyBuf.length}b (sha256 ${hashDownloaded.slice(0, 12)}...), ` +
-      `diverges at byte offset ${divergeAt === -1 ? 'n/a (same up to shorter length)' : divergeAt}. ` +
-      `downloaded first32=${hex(verifyBuf, 0, 32)} last32=${hex(verifyBuf, verifyBuf.length - 32, 32)}. ` +
-      `original first32=${hex(optimized, 0, 32)} last32=${hex(optimized, optimized.length - 32, 32)}.`
-    )
+  function headerSummary(res: Awaited<ReturnType<typeof undiciFetch>>): string {
+    const h = res.headers
+    return `cf-cache-status=${h.get('cf-cache-status')} content-length=${h.get('content-length')} ` +
+      `content-encoding=${h.get('content-encoding') ?? 'none'} transfer-encoding=${h.get('transfer-encoding') ?? 'none'} ` +
+      `etag=${h.get('etag')} last-modified=${h.get('last-modified')}`
   }
 
-  // Hashes matched — this is a real, correct upload, not just a test.
-  return pub.publicUrl
+  // Read #1: immediately, via undici (not Next's fetch), hashed against the
+  // buffer sharp actually produced in this same run.
+  const res1 = await undiciFetch(pub.publicUrl, { cache: 'no-store' })
+  const buf1 = Buffer.from(await res1.arrayBuffer())
+  const hashOriginal = createHash('sha256').update(optimized).digest('hex')
+  const hash1 = createHash('sha256').update(buf1).digest('hex')
+
+  // Read #2: independent request, ~2.5s later, also forcing no-store — a
+  // "correct then corrupts" pattern here would point at Supabase's CDN/
+  // edge/replication layer, not upload code; a match here but corruption
+  // reported elsewhere (browser, curl, Supabase dashboard) would point at
+  // something specific to how THOSE clients request the file instead.
+  await new Promise(resolve => setTimeout(resolve, 2500))
+  const res2 = await undiciFetch(pub.publicUrl, { cache: 'no-store' })
+  const buf2 = Buffer.from(await res2.arrayBuffer())
+  const hash2 = createHash('sha256').update(buf2).digest('hex')
+
+  function divergePoint(a: Buffer, b: Buffer): string {
+    const minLen = Math.min(a.length, b.length)
+    for (let i = 0; i < minLen; i++) if (a[i] !== b[i]) return String(i)
+    return a.length === b.length ? 'identical' : 'identical up to shorter length'
+  }
+
+  // Always report in full, whether everything matched or not — this phase
+  // is about visibility, not about silently succeeding.
+  throw new Error(
+    `${slot}: [TEST] upload=${optimized.length}b/${hashOriginal.slice(0, 12)} | ` +
+    `read#1(+0s)=${buf1.length}b/${hash1.slice(0, 12)} [${headerSummary(res1)}] | ` +
+    `read#2(+2.5s)=${buf2.length}b/${hash2.slice(0, 12)} [${headerSummary(res2)}] | ` +
+    `upload==read#1: ${hashOriginal === hash1} (diverge@${divergePoint(optimized, buf1)}) | ` +
+    `read#1==read#2: ${hash1 === hash2} (diverge@${divergePoint(buf1, buf2)}) | ` +
+    `url=${pub.publicUrl}`
+  )
 }
