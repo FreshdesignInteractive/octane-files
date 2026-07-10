@@ -17,35 +17,47 @@ export async function POST(req: NextRequest) {
   const body: { headers: string[]; rows: Record<string, string>[] } = await req.json()
   const unknownColumns = findUnknownColumns(body.headers, KNOWN_ENRICHMENT_HEADERS)
 
+  // Every row is independently try/caught — one row throwing (a bad Supabase
+  // response, an unexpected shape) must never abort the batch and hide every
+  // other row's results. The whole point of a single-pass preview is that
+  // ALL problems come back together, not "fix this one, re-upload, hit the
+  // next" one exception at a time.
   const results = []
   for (let i = 0; i < body.rows.length; i++) {
     const row = body.rows[i]
     const make = row.Make ?? '', model = row.Model ?? '', generation = row.Generation ?? ''
-    const { values, errors } = parseEnrichmentFields(row)
-    const resolved = await resolveGeneration(supabase, make, model, generation)
+    try {
+      const { values, errors } = parseEnrichmentFields(row)
+      const resolved = await resolveGeneration(supabase, make, model, generation)
 
-    if (!resolved) {
-      results.push({ row_index: i, make, model, generation, match: { status: 'unmatched' as const } })
-      continue
-    }
-    if (errors.length > 0) {
+      if (!resolved) {
+        results.push({ row_index: i, make, model, generation, match: { status: 'unmatched' as const } })
+        continue
+      }
+      if (errors.length > 0) {
+        results.push({
+          row_index: i, make, model, generation,
+          match: { status: 'invalid' as const, generation_id: resolved.id, slug: resolved.slug, errors },
+        })
+        continue
+      }
       results.push({
         row_index: i, make, model, generation,
-        match: { status: 'invalid' as const, generation_id: resolved.id, slug: resolved.slug, errors },
+        match: {
+          status: 'matched' as const,
+          generation_id: resolved.id,
+          slug: resolved.slug,
+          archived: !!resolved.archived_at,
+          fields: values,
+          diffs: diffEnrichmentFields(resolved, values),
+        },
       })
-      continue
+    } catch (err) {
+      results.push({
+        row_index: i, make, model, generation,
+        match: { status: 'error' as const, message: err instanceof Error ? err.message : String(err) },
+      })
     }
-    results.push({
-      row_index: i, make, model, generation,
-      match: {
-        status: 'matched' as const,
-        generation_id: resolved.id,
-        slug: resolved.slug,
-        archived: !!resolved.archived_at,
-        fields: values,
-        diffs: diffEnrichmentFields(resolved, values),
-      },
-    })
   }
 
   return NextResponse.json({ unknownColumns, rows: results })

@@ -46,6 +46,9 @@ export default function AdminModelsTable({ rows, archivedCount }: { rows: AdminR
           <Link href="/admin/bulk-import" className="text-xs text-text-primary no-underline border border-border-mid rounded-md py-2 px-3.5">
             Bulk Import
           </Link>
+          <Link href="/admin/bulk-image-upload" className="text-xs text-text-primary no-underline border border-border-mid rounded-md py-2 px-3.5">
+            Bulk Image Upload
+          </Link>
           <Link href="/admin/new" className="btn-primary h-9 px-4 no-underline">+ New Car</Link>
         </div>
       </div>

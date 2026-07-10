@@ -14,6 +14,7 @@ type RowMatch =
       generation_id: string; slug: string; archived: boolean; would_update_existing: boolean
       name: string; years: string | null; description: string | null; production_notes: string | null
     }
+  | { status: 'error'; message: string }
 
 interface PreviewRow { row_index: number; make: string; model: string; generation: string; match: RowMatch }
 interface PreviewResponse { unknownColumns: string[]; rows: PreviewRow[] }
@@ -88,6 +89,7 @@ export default function BulkImportTrims() {
   const matched = preview?.rows.filter(r => r.match.status === 'matched') ?? []
   const unmatched = preview?.rows.filter(r => r.match.status === 'unmatched') ?? []
   const invalid = preview?.rows.filter(r => r.match.status === 'invalid') ?? []
+  const errored = preview?.rows.filter(r => r.match.status === 'error') ?? []
   const includedCount = matched.filter(r => included[r.row_index]).length
 
   return (
@@ -122,6 +124,7 @@ export default function BulkImportTrims() {
 
           <div className="text-body text-text-secondary">
             {matched.length} matched · {unmatched.length} unmatched (skipped) · {invalid.length} invalid (skipped)
+            {errored.length > 0 && ` · ${errored.length} errored (skipped)`}
           </div>
 
           {matched.length > 0 && (
@@ -178,6 +181,22 @@ export default function BulkImportTrims() {
                     <div key={r.row_index} className="text-label text-text-secondary">
                       {r.make} {r.model} {r.generation}:
                       {m.errors.map((e, i) => <div key={i} className="ml-3">{e.header}: {e.reason}</div>)}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          )}
+
+          {errored.length > 0 && (
+            <div>
+              <h3 className="text-body font-bold text-error mb-3">Errored ({errored.length}) — unexpected problem, not a validation issue</h3>
+              <div className="flex flex-col gap-1">
+                {errored.map(r => {
+                  const m = r.match as Extract<RowMatch, { status: 'error' }>
+                  return (
+                    <div key={r.row_index} className="text-label text-text-secondary">
+                      {r.make} {r.model} {r.generation}: {m.message}
                     </div>
                   )
                 })}
