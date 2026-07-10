@@ -38,33 +38,36 @@ export async function optimizeAndUploadCarImage(
   const { data: { session } } = await supabase.auth.getSession()
   if (!session) throw new Error(`${slot}: [TEST] no session on the caller's client — can't build an authenticated one-off client`)
 
-  const testClient = createSupabaseClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      global: { fetch: undiciFetch as unknown as typeof fetch },
-      auth: { persistSession: false, autoRefreshToken: false },
-    }
-  )
-  await testClient.auth.setSession({ access_token: session.access_token, refresh_token: session.refresh_token })
-
-  // Raw Buffer body, on purpose — matches the exact original code path
-  // that first produced the UTF-8-replacement corruption, so this isolates
-  // ONE variable (the fetch implementation) against that known-bad
-  // baseline. (An earlier version of this test switched to a Blob body at
-  // the same time as switching to undici's fetch — that combination hit a
-  // different bug: @supabase/storage-js's Blob branch builds a FormData
-  // and never applies the `contentType` option at all, relying solely on
-  // the Blob's own .type surviving undici's multipart encoding, which it
-  // didn't — a mechanical problem with that test, not new evidence about
-  // the actual corruption. The Buffer branch below is the one that
-  // genuinely applies `contentType` as a header.)
+  // Confirmed isPlainObject(Buffer) === false directly (not just by reading
+  // the source), so @supabase/storage-js's own JSON.stringify branch never
+  // touches our buffer — that hypothesis is dead. Both Next's ambient fetch
+  // AND raw undici's fetch produced the identical corruption signature on
+  // the same Buffer body, which is suspicious on its own: Node's built-in
+  // fetch is itself built on an internal undici, so "swap the fetch
+  // implementation" may not have changed the actual wire-serialization
+  // engine at all. This bypasses @supabase/storage-js ENTIRELY — no
+  // client library in the path — hand-building the raw HTTP POST with
+  // undici directly, so a corrupt result here points at Supabase's
+  // Storage API / Cloudflare edge, not at any client-side code.
   const path = `${slug}/${slot}-${Date.now()}.webp`
-  const { error } = await testClient.storage.from(BUCKET).upload(path, optimized, {
-    contentType: 'image/webp', upsert: false,
+  const uploadUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/${BUCKET}/${path}`
+  const uploadRes = await undiciFetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${session.access_token}`,
+      'apikey': process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      'Content-Type': 'image/webp',
+      'x-upsert': 'false',
+      'cache-control': 'max-age=3600',
+    },
+    body: optimized,
   })
-  if (error) throw new Error(`${slot}: [TEST] upload failed: ${error.message}`)
+  if (!uploadRes.ok) {
+    const bodyText = await uploadRes.text().catch(() => '<unreadable>')
+    throw new Error(`${slot}: [TEST] raw POST upload failed: HTTP ${uploadRes.status} — ${bodyText.slice(0, 300)}`)
+  }
 
+  const testClient = createSupabaseClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!)
   const { data: pub } = testClient.storage.from(BUCKET).getPublicUrl(path)
 
   function headerSummary(res: Awaited<ReturnType<typeof undiciFetch>>): string {
