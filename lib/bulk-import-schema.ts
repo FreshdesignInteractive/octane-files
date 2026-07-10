@@ -70,12 +70,25 @@ export function isRadarField(key: EnrichmentFieldKey): key is RadarFieldKey {
   return key in RADAR_FIELD_TO_AXIS
 }
 
-const radarFieldSpecs: FieldSpec[] = RADAR_AXES.map(axis => ({
-  key: (Object.keys(RADAR_FIELD_TO_AXIS) as RadarFieldKey[]).find(k => RADAR_FIELD_TO_AXIS[k] === axis.key)!,
-  header: `Radar${axis.label.replace(/\s+/g, '')}`,
-  type: 'integer',
-  range: [1, 10] as const,
-}))
+// Headers are hand-written, not derived from RADAR_AXES' labels — a naive
+// `Radar${label.replace(/\s+/g, '')}` derivation once silently produced
+// "RadarEaseofRestoration" (lowercase "of") instead of the intended
+// RadarEaseOfRestoration, because stripping whitespace doesn't recapitalize
+// the words it joins. Explicit beats derived for a list this short.
+const RADAR_FIELD_HEADERS: Record<RadarFieldKey, string> = {
+  radar_desirability: 'RadarDesirability',
+  radar_rarity: 'RadarRarity',
+  radar_driving_thrill: 'RadarDrivingThrill',
+  radar_investment_trajectory: 'RadarInvestmentTrajectory',
+  radar_usability: 'RadarUsability',
+  radar_ease_of_restoration: 'RadarEaseOfRestoration',
+  radar_cultural_impact: 'RadarCulturalImpact',
+}
+
+const radarFieldSpecs: FieldSpec[] = RADAR_AXES.map(axis => {
+  const key = (Object.keys(RADAR_FIELD_TO_AXIS) as RadarFieldKey[]).find(k => RADAR_FIELD_TO_AXIS[k] === axis.key)!
+  return { key, header: RADAR_FIELD_HEADERS[key], type: 'integer', range: [1, 10] as const }
+})
 
 // Canonical order — mirrors Identity & Classification -> Overview -> Why
 // collectors want it -> How it scores -> Which one to look for -> What it's
@@ -86,8 +99,8 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'designer', header: 'Designer', type: 'text' },
   { key: 'wikipedia_url', header: 'WikipediaURL', type: 'text' },
   { key: 'engine_signature', header: 'EngineSignature', type: 'text' },
-  { key: 'class', header: 'Class', type: 'enum', allowedValues: CAR_CLASSES.map(c => c.value) },
   { key: 'engine_layout', header: 'EngineLayout', type: 'enum', allowedValues: ENGINE_LAYOUTS },
+  { key: 'class', header: 'Class', type: 'enum', allowedValues: CAR_CLASSES.map(c => c.value) },
   { key: 'units_produced', header: 'UnitsProduced', type: 'integer' },
   { key: 'is_icon', header: 'IsIcon', type: 'boolean' },
   { key: 'homologation_special', header: 'HomologationSpecial', type: 'boolean' },
