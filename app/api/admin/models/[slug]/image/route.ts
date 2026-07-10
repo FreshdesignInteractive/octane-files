@@ -1,18 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { checkIsAdmin } from '@/lib/is-admin'
-import { resolveGenerationId } from '@/lib/admin-child-rows'
 import { optimizeAndUploadCarImage } from '@/lib/car-image-optimize'
 
 const VALID_SLOTS = ['hero', 'gallery-1', 'gallery-2', 'gallery-3']
+const BUCKET = 'car-images'
 
-// Resizes/uploads ONE image and returns its URL — does not touch the
-// generations row. Used by the per-car edit page's quick-attach flow: the
-// client merges the returned URL into its in-memory form state (same as
-// the "Ask AI to fill" button), and the existing Save button is what
-// actually commits hero_image/gallery_images, same as every other field on
-// this form. Keeps this endpoint's blast radius to "upload a file,"
-// nothing more.
+function extractStoragePath(url: string): string | null {
+  const marker = `/storage/v1/object/public/${BUCKET}/`
+  const idx = url.indexOf(marker)
+  if (idx === -1) return null
+  return decodeURIComponent(url.slice(idx + marker.length))
+}
+
+// Resizes/uploads ONE image and returns its URL — does not write
+// hero_image/gallery_images itself (the client merges the URL into its
+// in-memory form state, same as "Ask AI to fill", and the existing Save
+// button is what commits it). It DOES delete whatever was previously saved
+// for this exact slot, best-effort, right here — that doesn't need to wait
+// for Save, since it only needs to read the row's *current* saved value,
+// not write a new one. Without this, re-uploading a car's photos (a normal
+// thing to do while dialing in the Quick Import workflow) orphaned a full
+// duplicate image set in storage every time instead of replacing it.
+// Gallery position 0/1/2 is treated as gallery-1/2/3 by convention — matches
+// how this endpoint and the bulk image-upload tool both write the array.
 export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
@@ -24,8 +35,12 @@ export async function POST(
   }
 
   const { slug } = await params
-  const generationId = await resolveGenerationId(supabase, slug)
-  if (!generationId) return NextResponse.json({ error: 'Car not found' }, { status: 404 })
+  const { data: gen } = await supabase
+    .from('generations')
+    .select('id, hero_image, gallery_images')
+    .eq('slug', slug)
+    .maybeSingle()
+  if (!gen) return NextResponse.json({ error: 'Car not found' }, { status: 404 })
 
   const form = await req.formData()
   const slot = String(form.get('slot') ?? '')
@@ -37,10 +52,23 @@ export async function POST(
     return NextResponse.json({ error: 'Missing file' }, { status: 400 })
   }
 
+  let url: string
   try {
-    const url = await optimizeAndUploadCarImage(supabase, slug, slot, file)
-    return NextResponse.json({ slot, url })
+    url = await optimizeAndUploadCarImage(supabase, slug, slot, file)
   } catch (err) {
     return NextResponse.json({ error: err instanceof Error ? err.message : String(err) }, { status: 400 })
   }
+
+  const oldUrl = slot === 'hero'
+    ? gen.hero_image
+    : (gen.gallery_images ?? [])[Number(slot.split('-')[1]) - 1]
+  if (oldUrl) {
+    const path = extractStoragePath(oldUrl)
+    if (path) {
+      const { error } = await supabase.storage.from(BUCKET).remove([path])
+      if (error) console.error('Failed to delete replaced car image:', path, error.message)
+    }
+  }
+
+  return NextResponse.json({ slot, url })
 }
