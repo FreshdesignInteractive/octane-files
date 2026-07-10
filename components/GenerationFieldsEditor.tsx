@@ -39,7 +39,8 @@ const SECTIONS = [
   { id: 'lineage', label: 'Where it comes from' },
   { id: 'rivals', label: 'Rivals' },
   { id: 'market-data', label: 'Market Data' },
-  { id: 'ownership', label: 'What owning one is like' },
+  { id: 'known-issues', label: 'What owning one is like' },
+  { id: 'upkeep-parts', label: 'Upkeep & Parts' },
   { id: 'resources', label: 'Resources' },
 ] as const
 
@@ -356,13 +357,16 @@ export default function GenerationFieldsEditor({
         </div>
       </section>
 
-      {/* What owning one is like — Ownership */}
-      <section id="ownership">
+      {/* What owning one is like — Known Issues */}
+      <section id="known-issues">
         <h2 className={sectionHeading}>What owning one is like</h2>
-        {field('Known Issues', <textarea className="textarea min-h-30" value={value.known_issues ?? ''} onChange={e => onChange({ known_issues: e.target.value || null })} />)}
-        <div className="mt-4">
-          {field('Maintenance', <textarea className="textarea min-h-30" value={value.maintenance ?? ''} onChange={e => onChange({ maintenance: e.target.value || null })} placeholder="Common issues, parts availability, tips for owners..." />)}
-        </div>
+        {field('', <textarea className="textarea min-h-30" value={value.known_issues ?? ''} onChange={e => onChange({ known_issues: e.target.value || null })} />)}
+      </section>
+
+      {/* Upkeep & Parts — Maintenance */}
+      <section id="upkeep-parts">
+        <h2 className={sectionHeading}>Upkeep &amp; Parts</h2>
+        {field('', <textarea className="textarea min-h-30" value={value.maintenance ?? ''} onChange={e => onChange({ maintenance: e.target.value || null })} placeholder="Common issues, parts availability, tips for owners..." />)}
       </section>
 
       {/* Resources */}

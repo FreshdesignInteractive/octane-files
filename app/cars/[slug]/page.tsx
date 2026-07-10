@@ -93,7 +93,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const hasSpecifications = car.specs?.length > 0
   const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
   const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
-  const hasOwnershipSection = !!(car.maintenance || car.known_issues)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
   const galleryImages = car.gallery_images?.filter(Boolean) ?? []
   const relatedCars = car.relations?.filter(r => r.relation_type === 'related') ?? []
@@ -115,7 +114,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
     relatedCars.length > 0 && { id: 'lineage', label: 'Where it comes from' },
     rivalCars.length > 0 && { id: 'rivals', label: 'Rivals' },
     hasMarketSection && { id: 'market-data', label: 'Market Data' },
-    hasOwnershipSection && { id: 'ownership', label: 'What owning one is like' },
+    car.known_issues && { id: 'known-issues', label: 'What owning one is like' },
+    car.maintenance && { id: 'upkeep-parts', label: 'Upkeep & Parts' },
     car.resources?.length > 0 && { id: 'resources', label: 'Resources' },
   ].filter(Boolean) as { id: string; label: string }[]
 
@@ -439,20 +439,19 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             </Section>
           )}
 
-          {/* What owning one is like — Ownership */}
-          {hasOwnershipSection && (
-            <Section id="ownership" label="What owning one is like">
-              {car.known_issues && (
-                <div>
-                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Known Issues</div>
-                  <p className="text-body text-text-secondary leading-[1.7] m-0">{car.known_issues}</p>
-                </div>
-              )}
-              {car.maintenance && (
-                <div className={car.known_issues ? 'mt-6 max-w-170 prose' : 'max-w-170 prose'}>
-                  {renderText(car.maintenance)}
-                </div>
-              )}
+          {/* What owning one is like — Known Issues */}
+          {car.known_issues && (
+            <Section id="known-issues" label="What owning one is like">
+              <p className="text-body text-text-secondary leading-[1.7] max-w-170 m-0">{car.known_issues}</p>
+            </Section>
+          )}
+
+          {/* Upkeep & Parts — Maintenance */}
+          {car.maintenance && (
+            <Section id="upkeep-parts" label="Upkeep & Parts">
+              <div className="max-w-170 prose">
+                {renderText(car.maintenance)}
+              </div>
             </Section>
           )}
 
