@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
 const TO_EMAIL = 'raj.sidharthan@freshdesign.com'
-const FROM_EMAIL = 'Octane Files <onboarding@resend.dev>'
+const FROM_EMAIL = 'Octane Files <noreply@octanefiles.com>'
 
 export async function POST(req: NextRequest) {
   const { name, email, message } = await req.json()
