@@ -45,12 +45,6 @@ export default function CarCard({ car }: { car: CarSummary }) {
                 <span>{car.class}</span>
               </>
             )}
-            {car.units_produced && (
-              <>
-                <span>&middot;</span>
-                <span>{car.units_produced.toLocaleString()} produced</span>
-              </>
-            )}
           </div>
         </div>
       </article>
