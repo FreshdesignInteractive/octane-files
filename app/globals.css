@@ -140,5 +140,12 @@ body {
   .prose p { @apply mb-5 leading-[1.8] text-text-secondary; }
   .prose p:last-child { @apply mb-0; }
   .prose strong { @apply text-text-primary font-semibold; }
+  .prose h2 { @apply text-lg font-bold text-text-primary mt-10 mb-3 tracking-[-0.01em]; }
+  .prose h2:first-child { @apply mt-0; }
   .prose h3 { @apply text-base font-semibold text-text-primary mt-7 mb-2 tracking-[0.01em]; }
+  .prose ul, .prose ol { @apply mb-5 pl-5 leading-[1.8] text-text-secondary; }
+  .prose ul { @apply list-disc; }
+  .prose ol { @apply list-decimal; }
+  .prose li { @apply mb-1.5; }
+  .prose li:last-child { @apply mb-0; }
 }
