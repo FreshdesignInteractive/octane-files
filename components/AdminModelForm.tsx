@@ -13,7 +13,8 @@ import { parseCsvToRows } from '@/lib/csv-parse'
 import { createClient as createBrowserSupabaseClient } from '@/lib/supabase-browser'
 import { deleteCarImageIfOwned } from '@/lib/storage-cleanup'
 
-const IMAGE_SLOTS = ['hero', 'gallery-1', 'gallery-2', 'gallery-3'] as const
+const IMAGE_SLOT_HERO = 'hero'
+const GALLERY_SLOT_PATTERN = /^gallery-(\d+)$/
 
 function toInput(g: GenerationRecord): GenerationInput {
   const {
@@ -205,11 +206,14 @@ export default function AdminModelForm({
     setMsg(`Applied ${Object.keys(values).length} field(s) from CSV — review and Save${unknownNote}`)
   }
 
-  // Filename (minus extension) decides the slot — hero.jpg, gallery-1.png,
-  // etc., same convention as the bulk image-upload tool's folders, just
-  // loose files instead of a folder since this is always exactly one car.
-  // Each file is resized/uploaded immediately (so you see it land), but
-  // only `form` is updated — Save still commits it.
+  // Filename (minus extension) decides the slot: hero.jpg replaces the
+  // hero; gallery-N.jpg (any positive integer, not a fixed 1-3) targets
+  // gallery position N. If that position already has an image, this
+  // replaces just that one photo; if N is past the current gallery length,
+  // it's appended — so dropping in a single gallery-4.jpg to add a fourth
+  // photo doesn't touch 1-3. There's no separate "add"/"remove" button for
+  // gallery photos anymore; this filename convention is the whole
+  // interface for both.
   // Server resizes only (sharp needs Node) and hands the bytes back — the
   // actual Storage upload happens here, client-side. A long investigation
   // proved a Vercel-server-to-Supabase upload of binary data comes back
@@ -220,19 +224,19 @@ export default function AdminModelForm({
     const bySlot = new Map<string, File>()
     for (const file of Array.from(fileList)) {
       const slot = file.name.replace(/\.[^.]+$/, '').toLowerCase()
-      if ((IMAGE_SLOTS as readonly string[]).includes(slot)) bySlot.set(slot, file)
+      if (slot === IMAGE_SLOT_HERO || GALLERY_SLOT_PATTERN.test(slot)) bySlot.set(slot, file)
     }
     if (bySlot.size === 0) {
-      setMsg(`Error: no recognized filenames (expected ${IMAGE_SLOTS.join(', ')})`)
+      setMsg(`Error: no recognized filenames (expected hero, gallery-1, gallery-2, ...)`)
       return
     }
 
     const oldHero = form.hero_image
-    const oldGallery = form.gallery_images
+    const baseGallery = form.gallery_images
 
     setImagesUploading(true)
     setMsg(`Uploading 0/${bySlot.size}...`)
-    const uploaded: Record<string, string> = {}
+    const uploaded: { slot: string; url: string }[] = []
     const failures: string[] = []
     let done = 0
     const browserSupabase = createBrowserSupabaseClient()
@@ -254,7 +258,7 @@ export default function AdminModelForm({
         if (uploadError) throw new Error(uploadError.message)
 
         const { data: pub } = browserSupabase.storage.from('car-images').getPublicUrl(path)
-        uploaded[slot] = pub.publicUrl
+        uploaded.push({ slot, url: pub.publicUrl })
       } catch (err) {
         failures.push(`${slot}: ${err instanceof Error ? err.message : String(err)}`)
       }
@@ -263,26 +267,46 @@ export default function AdminModelForm({
     }
     setImagesUploading(false)
 
-    if (Object.keys(uploaded).length > 0) {
-      setForm(f => {
-        const next = { ...f }
-        if (uploaded.hero) next.hero_image = uploaded.hero
-        const galleryUrls = IMAGE_SLOTS.filter(s => s !== 'hero' && uploaded[s]).map(s => uploaded[s])
-        if (galleryUrls.length > 0) next.gallery_images = galleryUrls
-        return next
-      })
+    if (uploaded.length > 0) {
+      const heroUpload = uploaded.find(u => u.slot === IMAGE_SLOT_HERO)
 
-      // Best-effort cleanup of whatever these slots replaced — safe to do
-      // client-side since deletes carry no binary body and aren't subject
-      // to the upload corruption above.
-      if (uploaded.hero && oldHero) deleteCarImageIfOwned(oldHero)
-      if (IMAGE_SLOTS.some(s => s !== 'hero' && uploaded[s])) {
-        for (const old of oldGallery ?? []) deleteCarImageIfOwned(old)
+      // gallery-N -> position N-1, applied in ascending N order so several
+      // new positions in one batch append in a sensible order.
+      const galleryUploads = uploaded
+        .filter(u => u.slot !== IMAGE_SLOT_HERO)
+        .map(u => ({ index: Number(GALLERY_SLOT_PATTERN.exec(u.slot)![1]) - 1, url: u.url }))
+        .sort((a, b) => a.index - b.index)
+
+      const displacedGalleryUrls: string[] = []
+      let nextGallery = baseGallery
+      if (galleryUploads.length > 0) {
+        nextGallery = [...baseGallery]
+        for (const { index, url } of galleryUploads) {
+          if (index < nextGallery.length) {
+            displacedGalleryUrls.push(nextGallery[index])
+            nextGallery[index] = url
+          } else {
+            nextGallery.push(url)
+          }
+        }
       }
+
+      setForm(f => ({
+        ...f,
+        ...(heroUpload ? { hero_image: heroUpload.url } : {}),
+        ...(galleryUploads.length > 0 ? { gallery_images: nextGallery } : {}),
+      }))
+
+      // Best-effort cleanup — only the images actually displaced/replaced,
+      // never anything left untouched. Safe to do client-side since
+      // deletes carry no binary body and aren't subject to the upload
+      // corruption above.
+      if (heroUpload && oldHero) deleteCarImageIfOwned(oldHero)
+      for (const old of displacedGalleryUrls) deleteCarImageIfOwned(old)
     }
 
     if (failures.length > 0) setMsg(`Error: ${failures.join('; ')}`)
-    else setMsg(`Attached ${Object.keys(uploaded).length} image(s) — review and Save`)
+    else setMsg(`Attached ${uploaded.length} image(s) — review and Save`)
   }
 
   const title = `${make} ${modelName}${form.code && form.code.toLowerCase() !== modelName.toLowerCase() ? ' ' + form.code : ''}`
@@ -350,7 +374,7 @@ export default function AdminModelForm({
             onChange={e => { if (e.target.files?.length) importImages(e.target.files); e.target.value = '' }}
           />
           <span className="text-label text-text-tertiary">
-            Images: filenames <code>hero</code>, <code>gallery-1</code>, <code>gallery-2</code>, <code>gallery-3</code>
+            Images: filenames <code>hero</code>, <code>gallery-1</code>, <code>gallery-2</code>, etc. — <code>gallery-N</code> replaces position N if it exists, or adds a new photo if it doesn&apos;t
           </span>
         </div>
       </div>

@@ -14,10 +14,17 @@ import { deleteCarImageIfOwned } from '@/lib/storage-cleanup'
 // stays: pointing at an externally-hosted image is a genuinely different
 // case (no file to optimize, nothing to upload).
 export default function ImageUploadField({
-  value, onChange,
+  value, onChange, showRemoveButton = true,
 }: {
   value: string | null
   onChange: (url: string | null) => void
+  // Hero is a single slot — clearing it is meaningful (the public page
+  // falls back to a placeholder) and needs its own button. Gallery items
+  // don't need this: the per-row "Remove" button in GenerationFieldsEditor
+  // already drops that array entry entirely, and there's no other reason
+  // to null out a gallery slot in place (nothing refills it manually
+  // anymore — a replacement photo comes from the next Attach images run).
+  showRemoveButton?: boolean
 }) {
   function handleRemove() {
     deleteCarImageIfOwned(value)
@@ -31,7 +38,7 @@ export default function ImageUploadField({
           <img src={value} alt="preview" className="w-20 h-20 object-cover rounded-md border border-border flex-shrink-0" />
         )}
         <div className="flex-1 flex flex-col gap-2">
-          {value && (
+          {value && showRemoveButton && (
             <button
               type="button"
               onClick={handleRemove}

@@ -171,6 +171,7 @@ export default function GenerationFieldsEditor({
                     <ImageUploadField
                       value={url}
                       onChange={v => onChange({ gallery_images: value.gallery_images.map((u, j) => j === i ? (v ?? '') : u) })}
+                      showRemoveButton={false}
                     />
                   </div>
                   <button
@@ -183,7 +184,11 @@ export default function GenerationFieldsEditor({
                   >Remove</button>
                 </div>
               ))}
-              <button type="button" onClick={() => onChange({ gallery_images: [...value.gallery_images, ''] })} className="btn-secondary self-start px-3">+ Add image</button>
+              {value.gallery_images.length === 0 && (
+                <p className="text-label text-text-tertiary italic">
+                  No gallery images. Add some via Attach images above.
+                </p>
+              )}
             </div>
           ))}
         </div>
