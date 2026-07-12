@@ -77,8 +77,11 @@
   --spacing-dropdown-gap: 0.375rem; /* 6px */
 
   /* Single z-index tier for anything that must float above the sticky
-     header/subnav (z-40) — dropdowns and modals share this tier, since in
-     practice only one is ever open at a time. */
+     header/subnav (z-50/z-40) — dropdowns and modals share this tier,
+     since in practice only one is ever open at a time. Unlike tracking
+     and spacing, z-index has no themable Tailwind namespace, so this
+     does NOT auto-generate a z-overlay utility class the way those do —
+     reference it as an arbitrary value instead: z-[var(--z-overlay)]. */
   --z-overlay: 200;
 }
 

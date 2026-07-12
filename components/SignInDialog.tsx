@@ -43,7 +43,7 @@ export default function SignInDialog({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-overlay bg-overlay flex items-center justify-center p-6"
+      className="fixed inset-0 z-[var(--z-overlay)] bg-overlay flex items-center justify-center p-6"
     >
       <div
         onClick={e => e.stopPropagation()}

@@ -67,7 +67,7 @@ export default function FilterDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] left-0 w-full sm:w-auto sm:min-w-48 bg-white border border-border rounded-lg shadow-dropdown z-overlay overflow-hidden">
+        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] left-0 w-full sm:w-auto sm:min-w-48 bg-white border border-border rounded-lg shadow-dropdown z-[var(--z-overlay)] overflow-hidden">
           <div className="max-h-96 overflow-y-auto py-1">
             {allOptions.map(opt => {
               const isActive = opt.value === activeValue

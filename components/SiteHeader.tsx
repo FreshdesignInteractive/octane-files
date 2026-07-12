@@ -135,7 +135,7 @@ function HeaderSearch() {
         </button>
       )}
       {open && suggestions.length > 0 && (
-        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] left-0 right-0 bg-white border border-border rounded-lg shadow-dropdown z-overlay overflow-hidden">
+        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] left-0 right-0 bg-white border border-border rounded-lg shadow-dropdown z-[var(--z-overlay)] overflow-hidden">
           {suggestions.map((car, i) => (
             <Link
               key={car.id}
@@ -188,7 +188,7 @@ function AvatarMenu({ profile, isAdmin, onSignOut }: { profile: NonNullable<Prof
       </button>
 
       {open && (
-        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] right-0 bg-white rounded-xl shadow-dropdown min-w-[200px] z-overlay overflow-hidden">
+        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] right-0 bg-white rounded-xl shadow-dropdown min-w-[200px] z-[var(--z-overlay)] overflow-hidden">
           <div className="p-4 text-sm font-semibold text-text-primary">
             {profile.display_name ?? profile.username}
           </div>

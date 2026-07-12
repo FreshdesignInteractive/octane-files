@@ -99,7 +99,7 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
       {lightboxOpen && (
         <div
           onClick={close}
-          className="fixed inset-0 z-overlay bg-black flex items-center justify-center p-6"
+          className="fixed inset-0 z-[var(--z-overlay)] bg-black flex items-center justify-center p-6"
         >
           {images.length > 1 && (
             <div className="absolute top-6 left-1/2 -translate-x-1/2 text-white/70 text-sm">
