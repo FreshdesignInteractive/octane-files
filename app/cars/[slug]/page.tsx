@@ -139,20 +139,20 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
     <>
       <SiteHeader />
       <main>
-        {/* Hero */}
-        <div className="relative h-[clamp(280px,40vw,520px)] bg-text-primary overflow-hidden">
-          <Image
-            src={car.hero_image || '/placeholder.png'}
-            alt={name}
-            fill
-            className={car.hero_image ? 'object-cover' : 'object-contain'}
-            priority
-          />
-          {/* Gradient overlay */}
-          <div className="absolute inset-0 bg-linear-to-t from-text-primary/95 via-text-primary/30 to-transparent" />
-          {/* Title over hero */}
-          <div className="absolute bottom-0 left-0 right-0 px-8 pb-8">
-            <div className="max-w-page mx-auto">
+        {/* Hero — constrained to the same 1200px container as the body, not full-bleed */}
+        <div className="detail-container pt-8 pb-8">
+          <div className="relative h-[clamp(280px,40vw,520px)] bg-text-primary overflow-hidden rounded-card">
+            <Image
+              src={car.hero_image || '/placeholder.png'}
+              alt={name}
+              fill
+              className={car.hero_image ? 'object-cover' : 'object-contain'}
+              priority
+            />
+            {/* Gradient overlay */}
+            <div className="absolute inset-0 bg-linear-to-t from-text-primary/95 via-text-primary/30 to-transparent" />
+            {/* Title over hero */}
+            <div className="absolute bottom-0 left-0 right-0 px-8 pb-8">
               <div className="text-label font-semibold tracking-widest text-accent uppercase mb-2">
                 {car.country} &middot; {car.class}
               </div>
