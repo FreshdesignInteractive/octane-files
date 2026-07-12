@@ -70,8 +70,14 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
       {lightboxOpen && (
         <div
           onClick={close}
-          className="fixed inset-0 z-[200] bg-overlay flex items-center justify-center p-6"
+          className="fixed inset-0 z-[200] bg-black flex items-center justify-center p-6"
         >
+          {images.length > 1 && (
+            <div className="absolute top-6 left-1/2 -translate-x-1/2 text-white/70 text-sm">
+              {selected + 1} / {images.length}
+            </div>
+          )}
+
           <button
             onClick={close}
             aria-label="Close"
@@ -86,9 +92,9 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
             <button
               onClick={e => { e.stopPropagation(); prev() }}
               aria-label="Previous photo"
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-transparent border-none cursor-pointer p-2"
+              className="absolute left-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-white/30 hover:border-white/60 text-white/70 hover:text-white bg-transparent cursor-pointer flex items-center justify-center transition-colors"
             >
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="15,18 9,12 15,6" />
               </svg>
             </button>
@@ -102,9 +108,9 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
             <button
               onClick={e => { e.stopPropagation(); next() }}
               aria-label="Next photo"
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-white/70 hover:text-white bg-transparent border-none cursor-pointer p-2"
+              className="absolute right-4 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full border border-white/30 hover:border-white/60 text-white/70 hover:text-white bg-transparent cursor-pointer flex items-center justify-center transition-colors"
             >
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <polyline points="9,18 15,12 9,6" />
               </svg>
             </button>
