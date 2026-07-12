@@ -130,9 +130,7 @@ body {
   }
 
   .eyebrow {
-    /* Some eyebrows are literal <h2> tags (see app/cars/[slug]/page.tsx) —
-       font-ui pins them to the UI face despite the @layer base heading rule. */
-    @apply text-label font-bold tracking-widest text-text-tertiary uppercase font-ui;
+    @apply text-label font-bold tracking-widest text-text-tertiary uppercase;
   }
 
   .stat-grid {
