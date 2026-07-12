@@ -185,9 +185,9 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
         </div>
 
         {/* Body */}
-        <div className="site-container pb-20">
+        <div className="detail-container pb-20">
           {/* Sticky subnav */}
-          <nav className="sticky top-14 z-40 bg-text-primary/95 border-b border-border -mx-6 px-6 backdrop-blur-sm">
+          <nav className="sticky top-14 z-40 bg-text-primary/95 border-b border-border -mx-5 px-5 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10 backdrop-blur-sm">
             <div className="flex gap-0 overflow-x-auto">
               {sections.map(s => (
                 <a key={s.id} href={`#${s.id}`} className="text-xs font-medium text-text-secondary no-underline px-4 py-3 border-b-2 border-transparent whitespace-nowrap transition-colors">

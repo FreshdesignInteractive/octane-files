@@ -57,6 +57,11 @@
 
   /* Page container — extends Tailwind's max-w-* scale past its 7xl (1280px) top */
   --container-page: 90rem; /* 1440px */
+
+  /* Detail-page container — narrower reading-width variant, currently only
+     the car detail page body (1200px outer, 40px padding -> 1120px content
+     at full desktop size; padding steps down on smaller screens below). */
+  --container-detail: 75rem; /* 1200px */
 }
 
 * { box-sizing: border-box; }
@@ -109,6 +114,13 @@ body {
 @layer components {
   .site-container {
     @apply max-w-page mx-auto w-full px-6;
+  }
+
+  /* Detail-page container — padding steps 20px -> 24px -> 40px across
+     Tailwind's own sm/lg breakpoints; the 1200px max-width means it's
+     already fluid below that, so only padding needs to grade down. */
+  .detail-container {
+    @apply max-w-detail mx-auto w-full px-5 sm:px-6 lg:px-10;
   }
 
   .card {
