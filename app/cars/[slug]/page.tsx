@@ -8,6 +8,7 @@ import SaveButton from '@/components/SaveButton'
 import EditButton from '@/components/EditButton'
 import RadarChart from '@/components/RadarChart'
 import CarGallery from '@/components/CarGallery'
+import ShareButton from '@/components/ShareButton'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car, CarRelation } from '@/lib/types'
 
@@ -154,15 +155,13 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               {car.generation && <span className="text-text-secondary font-normal"> {car.generation}</span>}
             </h1>
             <div className="flex items-center gap-3">
-              {/* Share: visual placeholder only, not wired up yet */}
-              <button type="button" className="icon-link">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
-                  <polyline points="16 6 12 2 8 6" />
-                  <line x1="12" y1="2" x2="12" y2="15" />
-                </svg>
-                Share
-              </button>
+              <ShareButton
+                car={{
+                  name,
+                  infoLine: `${car.country} · ${car.class} · ${years}`,
+                  image: car.hero_image || '/placeholder.png',
+                }}
+              />
               <span className="w-px h-2.5 bg-border-mid" />
               <SaveButton modelId={car.id} />
               <EditButton slug={car.slug} />
