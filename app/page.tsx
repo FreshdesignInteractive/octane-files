@@ -11,8 +11,8 @@ export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1 bg-white">
-        <section className="border-b border-border bg-white py-5">
+      <main className="flex-1">
+        <section className="border-b border-border py-5">
           <div className="site-container">
             <Suspense>
               <FilterBar />
@@ -20,7 +20,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="site-container bg-white pt-8 pb-20">
+        <section className="site-container pt-8 pb-20">
           <Suspense>
             <CarGrid />
           </Suspense>
