@@ -89,17 +89,25 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
   return (
     <div className="relative bg-white rounded-full shadow-lg h-16 px-8 flex items-center">
       {/* Off-screen measuring clones — identical classes to the real links,
-          so offsetWidth reflects true rendered width at the current font. */}
-      <div className="absolute top-0 left-0 -translate-y-full invisible flex gap-8 pointer-events-none" aria-hidden="true">
-        {items.map((item, i) => (
-          <span
-            key={item.id}
-            ref={el => { measureRefs.current[i] = el }}
-            className="text-sm font-medium whitespace-nowrap px-4 py-2"
-          >
-            {item.label}
-          </span>
-        ))}
+          so offsetWidth reflects true rendered width at the current font.
+          `invisible` alone only hides them visually; it doesn't stop them
+          contributing to the page's scrollable width, and they're
+          deliberately unclipped/full-width to measure every label. The
+          zero-size, overflow-hidden wrapper is what actually contains
+          them — offsetWidth on the children is unaffected by an ancestor
+          clipping them. */}
+      <div className="absolute top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="flex gap-8">
+          {items.map((item, i) => (
+            <span
+              key={item.id}
+              ref={el => { measureRefs.current[i] = el }}
+              className="text-sm font-medium whitespace-nowrap px-4 py-2"
+            >
+              {item.label}
+            </span>
+          ))}
+        </div>
       </div>
 
       <div ref={trackRef} className="flex-1 min-w-0 flex items-center gap-8 overflow-hidden">

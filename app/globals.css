@@ -70,6 +70,11 @@ html {
   scroll-behavior: smooth;
   color-scheme: light;
   background: var(--color-bg-base);
+  /* The page itself never scrolls horizontally — a trackpad/mouse swipe
+     shouldn't be able to shift the layout sideways. This is a baseline
+     invariant, not a per-page patch; if something overflows, fix that
+     element instead of relying on this to hide it. */
+  overflow-x: hidden;
 }
 
 body {
