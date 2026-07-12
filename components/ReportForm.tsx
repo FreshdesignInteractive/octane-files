@@ -1,0 +1,104 @@
+'use client'
+
+import { useEffect, useState, type FormEvent } from 'react'
+import { createClient } from '@/lib/supabase-browser'
+import SignInDialog from '@/components/SignInDialog'
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
+
+type Status = 'idle' | 'sending' | 'sent' | 'error'
+
+export default function ReportForm({ carName, carSlug }: { carName: string; carSlug: string }) {
+  // undefined = auth state not yet resolved — avoids a signed-out flash on load
+  const [session, setSession] = useState<Session | null | undefined>(undefined)
+  const [showSignIn, setShowSignIn] = useState(false)
+  const [message, setMessage] = useState('')
+  const [status, setStatus] = useState<Status>('idle')
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, s: Session | null) => {
+      if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setSession(s)
+      } else if (event === 'SIGNED_OUT') {
+        setSession(null)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  async function handleSubmit(e: FormEvent) {
+    e.preventDefault()
+    if (!session) return
+    setStatus('sending')
+    setError(null)
+
+    try {
+      const res = await fetch('/api/report-issue', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          carName,
+          carUrl: `${window.location.origin}/cars/${carSlug}`,
+          message,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Something went wrong.')
+      setStatus('sent')
+    } catch (err) {
+      setStatus('error')
+      setError(err instanceof Error ? err.message : 'Something went wrong.')
+    }
+  }
+
+  if (status === 'sent') {
+    return (
+      <p className="text-body text-text-secondary leading-[1.8]">
+        Thanks — we’ll take a look at this vehicle profile.
+      </p>
+    )
+  }
+
+  if (session === undefined) return null
+
+  if (!session) {
+    return (
+      <div>
+        <p className="text-body text-text-secondary leading-[1.8] mb-5">
+          Sign in to report a mistake on this vehicle profile.
+        </p>
+        <button type="button" onClick={() => setShowSignIn(true)} className="btn-primary h-10 px-5">
+          Sign in to continue
+        </button>
+        {showSignIn && <SignInDialog onClose={() => setShowSignIn(false)} />}
+      </div>
+    )
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-5 max-w-125">
+      <div className="field">
+        <label htmlFor="report-message" className="field-label">What&apos;s wrong?</label>
+        <textarea
+          id="report-message"
+          className="textarea"
+          rows={6}
+          value={message}
+          onChange={e => setMessage(e.target.value)}
+          placeholder="e.g. the horsepower listed looks off, or a spec is missing"
+          required
+        />
+      </div>
+
+      {status === 'error' && <p className="text-body text-error">{error}</p>}
+
+      <button type="submit" disabled={status === 'sending'} className="btn-primary h-10 px-5 self-start">
+        {status === 'sending' ? 'Sending…' : 'Send report'}
+      </button>
+    </form>
+  )
+}
