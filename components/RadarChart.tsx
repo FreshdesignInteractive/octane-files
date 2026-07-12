@@ -42,12 +42,12 @@ export default function RadarChart({ scores }: { scores: RadarScores | null }) {
       {/* Data shape */}
       <polygon
         points={dataPoints.map(p => p.join(',')).join(' ')}
-        className="fill-accent/15 stroke-accent"
+        className="fill-accent-secondary/15 stroke-accent-secondary"
         strokeWidth={2}
         strokeLinejoin="round"
       />
       {dataPoints.map(([x, y], i) => (
-        <circle key={i} cx={x} cy={y} r={3} className="fill-accent" />
+        <circle key={i} cx={x} cy={y} r={3} className="fill-accent-secondary" />
       ))}
       {/* Axis labels */}
       {RADAR_AXES.map((axis, i) => {

@@ -286,8 +286,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 </div>
               )}
               {car.buyers_flag && (
-                <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-border bg-accent-subtle">
-                  <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-1.5">Buyer&apos;s Guide</div>
+                <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-secondary-border bg-accent-secondary-subtle">
+                  <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-1.5">Buyer&apos;s Guide</div>
                   <p className="text-body text-text-secondary m-0">{car.buyers_flag}</p>
                 </div>
               )}
@@ -301,7 +301,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 {car.analog_index !== null && (
                   <div className="stat-cell">
                     <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">Analog Index</div>
-                    <div className="text-xl font-semibold text-accent tracking-[-0.02em]">{car.analog_index}/10</div>
+                    <div className="text-xl font-semibold text-accent-secondary tracking-[-0.02em]">{car.analog_index}/10</div>
                   </div>
                 )}
                 <RadarChart scores={car.radar_scores} />
@@ -361,25 +361,25 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               <div className="grid gap-8 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
                 {car.driving_character && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Driving Character</div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">Driving Character</div>
                     <p className="text-body text-text-secondary leading-[1.7] m-0">{car.driving_character}</p>
                   </div>
                 )}
                 {car.design_notes && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Design</div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">Design</div>
                     <p className="text-body text-text-secondary leading-[1.7] m-0">{car.design_notes}</p>
                   </div>
                 )}
                 {car.motorsport_pedigree && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">Motorsport Pedigree</div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">Motorsport Pedigree</div>
                     <p className="text-body text-text-secondary leading-[1.7] m-0">{car.motorsport_pedigree}</p>
                   </div>
                 )}
                 {car.cultural_notes && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">In Culture</div>
+                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">In Culture</div>
                     <p className="text-body text-text-secondary leading-[1.7] m-0">{car.cultural_notes}</p>
                   </div>
                 )}
@@ -419,7 +419,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                       <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1.5">
                         {tier.label}
                       </div>
-                      <div className="text-xl font-semibold text-accent tracking-[-0.02em]">
+                      <div className="text-xl font-semibold text-accent-secondary tracking-[-0.02em]">
                         {formatMoney(tier.value)}
                       </div>
                     </div>
