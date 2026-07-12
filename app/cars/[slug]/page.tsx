@@ -9,6 +9,7 @@ import EditButton from '@/components/EditButton'
 import RadarChart from '@/components/RadarChart'
 import CarGallery from '@/components/CarGallery'
 import ShareButton from '@/components/ShareButton'
+import OverflowNav from '@/components/OverflowNav'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car, CarRelation } from '@/lib/types'
 
@@ -194,14 +195,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
         {/* Body */}
         <div className="detail-container pb-20">
           {/* Sticky subnav */}
-          <nav className="sticky top-14 z-40 bg-text-primary/95 border-b border-border -mx-5 px-5 sm:-mx-6 sm:px-6 lg:-mx-10 lg:px-10 backdrop-blur-sm">
-            <div className="flex gap-0 overflow-x-auto">
-              {sections.map(s => (
-                <a key={s.id} href={`#${s.id}`} className="text-xs font-medium text-text-secondary no-underline px-4 py-3 border-b-2 border-transparent whitespace-nowrap transition-colors">
-                  {s.label}
-                </a>
-              ))}
-            </div>
+          <nav className="sticky top-14 z-40 py-4">
+            <OverflowNav items={sections} />
           </nav>
 
           {/* Quick stats bar */}
