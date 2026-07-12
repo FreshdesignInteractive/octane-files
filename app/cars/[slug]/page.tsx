@@ -470,8 +470,16 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
           {/* Sidebar — two empty placeholder containers for now; heights are
               illustrative only, pending real content. Same shadow as the
-              subnav pill, same corner radius as the gallery/hero images. */}
-          <div className="flex flex-col gap-10">
+              subnav pill, same corner radius as the gallery/hero images.
+              Sticks right below the subnav once scrolled up to it: 56px
+              (site header, h-14) + 96px (subnav's own h-16 + py-4) = 152px.
+              lg-only — below that breakpoint this is a single stacked
+              column, not the two-column layout, so sticking here would
+              pin it awkwardly mid-page. self-start keeps it at its own
+              natural height instead of stretching to match the main
+              column (grid's default stretch), which would leave it no
+              room to actually stick. */}
+          <div className="flex flex-col gap-10 lg:sticky lg:top-[152px] lg:self-start">
             <div className="bg-white rounded-2xl shadow-lg min-h-40" />
             <div className="bg-white rounded-2xl shadow-lg min-h-96" />
 
