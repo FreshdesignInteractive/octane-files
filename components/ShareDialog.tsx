@@ -53,12 +53,11 @@ function PinterestIcon() {
   )
 }
 
-function InstagramIcon() {
+function EmbedIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <rect x="2" y="2" width="20" height="20" rx="5" />
-      <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
-      <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
     </svg>
   )
 }
@@ -78,6 +77,8 @@ function ShareOption({ label, icon, onClick }: { label: string; icon: React.Reac
 
 export default function ShareDialog({ car, onClose }: { car: ShareCarInfo; onClose: () => void }) {
   const [copied, setCopied] = useState(false)
+  const [htmlCopied, setHtmlCopied] = useState(false)
+  const [view, setView] = useState<'share' | 'embed'>('share')
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
@@ -111,22 +112,28 @@ export default function ShareDialog({ car, onClose }: { car: ShareCarInfo; onClo
     openShareWindow(`https://pinterest.com/pin/create/button/?url=${encodeURIComponent(window.location.href)}&media=${encodeURIComponent(car.image)}&description=${encodeURIComponent(car.name)}`)
   }
 
-  // Instagram has no web share-intent URL — unlike Facebook/Twitter/LinkedIn/
-  // Pinterest, there's no way to hand it a link directly. Copying the link
-  // is the standard fallback (paste into a bio/DM/story).
-  function shareInstagram() {
-    copyLink()
+  // Embeds the live public car page directly — there's no separate compact
+  // embed template, so the iframe shows the same page a visitor would see.
+  const embedSrc = typeof window !== 'undefined' ? window.location.href : ''
+  const embedSnippet = `<iframe src="${embedSrc}" width="450" height="400" style="border:0;border-radius:8px;" loading="lazy"></iframe>`
+
+  async function copyEmbedHtml() {
+    await navigator.clipboard.writeText(embedSnippet)
+    setHtmlCopied(true)
+    setTimeout(() => setHtmlCopied(false), 1800)
   }
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[200] bg-overlay flex items-center justify-center p-6">
       <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl pt-8 px-8 pb-8 w-full max-w-[560px] relative shadow-modal">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-text-primary tracking-[-0.02em] m-0">Share this car</h2>
+          <h2 className="text-xl font-bold text-text-primary tracking-[-0.02em] m-0">
+            {view === 'share' ? 'Share this car' : 'Embed this car'}
+          </h2>
           <button
             onClick={onClose}
             aria-label="Close"
-            className="bg-transparent border-none cursor-pointer text-text-tertiary flex items-center justify-center p-1 rounded-md"
+            className="bg-transparent border-none cursor-pointer text-text-secondary flex items-center justify-center p-1 rounded-md"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
               <path d="M18 6L6 18M6 6l12 12" />
@@ -139,19 +146,55 @@ export default function ShareDialog({ car, onClose }: { car: ShareCarInfo; onClo
             <Image src={car.image} alt="" fill className="object-cover" />
           </div>
           <div>
-            <div className="text-body font-semibold text-text-primary">{car.name}</div>
+            <h4 className="text-base text-text-primary m-0">{car.name}</h4>
             <div className="text-label text-text-secondary mt-1">{car.infoLine}</div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <ShareOption label={copied ? 'Copied!' : 'Copy Link'} onClick={copyLink} icon={<CopyIcon />} />
-          <ShareOption label="Facebook" onClick={shareFacebook} icon={<FacebookIcon />} />
-          <ShareOption label="Twitter / X" onClick={shareTwitter} icon={<TwitterIcon />} />
-          <ShareOption label="LinkedIn" onClick={shareLinkedIn} icon={<LinkedInIcon />} />
-          <ShareOption label="Pinterest" onClick={sharePinterest} icon={<PinterestIcon />} />
-          <ShareOption label={copied ? 'Copied!' : 'Instagram'} onClick={shareInstagram} icon={<InstagramIcon />} />
-        </div>
+        {view === 'share' ? (
+          <div className="grid grid-cols-2 gap-3">
+            <ShareOption label={copied ? 'Copied!' : 'Copy Link'} onClick={copyLink} icon={<CopyIcon />} />
+            <ShareOption label="Facebook" onClick={shareFacebook} icon={<FacebookIcon />} />
+            <ShareOption label="Twitter / X" onClick={shareTwitter} icon={<TwitterIcon />} />
+            <ShareOption label="LinkedIn" onClick={shareLinkedIn} icon={<LinkedInIcon />} />
+            <ShareOption label="Pinterest" onClick={sharePinterest} icon={<PinterestIcon />} />
+            <ShareOption label="Embed" onClick={() => setView('embed')} icon={<EmbedIcon />} />
+          </div>
+        ) : (
+          <div>
+            <div className="w-full max-w-[280px] mx-auto mb-5 rounded-lg overflow-hidden border border-border">
+              <div className="relative aspect-video bg-bg-elevated">
+                <Image src={car.image} alt="" fill className="object-cover" />
+              </div>
+              <div className="p-3">
+                <div className="text-body font-semibold text-text-primary">{car.name}</div>
+                <div className="text-label text-text-secondary mt-0.5">{car.infoLine}</div>
+                <div className="text-label text-accent mt-2">View on Octane Files</div>
+              </div>
+            </div>
+
+            <p className="text-label text-text-secondary mb-2">Copy and paste this into your website:</p>
+            <textarea
+              readOnly
+              value={embedSnippet}
+              onClick={e => (e.target as HTMLTextAreaElement).select()}
+              className="textarea h-20 font-mono text-xs mb-4 resize-none"
+            />
+
+            <div className="flex items-center justify-between">
+              <button type="button" onClick={copyEmbedHtml} className="btn-primary h-10 px-5">
+                {htmlCopied ? 'Copied!' : 'Copy HTML'}
+              </button>
+              <button
+                type="button"
+                onClick={() => setView('share')}
+                className="text-body text-text-secondary underline bg-transparent border-none cursor-pointer"
+              >
+                Go back
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )
