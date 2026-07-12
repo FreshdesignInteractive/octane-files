@@ -20,7 +20,7 @@ const field = (label: string, children: React.ReactNode) => (
   </div>
 )
 
-const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking-[0.06em] mb-4 pb-2 border-b border-border'
+const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking-widest mb-4 pb-2 border-b border-border'
 
 // Canonical section list — identical ids and order to app/cars/[slug]/page.tsx,
 // so the sticky nav below and every <section id="..."> exactly mirror the
@@ -120,7 +120,7 @@ export default function GenerationFieldsEditor({
           {field('Body Styles', (
             <div className="flex flex-wrap gap-2">
               {BODY_STYLES.map(style => (
-                <label key={style} className={`pill ${value.body_styles.includes(style) ? 'pill-active' : ''}`} style={{ cursor: 'pointer' }}>
+                <label key={style} className={`pill ${value.body_styles.includes(style) ? 'pill-active' : ''}`}>
                   <input
                     type="checkbox"
                     className="sr-only"
@@ -138,7 +138,7 @@ export default function GenerationFieldsEditor({
           {field('Drivetrain', (
             <div className="flex flex-wrap gap-2">
               {DRIVETRAIN_TYPES.map(dt => (
-                <label key={dt} className={`pill ${value.drivetrain.includes(dt) ? 'pill-active' : ''}`} style={{ cursor: 'pointer' }}>
+                <label key={dt} className={`pill ${value.drivetrain.includes(dt) ? 'pill-active' : ''}`}>
                   <input
                     type="checkbox"
                     className="sr-only"

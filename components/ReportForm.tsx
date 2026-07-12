@@ -57,7 +57,7 @@ export default function ReportForm({ carName, carSlug }: { carName: string; carS
 
   if (status === 'sent') {
     return (
-      <p className="text-body text-text-secondary leading-[1.8]">
+      <p className="text-body text-text-secondary leading-relaxed">
         Thanks — we’ll take a look at this vehicle profile.
       </p>
     )
@@ -73,7 +73,7 @@ export default function ReportForm({ carName, carSlug }: { carName: string; carS
     const showSignIn = !signInDismissed
     return (
       <div>
-        <p className="text-body text-text-secondary leading-[1.8] mb-5">
+        <p className="text-body text-text-secondary leading-relaxed mb-5">
           Sign in to report a mistake on this vehicle profile.
         </p>
         <button type="button" onClick={() => setSignInDismissed(false)} className="btn-primary h-10 px-5">

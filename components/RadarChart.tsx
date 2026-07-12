@@ -59,7 +59,7 @@ export default function RadarChart({ scores }: { scores: RadarScores | null }) {
             y={y}
             textAnchor="middle"
             dominantBaseline="middle"
-            className="fill-text-tertiary text-[9px] font-medium uppercase tracking-wide"
+            className="fill-text-tertiary text-micro font-medium uppercase tracking-wide"
           >
             {axis.label}
           </text>

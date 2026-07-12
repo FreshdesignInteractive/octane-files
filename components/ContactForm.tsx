@@ -33,7 +33,7 @@ export default function ContactForm() {
 
   if (status === 'sent') {
     return (
-      <p className="text-body text-text-secondary leading-[1.8]">
+      <p className="text-body text-text-secondary leading-relaxed">
         Thanks — your message is on its way. We’ll get back to you soon.
       </p>
     )

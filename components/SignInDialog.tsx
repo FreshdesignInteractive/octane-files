@@ -43,7 +43,7 @@ export default function SignInDialog({ onClose }: { onClose: () => void }) {
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[200] bg-overlay flex items-center justify-center p-6"
+      className="fixed inset-0 z-overlay bg-overlay flex items-center justify-center p-6"
     >
       <div
         onClick={e => e.stopPropagation()}
@@ -60,10 +60,10 @@ export default function SignInDialog({ onClose }: { onClose: () => void }) {
           </svg>
         </button>
 
-        <h2 className="text-xl font-bold text-text-primary tracking-[-0.02em] mb-2">
+        <h2 className="text-xl font-bold text-text-primary mb-2">
           Sign in to Octane Files
         </h2>
-        <p className="text-body text-text-secondary leading-[1.6] mb-7">
+        <p className="text-body text-text-secondary leading-relaxed mb-7">
           Sign in to post your cars, like builds, and join the community.
         </p>
 
@@ -75,7 +75,7 @@ export default function SignInDialog({ onClose }: { onClose: () => void }) {
           Continue with Google
         </button>
 
-        <p className="text-label text-text-tertiary mt-5 text-center leading-[1.6]">
+        <p className="text-label text-text-tertiary mt-5 text-center leading-relaxed">
           By signing in you agree to our{' '}
           <Link href="/terms" onClick={onClose} className="text-text-secondary underline">terms</Link>
           {' '}and{' '}

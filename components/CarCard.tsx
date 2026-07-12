@@ -29,12 +29,12 @@ export default function CarCard({ car }: { car: CarSummary }) {
 
         {/* Info */}
         <div className="p-4">
-          <div className="text-base font-bold text-text-primary tracking-[-0.02em] leading-[1.2] mb-1.5">
+          <h3 className="text-base font-bold text-text-primary leading-tight mb-1.5">
             {car.make} {car.model}
             {car.generation && car.generation.toLowerCase() !== car.model.toLowerCase() && (
               <span className="text-text-secondary font-normal text-sm"> {car.generation}</span>
             )}
-          </div>
+          </h3>
           <div className="text-xs text-text-tertiary flex gap-2 flex-wrap">
             <span>{car.country}</span>
             <span>&middot;</span>

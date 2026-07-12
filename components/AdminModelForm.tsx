@@ -342,7 +342,7 @@ export default function AdminModelForm({
       )}
 
       <div className="mb-7 p-4 rounded-lg border border-border-mid bg-bg-elevated flex flex-col gap-2">
-        <div className="text-label font-bold tracking-[0.08em] text-text-tertiary uppercase">Quick Import</div>
+        <div className="text-label font-bold tracking-widest text-text-tertiary uppercase">Quick Import</div>
         <p className="text-label text-text-tertiary -mt-1">
           Fills the form in memory only — review below and click Save to commit.
         </p>

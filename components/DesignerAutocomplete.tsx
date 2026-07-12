@@ -51,7 +51,7 @@ export default function DesignerAutocomplete({
         placeholder="Type to search existing designers, or enter a new one"
       />
       {open && suggestions.length > 0 && (
-        <div className="absolute top-[calc(100%+4px)] left-0 right-0 bg-white border border-border rounded-md shadow-dropdown z-10 max-h-50 overflow-y-auto">
+        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] left-0 right-0 bg-white border border-border rounded-md shadow-dropdown z-10 max-h-50 overflow-y-auto">
           {suggestions.slice(0, 8).map(d => (
             <button
               key={d}

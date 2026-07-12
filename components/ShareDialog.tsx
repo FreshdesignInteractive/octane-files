@@ -124,10 +124,10 @@ export default function ShareDialog({ car, onClose }: { car: ShareCarInfo; onClo
   }
 
   return (
-    <div onClick={onClose} className="fixed inset-0 z-[200] bg-overlay flex items-center justify-center p-6">
+    <div onClick={onClose} className="fixed inset-0 z-overlay bg-overlay flex items-center justify-center p-6">
       <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl pt-8 px-8 pb-8 w-full max-w-[560px] relative shadow-modal">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-text-primary tracking-[-0.02em] m-0">
+          <h2 className="text-xl font-bold text-text-primary m-0">
             {view === 'share' ? 'Share this car' : 'Embed this car'}
           </h2>
           <button

@@ -135,7 +135,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           </p>
         )
       }
-      return <p key={i} className="leading-[1.8] text-text-secondary mb-5">{para}</p>
+      return <p key={i} className="leading-relaxed text-text-secondary mb-5">{para}</p>
     })
   }
 
@@ -152,7 +152,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           </div>
 
           <div className="flex flex-wrap justify-between items-end gap-3 mb-6">
-            <h1 className="text-hero font-bold text-text-primary leading-[1.1] m-0">
+            <h1 className="text-hero font-bold text-text-primary leading-tight m-0">
               {car.make} {car.model}
               {car.generation && <span className="text-text-secondary font-normal"> {car.generation}</span>}
             </h1>
@@ -232,7 +232,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               .filter((s): s is { label: string; value: React.ReactNode } => s !== null)
               .map(stat => (
                 <div key={stat.label} className="stat-cell">
-                  <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">
+                  <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">
                     {stat.label}
                   </div>
                   <div className="text-sm font-medium text-text-primary">
@@ -276,7 +276,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               )}
               {car.buyers_flag && (
                 <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-secondary-border bg-accent-secondary-subtle">
-                  <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-1.5">Buyer&apos;s Guide</div>
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Buyer&apos;s Guide</div>
                   <p className="text-body text-text-secondary m-0">{car.buyers_flag}</p>
                 </div>
               )}
@@ -289,8 +289,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               <div className="flex flex-wrap gap-10 items-center">
                 {car.analog_index !== null && (
                   <div className="stat-cell">
-                    <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1">Analog Index</div>
-                    <div className="text-xl font-semibold text-accent-secondary tracking-[-0.02em]">{car.analog_index}/10</div>
+                    <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">Analog Index</div>
+                    <div className="text-xl font-semibold text-accent-secondary tracking-heading">{car.analog_index}/10</div>
                   </div>
                 )}
                 <RadarChart scores={car.radar_scores} />
@@ -304,7 +304,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
                 {car.specs.map(group => (
                   <div key={group.group}>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent uppercase mb-3">
+                    <div className="text-label font-bold tracking-widest text-accent uppercase mb-3">
                       {group.group}
                     </div>
                     <div className="flex flex-col gap-0">
@@ -325,7 +325,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           {hasVariantsTrims && (
             <Section id="variants-trims" label="Which one to look for">
               {car.variants_to_know && (
-                <p className="text-body text-text-secondary leading-[1.7] max-w-170 mb-6">
+                <p className="text-body text-text-secondary leading-relaxed max-w-170 mb-6">
                   {car.variants_to_know}
                 </p>
               )}
@@ -350,26 +350,26 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               <div className="grid gap-8 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
                 {car.driving_character && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">Driving Character</div>
-                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.driving_character}</p>
+                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Driving Character</div>
+                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.driving_character}</p>
                   </div>
                 )}
                 {car.design_notes && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">Design</div>
-                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.design_notes}</p>
+                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Design</div>
+                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.design_notes}</p>
                   </div>
                 )}
                 {car.motorsport_pedigree && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">Motorsport Pedigree</div>
-                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.motorsport_pedigree}</p>
+                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Motorsport Pedigree</div>
+                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.motorsport_pedigree}</p>
                   </div>
                 )}
                 {car.cultural_notes && (
                   <div>
-                    <div className="text-label font-bold tracking-[0.08em] text-accent-secondary uppercase mb-3">In Culture</div>
-                    <p className="text-body text-text-secondary leading-[1.7] m-0">{car.cultural_notes}</p>
+                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">In Culture</div>
+                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.cultural_notes}</p>
                   </div>
                 )}
               </div>
@@ -405,10 +405,10 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] max-w-120 mb-5">
                   {marketTiers.map(tier => (
                     <div key={tier.label} className="stat-cell">
-                      <div className="text-micro font-semibold tracking-[0.08em] text-text-tertiary uppercase mb-1.5">
+                      <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1.5">
                         {tier.label}
                       </div>
-                      <div className="text-xl font-semibold text-accent-secondary tracking-[-0.02em]">
+                      <div className="text-xl font-semibold text-accent-secondary tracking-heading">
                         {formatMoney(tier.value)}
                       </div>
                     </div>
@@ -416,7 +416,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 </div>
               )}
               {car.market_data?.notes && (
-                <p className="text-body text-text-secondary leading-[1.7] max-w-150">
+                <p className="text-body text-text-secondary leading-relaxed max-w-150">
                   {car.market_data.notes}
                 </p>
               )}
@@ -431,7 +431,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           {/* What owning one is like — Known Issues */}
           {car.known_issues && (
             <Section id="known-issues" label="What owning one is like">
-              <p className="text-body text-text-secondary leading-[1.7] max-w-170 m-0">{car.known_issues}</p>
+              <p className="text-body text-text-secondary leading-relaxed max-w-170 m-0">{car.known_issues}</p>
             </Section>
           )}
 
@@ -496,7 +496,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 dialog, so Google sign-in's redirect (which always lands on
                 the homepage) doesn't need to restore any in-page state. */}
             <div className="flex flex-col items-center gap-2 text-center px-6">
-              <p className="text-label text-text-tertiary leading-[1.6] m-0">
+              <p className="text-label text-text-tertiary leading-relaxed m-0">
                 This page was generated by AI and may contain inaccuracies.
               </p>
               <Link
