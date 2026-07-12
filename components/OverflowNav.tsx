@@ -19,6 +19,7 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
   const [visibleCount, setVisibleCount] = useState(items.length)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
+  const [activeId, setActiveId] = useState<string | null>(items[0]?.id ?? null)
 
   useEffect(() => {
     function recalculate() {
@@ -44,6 +45,28 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
     const ro = new ResizeObserver(recalculate)
     if (trackRef.current) ro.observe(trackRef.current)
     return () => ro.disconnect()
+  }, [items])
+
+  // Scrollspy: highlight whichever section's heading is currently nearest
+  // the top of the viewport, below the sticky header + this nav itself.
+  useEffect(() => {
+    const elements = items
+      .map(item => document.getElementById(item.id))
+      .filter((el): el is HTMLElement => el !== null)
+    if (elements.length === 0) return
+
+    const observer = new IntersectionObserver(
+      entries => {
+        const visible = entries.filter(e => e.isIntersecting)
+        if (visible.length === 0) return
+        const topMost = visible.reduce((a, b) => (a.boundingClientRect.top < b.boundingClientRect.top ? a : b))
+        setActiveId(topMost.target.id)
+      },
+      { rootMargin: '-140px 0px -70% 0px', threshold: 0 }
+    )
+
+    elements.forEach(el => observer.observe(el))
+    return () => observer.disconnect()
   }, [items])
 
   useEffect(() => {
@@ -72,7 +95,7 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
           <span
             key={item.id}
             ref={el => { measureRefs.current[i] = el }}
-            className="text-sm font-medium whitespace-nowrap"
+            className="text-sm font-medium whitespace-nowrap px-4 py-2"
           >
             {item.label}
           </span>
@@ -84,7 +107,9 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
           <a
             key={item.id}
             href={`#${item.id}`}
-            className="text-sm font-medium text-text-primary no-underline whitespace-nowrap transition-colors hover:text-accent"
+            className={`text-sm font-medium no-underline whitespace-nowrap px-4 py-2 rounded-full transition-colors ${
+              item.id === activeId ? 'bg-accent-subtle text-accent' : 'text-text-primary hover:bg-bg-elevated'
+            }`}
           >
             {item.label}
           </a>
@@ -114,7 +139,9 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
                   key={item.id}
                   href={`#${item.id}`}
                   onClick={() => setMenuOpen(false)}
-                  className="block px-4 py-2 text-sm text-text-primary no-underline transition-colors hover:bg-bg-elevated"
+                  className={`block px-4 py-2 text-sm no-underline transition-colors ${
+                    item.id === activeId ? 'bg-accent-subtle text-accent' : 'text-text-primary hover:bg-bg-elevated'
+                  }`}
                 >
                   {item.label}
                 </a>
