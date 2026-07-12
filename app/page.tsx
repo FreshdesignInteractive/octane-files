@@ -3,6 +3,7 @@ import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import FilterBar from '@/components/FilterBar'
 import CarGrid from '@/components/CarGrid'
+import BackToTop from '@/components/BackToTop'
 
 // Static shell — no server-side Supabase calls.
 // CarGrid fetches its own data from /api/models client-side.
@@ -27,6 +28,7 @@ export default function HomePage() {
       </main>
 
       <SiteFooter />
+      <BackToTop />
     </>
   )
 }
