@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable}`}>
-      <body className="min-h-screen flex flex-col bg-white text-text-primary">{children}</body>
+      <body className="min-h-screen flex flex-col bg-bg-base text-text-primary">{children}</body>
     </html>
   )
 }
