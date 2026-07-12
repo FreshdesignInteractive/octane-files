@@ -10,6 +10,7 @@ import RadarChart from '@/components/RadarChart'
 import CarGallery from '@/components/CarGallery'
 import ShareButton from '@/components/ShareButton'
 import OverflowNav from '@/components/OverflowNav'
+import BackToTop from '@/components/BackToTop'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car, CarRelation } from '@/lib/types'
 
@@ -514,6 +515,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
         </div>
       </main>
       <SiteFooter />
+      <BackToTop />
     </>
   )
 }
