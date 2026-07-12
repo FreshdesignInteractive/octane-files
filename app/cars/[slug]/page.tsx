@@ -200,8 +200,12 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           </nav>
 
           {/* Body/side containership — main content column stays plain
-              (inherits the page background), sidebar is fixed-width and
-              stacks below the main column under lg. */}
+              (inherits the page background), sidebar is fixed-width. Below
+              lg, CSS Grid's default auto-placement would put the sidebar
+              (source order: second) after all of the main content, since
+              there's only one column to stack into — order-first on the
+              sidebar below (reset via lg:order-none) puts it right after
+              the subnav instead, without changing the desktop layout. */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
           <div>
           {/* Quick stats bar — mt-6 (24px) matches the sidebar's own top
@@ -483,7 +487,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               its own natural height instead of stretching to match the
               main column (grid's default stretch), which would leave it
               no room to actually stick. */}
-          <div className="flex flex-col gap-10 mt-6 lg:sticky lg:top-[152px] lg:self-start">
+          <div className="flex flex-col gap-10 mt-6 order-first lg:order-none lg:sticky lg:top-[152px] lg:self-start">
             <div className="bg-white rounded-2xl shadow-lg min-h-40" />
             <div className="bg-white rounded-2xl shadow-lg min-h-96" />
 
