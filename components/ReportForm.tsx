@@ -10,7 +10,7 @@ type Status = 'idle' | 'sending' | 'sent' | 'error'
 export default function ReportForm({ carName, carSlug }: { carName: string; carSlug: string }) {
   // undefined = auth state not yet resolved — avoids a signed-out flash on load
   const [session, setSession] = useState<Session | null | undefined>(undefined)
-  const [showSignIn, setShowSignIn] = useState(false)
+  const [signInDismissed, setSignInDismissed] = useState(false)
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -66,15 +66,20 @@ export default function ReportForm({ carName, carSlug }: { carName: string; carS
   if (session === undefined) return null
 
   if (!session) {
+    // Signed-out visitors see the sign-in dialog immediately, not a button
+    // they have to click first — showSignIn is derived from state, not
+    // synced via an effect. If they close it without signing in, this
+    // fallback prompt still has a button to reopen it.
+    const showSignIn = !signInDismissed
     return (
       <div>
         <p className="text-body text-text-secondary leading-[1.8] mb-5">
           Sign in to report a mistake on this vehicle profile.
         </p>
-        <button type="button" onClick={() => setShowSignIn(true)} className="btn-primary h-10 px-5">
+        <button type="button" onClick={() => setSignInDismissed(false)} className="btn-primary h-10 px-5">
           Sign in to continue
         </button>
-        {showSignIn && <SignInDialog onClose={() => setShowSignIn(false)} />}
+        {showSignIn && <SignInDialog onClose={() => setSignInDismissed(true)} />}
       </div>
     )
   }
