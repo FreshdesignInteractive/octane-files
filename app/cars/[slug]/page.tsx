@@ -7,6 +7,7 @@ import SiteFooter from '@/components/SiteFooter'
 import SaveButton from '@/components/SaveButton'
 import EditButton from '@/components/EditButton'
 import RadarChart from '@/components/RadarChart'
+import CarGallery from '@/components/CarGallery'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car, CarRelation } from '@/lib/types'
 
@@ -95,6 +96,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
   const galleryImages = car.gallery_images?.filter(Boolean) ?? []
+  const allImages = [car.hero_image || '/placeholder.png', ...galleryImages]
   const relatedCars = car.relations?.filter(r => r.relation_type === 'related') ?? []
   const rivalCars = car.relations?.filter(r => r.relation_type === 'rival') ?? []
   const marketTiers = [
@@ -105,7 +107,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
   const sections = [
     { id: 'overview', label: 'Overview' },
-    galleryImages.length > 0 && { id: 'gallery', label: 'Gallery' },
     hasCollectibility && { id: 'collectibility', label: 'Why collectors want it' },
     hasRatings && { id: 'ratings', label: 'How it scores' },
     hasSpecifications && { id: 'specifications', label: 'Specifications' },
@@ -139,49 +140,56 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
     <>
       <SiteHeader />
       <main>
-        {/* Hero — constrained to the same 1200px container as the body, not full-bleed */}
-        <div className="detail-container pt-8 pb-8">
-          <div className="relative h-[clamp(280px,40vw,520px)] bg-text-primary overflow-hidden rounded-card">
-            <Image
-              src={car.hero_image || '/placeholder.png'}
-              alt={name}
-              fill
-              className={car.hero_image ? 'object-cover' : 'object-contain'}
-              priority
-            />
-            {/* Gradient overlay */}
-            <div className="absolute inset-0 bg-linear-to-t from-text-primary/95 via-text-primary/30 to-transparent" />
-            {/* Title over hero */}
-            <div className="absolute bottom-0 left-0 right-0 px-8 pb-8">
-              <div className="text-label font-semibold tracking-widest text-accent uppercase mb-2">
-                {car.country} &middot; {car.class}
-              </div>
-              <h1 className="text-hero font-bold text-white leading-[1.1] m-0">
-                {car.make} {car.model}
-                {car.generation && <span className="text-white/50 font-normal"> {car.generation}</span>}
-              </h1>
-              {car.nickname && (
-                <div className="text-white/60 text-lg italic mt-1">&ldquo;{car.nickname}&rdquo;</div>
-              )}
-              {(car.is_icon || car.homologation_special || car.poster_car) && (
-                <div className="flex gap-2 flex-wrap mt-2.5">
-                  {car.is_icon && (
-                    <span className="text-label font-semibold uppercase tracking-wide text-white bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/25">★ Icon</span>
-                  )}
-                  {car.homologation_special && (
-                    <span className="text-label font-semibold uppercase tracking-wide text-white bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/25">Homologation Special</span>
-                  )}
-                  {car.poster_car && (
-                    <span className="text-label font-semibold uppercase tracking-wide text-white bg-white/15 backdrop-blur-sm px-2.5 py-1 rounded-full border border-white/25">Poster Car</span>
-                  )}
-                </div>
-              )}
-              <div className="text-sm text-white/45 mt-1.5">
-                {years}
-                {car.units_produced && ` · ${car.units_produced.toLocaleString()} produced`}
-              </div>
+        {/* Hero — breadcrumb + title above a flat image, no gradient overlay */}
+        <div className="detail-container pt-8 pb-6">
+          <div className="flex items-center gap-1 text-xs mb-3">
+            <Link href="/" className="text-accent no-underline">Browse</Link>
+            <span className="text-text-tertiary">&rsaquo;</span>
+            <span className="text-text-primary">{name}</span>
+          </div>
+
+          <div className="flex flex-wrap justify-between items-end gap-3 mb-6">
+            <h1 className="text-hero font-bold text-text-primary leading-[1.1] m-0">
+              {car.make} {car.model}
+              {car.generation && <span className="text-text-secondary font-normal"> {car.generation}</span>}
+            </h1>
+            <div className="flex items-center gap-3">
+              {/* Share: visual placeholder only, not wired up yet */}
+              <button type="button" className="icon-link">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8" />
+                  <polyline points="16 6 12 2 8 6" />
+                  <line x1="12" y1="2" x2="12" y2="15" />
+                </svg>
+                Share
+              </button>
+              <span className="w-px h-2.5 bg-border-mid" />
+              <SaveButton modelId={car.id} />
+              <EditButton slug={car.slug} />
             </div>
           </div>
+
+          {/* Gallery — hero image with a thumbnail rail; click a thumbnail to
+              swap the large display, click the large image for a lightbox */}
+          <CarGallery images={allImages} alt={name} />
+        </div>
+
+        {/* TEMP: relocated from the old hero overlay — placeholder position, to be
+            repositioned/restyled once the redesign reaches this content. */}
+        <div className="detail-container flex flex-wrap items-center gap-3 pb-6">
+          <span className="text-label font-semibold tracking-widest text-accent uppercase">
+            {car.country} &middot; {car.class}
+          </span>
+          {car.nickname && (
+            <span className="text-text-secondary italic text-sm">&ldquo;{car.nickname}&rdquo;</span>
+          )}
+          {car.is_icon && <span className="pill pill-active">★ Icon</span>}
+          {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
+          {car.poster_car && <span className="pill pill-active">Poster Car</span>}
+          <span className="text-text-tertiary text-sm">
+            {years}
+            {car.units_produced && ` · ${car.units_produced.toLocaleString()} produced`}
+          </span>
         </div>
 
         {/* Body */}
@@ -196,12 +204,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               ))}
             </div>
           </nav>
-
-          {/* Save to Garage */}
-          <div className="pt-6 flex gap-2.5">
-            <SaveButton modelId={car.id} />
-            <EditButton slug={car.slug} />
-          </div>
 
           {/* Quick stats bar */}
           <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] my-8">
@@ -243,24 +245,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 {renderText(car.overview)}
               </div>
             </section>
-          )}
-
-          {/* Gallery */}
-          {galleryImages.length > 0 && (
-            <Section id="gallery" label="Gallery">
-              <div className="grid gap-4 grid-cols-[repeat(auto-fill,minmax(220px,1fr))]">
-                {galleryImages.map((src, i) => (
-                  <div key={src} className="relative aspect-[4/3] rounded-lg overflow-hidden bg-border">
-                    <Image
-                      src={src}
-                      alt={`${name} — photo ${i + 1}`}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ))}
-              </div>
-            </Section>
           )}
 
           {/* Why collectors want it */}

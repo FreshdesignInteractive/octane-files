@@ -53,11 +53,15 @@ export default function SaveButton({ modelId }: { modelId: string }) {
   return (
     <>
       <button
+        type="button"
         onClick={toggle}
         disabled={pending}
-        className={saved ? 'btn-primary px-5 h-10' : 'btn-secondary px-5 h-10'}
+        className={saved ? 'icon-link text-accent' : 'icon-link'}
       >
-        {saved ? '✓ In my Garage' : 'Save to my Garage'}
+        <svg width="16" height="16" viewBox="0 0 24 24" fill={saved ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+        </svg>
+        {saved ? 'Saved to Garage' : 'Save to Garage'}
       </button>
 
       {showSignIn && <SignInDialog onClose={() => setShowSignIn(false)} />}

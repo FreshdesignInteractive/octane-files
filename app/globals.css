@@ -151,6 +151,11 @@ body {
     @apply border-[1.5px] border-accent bg-accent text-white font-medium;
   }
 
+  .icon-link {
+    @apply inline-flex items-center gap-1 text-xs text-text-primary bg-transparent
+           border-none p-0 cursor-pointer no-underline transition-colors hover:text-accent;
+  }
+
   .eyebrow {
     @apply text-label font-bold tracking-widest text-text-tertiary uppercase;
   }
