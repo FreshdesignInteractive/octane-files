@@ -199,6 +199,11 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             <OverflowNav items={sections} />
           </nav>
 
+          {/* Body/side containership — main content column stays plain
+              (inherits the page background), sidebar is fixed-width and
+              stacks below the main column under lg. */}
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
+          <div>
           {/* Quick stats bar */}
           <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] my-8">
             {([
@@ -460,6 +465,16 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               </svg>
               All cars
             </Link>
+          </div>
+          </div>
+
+          {/* Sidebar — two empty placeholder containers for now; heights are
+              illustrative only, pending real content. Same shadow as the
+              subnav pill, same corner radius as the gallery/hero images. */}
+          <div className="flex flex-col gap-10">
+            <div className="bg-white rounded-2xl shadow-lg min-h-40" />
+            <div className="bg-white rounded-2xl shadow-lg min-h-96" />
+          </div>
           </div>
         </div>
       </main>
