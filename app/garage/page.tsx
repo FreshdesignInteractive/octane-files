@@ -69,18 +69,18 @@ export default function GaragePage() {
     <>
       <SiteHeader />
       <main className="site-container pt-15 pb-20 flex-1">
-        <h1 className="text-heading font-bold tracking-[-0.03em] mb-8">My Garage</h1>
+        <h1 className="text-heading font-bold mb-8">My Garage</h1>
 
         {userId === undefined ? null : userId === null ? (
           <div className="text-center py-20">
-            <p className="text-base text-text-secondary mb-6">Sign in to see the cars you&apos;ve saved.</p>
+            <p className="text-paragraph text-text-secondary mb-6">Sign in to see the cars you&apos;ve saved.</p>
             <button onClick={() => setShowSignIn(true)} className="btn-primary h-10 px-7">
               Sign In
             </button>
           </div>
         ) : cars === null ? null : cars.length === 0 ? (
           <div className="text-center py-20">
-            <p className="text-base text-text-secondary mb-6">You haven&apos;t saved any cars yet.</p>
+            <p className="text-paragraph text-text-secondary mb-6">You haven&apos;t saved any cars yet.</p>
             <Link href="/" className="btn-primary h-10 px-7 no-underline">
               Browse cars
             </Link>

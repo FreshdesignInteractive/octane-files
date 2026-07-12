@@ -156,7 +156,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               <div className="text-label font-semibold tracking-widest text-accent uppercase mb-2">
                 {car.country} &middot; {car.class}
               </div>
-              <h1 className="text-hero font-bold tracking-[-0.03em] text-white leading-[1.1] m-0">
+              <h1 className="text-hero font-bold text-white leading-[1.1] m-0">
                 {car.make} {car.model}
                 {car.generation && <span className="text-white/50 font-normal"> {car.generation}</span>}
               </h1>

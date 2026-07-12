@@ -10,7 +10,7 @@ export default function AboutPage() {
       <SiteHeader />
       <main className="site-container pt-15 pb-20">
         <div className="max-w-180">
-          <h1 className="text-heading font-bold tracking-[-0.03em] mb-2">
+          <h1 className="text-heading font-bold mb-2">
             Every Car Has a Story. We&apos;re Just Here to Help You Keep It.
           </h1>
 

@@ -20,7 +20,7 @@ const field = (label: string, children: React.ReactNode) => (
   </div>
 )
 
-const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking-[0.06em] mb-4 pb-2 border-b border-border'
+const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking-[0.06em] mb-4 pb-2 border-b border-border font-ui'
 
 // Canonical section list — identical ids and order to app/cars/[slug]/page.tsx,
 // so the sticky nav below and every <section id="..."> exactly mirror the

@@ -10,8 +10,8 @@ export default function ContactPage() {
       <SiteHeader />
       <main className="site-container pt-15 pb-20">
         <div className="max-w-180">
-          <h1 className="text-heading font-bold tracking-[-0.03em] mb-2">Contact Us</h1>
-          <p className="text-base text-text-secondary leading-[1.8] mb-8">
+          <h1 className="text-heading font-bold mb-2">Contact Us</h1>
+          <p className="text-paragraph text-text-secondary mb-8">
             Have a question or want to get in touch? Send us a message below.
           </p>
           <ContactForm />

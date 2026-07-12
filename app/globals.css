@@ -19,17 +19,23 @@
   --color-error:          #ef4444;
   --color-overlay:        rgb(0 0 0 / 0.45);
 
-  /* Font family — reuses the Inter variable next/font sets on <html> */
-  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  /* Two-font system — brand/heading face vs. UI/body face, both set via
+     next/font variables on <html> (see app/layout.tsx). Headings (h1-h6,
+     see the @layer base rules below) always use font-brand; everything
+     else inherits font-ui from <body>. */
+  --font-brand: var(--font-plus-jakarta), system-ui, -apple-system, sans-serif;
+  --font-ui:    var(--font-inter), system-ui, -apple-system, sans-serif;
 
   /* Font sizes with no exact match in Tailwind's default scale.
      12/14/16/20/24px already exist as text-xs/sm/base/xl/2xl — use those directly. */
-  --text-micro:   0.625rem;  /* 10px */
-  --text-label:   0.6875rem; /* 11px — uppercase section eyebrows */
-  --text-body:    0.8125rem; /* 13px — most common UI text size site-wide */
-  --text-heading: 2rem;      /* 32px — page H1s */
-  --text-hero:    clamp(1.625rem, 4vw, 2.75rem); /* car detail hero title */
-  --text-display: 7.5rem;    /* 120px — 404 page only */
+  --text-micro:     0.625rem;  /* 10px */
+  --text-label:     0.6875rem; /* 11px — uppercase section eyebrows */
+  --text-body:      0.8125rem; /* 13px — most common UI text size site-wide */
+  --text-paragraph:              0.9375rem; /* 15px — main paragraph/body copy */
+  --text-paragraph--line-height: 1.5rem;    /* 24px */
+  --text-heading:   2rem;      /* 32px — page H1s */
+  --text-hero:      clamp(1.625rem, 4vw, 2.75rem); /* car detail hero title */
+  --text-display:   7.5rem;    /* 120px — 404 page only */
 
   /* Radius — 4/6/8/16px already exist as rounded-sm/md/lg/2xl; pills and
      circles use Tailwind's built-in rounded-full. Only 10px (cards) is new. */
@@ -55,13 +61,37 @@ html {
 body {
   background: var(--color-white);
   color: var(--color-text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-ui);
   -webkit-font-smoothing: antialiased;
 }
 
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: var(--color-bg-elevated); }
 ::-webkit-scrollbar-thumb { background: var(--color-border-mid); border-radius: 3px; }
+
+/* ---- Heading typography system ----
+   font-brand (Plus Jakarta Sans) on every heading tag, font-ui (Inter)
+   everywhere else. Weight steps down Bold -> Semibold -> Medium as the
+   scale descends; only h1/h2 get the tight "large header" tracking.
+   Sizing itself stays per-instance (text-heading/text-hero/text-2xl/etc.)
+   — this layer only owns family/weight/tracking. Lives in @layer base so
+   any element with its own explicit font-weight/tracking utility (plenty
+   of headings already have one) keeps winning over these defaults. */
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-brand);
+  }
+  h1, h2 {
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  h3, h4 {
+    font-weight: 600;
+  }
+  h5, h6 {
+    font-weight: 500;
+  }
+}
 
 /* ---- Shared component classes ----
    Composite patterns used across multiple pages. Everything here is built
@@ -100,7 +130,9 @@ body {
   }
 
   .eyebrow {
-    @apply text-label font-bold tracking-widest text-text-tertiary uppercase;
+    /* Some eyebrows are literal <h2> tags (see app/cars/[slug]/page.tsx) —
+       font-ui pins them to the UI face despite the @layer base heading rule. */
+    @apply text-label font-bold tracking-widest text-text-tertiary uppercase font-ui;
   }
 
   .stat-grid {
@@ -137,7 +169,7 @@ body {
     @apply rounded-full object-cover block;
   }
 
-  .prose p { @apply mb-5 leading-[1.8] text-text-secondary; }
+  .prose p { @apply text-paragraph mb-5 text-text-secondary; }
   .prose p:last-child { @apply mb-0; }
   .prose strong { @apply text-text-primary font-semibold; }
   .prose h2 { @apply text-lg font-bold text-text-primary mt-10 mb-3 tracking-[-0.01em]; }
