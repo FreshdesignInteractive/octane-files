@@ -36,7 +36,7 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
           type="button"
           onClick={() => setLightboxOpen(true)}
           aria-label="Open image in lightbox"
-          className="relative flex-1 min-w-0 rounded-2xl overflow-hidden bg-bg-elevated border-none p-0 cursor-zoom-in"
+          className="relative flex-1 min-w-0 min-h-0 rounded-2xl overflow-hidden bg-bg-elevated border-none p-0 cursor-zoom-in"
         >
           <Image
             src={activeSrc}
@@ -48,7 +48,7 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
         </button>
 
         {images.length > 1 && (
-          <div className="hidden md:flex flex-col gap-2.5 w-52 shrink-0">
+          <div className="hidden md:flex flex-col gap-2.5 w-52 shrink-0 min-h-0">
             {images.map((src, i) => (
               <button
                 key={src + i}
