@@ -285,7 +285,7 @@ export default function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border bg-white">
-        <div className="site-container h-14 flex items-center gap-4">
+        <div className="w-full px-10 h-14 flex items-center gap-4">
           {/* Logo — always icon mark */}
           <Link href="/" className="flex items-center no-underline flex-shrink-0">
             <img src="/of-logo.svg" alt="Octane Files" className="h-8 w-auto" />
