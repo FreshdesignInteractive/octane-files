@@ -204,8 +204,9 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               stacks below the main column under lg. */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
           <div>
-          {/* Quick stats bar */}
-          <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] my-8">
+          {/* Quick stats bar — mt-6 (24px) matches the sidebar's own top
+              offset below, so both columns start at the same height. */}
+          <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] mt-6 mb-8">
             {([
               { label: 'Production', value: years },
               car.drivetrain ? { label: 'Drivetrain', value: car.drivetrain } : null,
@@ -471,15 +472,18 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           {/* Sidebar — two empty placeholder containers for now; heights are
               illustrative only, pending real content. Same shadow as the
               subnav pill, same corner radius as the gallery/hero images.
-              Sticks right below the subnav once scrolled up to it: 56px
-              (site header, h-14) + 96px (subnav's own h-16 + py-4) = 152px.
-              lg-only — below that breakpoint this is a single stacked
-              column, not the two-column layout, so sticking here would
-              pin it awkwardly mid-page. self-start keeps it at its own
-              natural height instead of stretching to match the main
-              column (grid's default stretch), which would leave it no
-              room to actually stick. */}
-          <div className="flex flex-col gap-10 lg:sticky lg:top-[152px] lg:self-start">
+              mt-6 (24px) lines its top up with the stat-grid opposite it —
+              and since sticky offsets are measured from the margin edge,
+              the same mt-6 also keeps that 24px gap once stuck: 56px
+              (site header, h-14) + 96px (subnav's own h-16 + py-4) = 152px
+              to the subnav's bottom edge, +24px margin = the card's actual
+              top when pinned. lg-only — below that breakpoint this is a
+              single stacked column, not the two-column layout, so sticking
+              here would pin it awkwardly mid-page. self-start keeps it at
+              its own natural height instead of stretching to match the
+              main column (grid's default stretch), which would leave it
+              no room to actually stick. */}
+          <div className="flex flex-col gap-10 mt-6 lg:sticky lg:top-[152px] lg:self-start">
             <div className="bg-white rounded-2xl shadow-lg min-h-40" />
             <div className="bg-white rounded-2xl shadow-lg min-h-96" />
 
