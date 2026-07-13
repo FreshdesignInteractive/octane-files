@@ -5,7 +5,7 @@ export default function NotFound() {
   return (
     <>
       <SiteHeader />
-      <main className="flex-1 flex flex-col items-center justify-center min-h-[calc(100vh-57px)] px-6 text-center bg-bg-elevated">
+      <main className="flex-1 flex flex-col items-center px-6 pt-20 text-center bg-bg-elevated">
         <h1 className="text-display font-extrabold text-text-primary leading-none mb-6">
           404
         </h1>
