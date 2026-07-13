@@ -74,10 +74,13 @@ export default function CarGrid() {
   if (cars.length === 0) {
     return (
       <div className="text-center py-20">
-        <p className="text-sm text-text-tertiary mb-2">
-          No cars found. Try adjusting your filters or request a car to be added.
+        {/* eslint-disable-next-line @next/next/no-img-element -- static local asset, same as the logo in SiteHeader */}
+        <img src="/missing.svg" alt="" className="w-24 h-24 mx-auto mb-6" />
+        <h2 className="text-lg font-bold text-text-primary mb-1">No cars found</h2>
+        <p className="text-sm text-text-secondary mb-4">
+          Try adjusting your filters or request a car to be added.
         </p>
-        <p className="text-xs text-text-tertiary">
+        <p className="text-sm text-text-secondary">
           We curate every car to meet collector standards. Missing one?{' '}
           <Link href="/request-car" className="text-accent underline">Send a request</Link>.
         </p>
