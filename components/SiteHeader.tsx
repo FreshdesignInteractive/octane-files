@@ -221,6 +221,7 @@ function AvatarMenu({ profile, isAdmin, onSignOut }: { profile: NonNullable<Prof
 }
 
 export default function SiteHeader() {
+  const router = useRouter()
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined)
   const [isAdmin, setIsAdmin] = useState(false)
   const [showSignIn, setShowSignIn] = useState(false)
@@ -238,7 +239,7 @@ export default function SiteHeader() {
       // mount-time setup below.
       if (event === 'INITIAL_SESSION' && window.location.search.includes('signin=1')) {
         setShowSignIn(true)
-        window.history.replaceState({}, '', window.location.pathname)
+        router.replace(window.location.pathname)
       }
 
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
@@ -265,7 +266,7 @@ export default function SiteHeader() {
           .then(({ data }: { data: Profile | null }) => { if (data) setProfile(data) })
 
         if (event === 'SIGNED_IN' && window.location.search.includes('code=')) {
-          window.history.replaceState({}, '', window.location.pathname)
+          router.replace(window.location.pathname)
         }
       } else if (event === 'SIGNED_OUT') {
         setProfile(null)
@@ -274,7 +275,7 @@ export default function SiteHeader() {
     })
 
     return () => subscription.unsubscribe()
-  }, [])
+  }, [router])
 
   async function signOut() {
     const supabase = createClient()

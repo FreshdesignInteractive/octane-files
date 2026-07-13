@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import SignInDialog from '@/components/SignInDialog'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
@@ -10,6 +11,7 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 // state. No signed-out code path ever touches this table (see the
 // authenticated-only GRANT on saved_models in supabase-schema.sql).
 export default function SaveButton({ modelId }: { modelId: string }) {
+  const router = useRouter()
   const [userId, setUserId] = useState<string | null>(null)
   const [saved, setSaved] = useState(false)
   const [pending, setPending] = useState(false)
@@ -30,9 +32,13 @@ export default function SaveButton({ modelId }: { modelId: string }) {
             // Resuming a save that got interrupted by the sign-in redirect —
             // toggle() stamped ?save=<modelId> on the URL before opening
             // SignInDialog; same ?param-then-cleanup pattern SiteHeader
-            // already uses for ?signin=1.
+            // uses for ?signin=1, through router.replace() (not the raw
+            // History API — that desyncs Next's own client-side router
+            // state from the real URL and breaks every navigation after
+            // it for the rest of the tab, which is exactly the "site got
+            // stuck" bug this replaced).
             if (new URLSearchParams(window.location.search).get('save') === modelId) {
-              window.history.replaceState({}, '', window.location.pathname)
+              router.replace(window.location.pathname)
               supabase.from('saved_models').insert({ user_id: uid, model_id: modelId })
                 .then(({ error }: { error: { message: string } | null }) => { if (!error) setSaved(true) })
             }
@@ -44,16 +50,18 @@ export default function SaveButton({ modelId }: { modelId: string }) {
     })
 
     return () => subscription.unsubscribe()
-  }, [modelId])
+  }, [modelId, router])
 
   async function toggle() {
     if (!userId) {
       // No reload — SignInDialog reads this off window.location when it
       // builds the OAuth redirect, so it rides along through the sign-in
-      // round trip without any storage involved.
+      // round trip without any storage involved. router.replace(), not
+      // the raw History API, so Next's client-side router state stays in
+      // sync with the address bar.
       const url = new URL(window.location.href)
       url.searchParams.set('save', modelId)
-      window.history.replaceState({}, '', url)
+      router.replace(`${url.pathname}${url.search}`, { scroll: false })
       setShowSignIn(true)
       return
     }
