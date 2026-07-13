@@ -164,8 +164,9 @@ body {
   .btn-secondary {
     @apply inline-flex items-center justify-center cursor-pointer bg-transparent
            border border-border-mid text-text-primary rounded-md text-body font-medium
-           transition-colors hover:bg-bg-elevated
-           disabled:opacity-60 disabled:cursor-default disabled:hover:bg-transparent;
+           transition-colors hover:bg-white hover:border-text-tertiary active:bg-bg-elevated
+           disabled:opacity-60 disabled:cursor-default disabled:hover:bg-transparent
+           disabled:hover:border-border-mid disabled:active:bg-transparent;
   }
 
   .pill {
