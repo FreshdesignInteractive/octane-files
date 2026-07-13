@@ -5,7 +5,6 @@ import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import SaveButton from '@/components/SaveButton'
 import EditButton from '@/components/EditButton'
-import RadarChart from '@/components/RadarChart'
 import CarGallery from '@/components/CarGallery'
 import ShareButton from '@/components/ShareButton'
 import OverflowNav from '@/components/OverflowNav'
@@ -13,6 +12,7 @@ import BackToTop from '@/components/BackToTop'
 import CarCard from '@/components/CarCard'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car, CarRelation } from '@/lib/types'
+import { RADAR_AXES } from '@/lib/car-schema'
 
 export const revalidate = 3600
 
@@ -83,7 +83,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const years = car.year_end ? `${car.year_start}–${car.year_end}` : `${car.year_start}–present`
 
   const hasCollectibility = !!(car.callout || car.claim_to_fame || car.why_collectible || car.buyers_flag)
-  const hasRatings = car.analog_index !== null || (car.radar_scores && Object.keys(car.radar_scores).length === 7)
+  const hasRatings = car.analog_index !== null || !!(car.radar_scores && Object.keys(car.radar_scores).length > 0)
   const hasSpecifications = car.specs?.length > 0
   const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
   const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
@@ -274,17 +274,38 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             ) : <Unavailable />}
           </Section>
 
-          {/* How it scores — analog index + radar (radar only when all 7 axes set) */}
+          {/* How it scores — analog index + per-axis score bars. All 7 axes
+              always render (label + track); one with no score just stays
+              an empty grey track with a — value, never a fabricated zero. */}
           <Section id="ratings" label="How it scores">
             {hasRatings ? (
-              <div className="flex flex-wrap gap-10 items-center">
+              <div className="flex flex-col gap-8">
                 {car.analog_index !== null && (
                   <div className="stat-cell">
                     <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">Analog Index</div>
                     <div className="text-xl font-semibold text-accent-secondary tracking-heading">{car.analog_index}/10</div>
                   </div>
                 )}
-                <RadarChart scores={car.radar_scores} />
+                <div className="flex flex-col gap-4 max-w-150">
+                  {RADAR_AXES.map(axis => {
+                    const score = car.radar_scores?.[axis.key] ?? null
+                    return (
+                      <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+                        <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
+                        <div className="flex-1 flex items-center gap-4">
+                          <div className="flex-1 h-2 rounded-full bg-bg-elevated overflow-hidden">
+                            {score !== null && (
+                              <div className="h-full rounded-full bg-accent-secondary" style={{ width: `${score * 10}%` }} />
+                            )}
+                          </div>
+                          <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
+                            {score !== null ? `${score}/10` : NA}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             ) : <Unavailable />}
           </Section>
