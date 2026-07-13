@@ -21,9 +21,22 @@ export default function SaveButton({ modelId }: { modelId: string }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event: AuthChangeEvent, session: Session | null) => {
       if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         if (!session?.user) { setUserId(null); setSaved(false); return }
-        setUserId(session.user.id)
-        supabase.from('saved_models').select('id').eq('user_id', session.user.id).eq('model_id', modelId).maybeSingle()
-          .then(({ data }: { data: { id: string } | null }) => setSaved(!!data))
+        const uid = session.user.id
+        setUserId(uid)
+        supabase.from('saved_models').select('id').eq('user_id', uid).eq('model_id', modelId).maybeSingle()
+          .then(({ data }: { data: { id: string } | null }) => {
+            if (data) { setSaved(true); return }
+
+            // Resuming a save that got interrupted by the sign-in redirect —
+            // toggle() stamped ?save=<modelId> on the URL before opening
+            // SignInDialog; same ?param-then-cleanup pattern SiteHeader
+            // already uses for ?signin=1.
+            if (new URLSearchParams(window.location.search).get('save') === modelId) {
+              window.history.replaceState({}, '', window.location.pathname)
+              supabase.from('saved_models').insert({ user_id: uid, model_id: modelId })
+                .then(({ error }: { error: { message: string } | null }) => { if (!error) setSaved(true) })
+            }
+          })
       } else if (event === 'SIGNED_OUT') {
         setUserId(null)
         setSaved(false)
@@ -34,7 +47,16 @@ export default function SaveButton({ modelId }: { modelId: string }) {
   }, [modelId])
 
   async function toggle() {
-    if (!userId) { setShowSignIn(true); return }
+    if (!userId) {
+      // No reload — SignInDialog reads this off window.location when it
+      // builds the OAuth redirect, so it rides along through the sign-in
+      // round trip without any storage involved.
+      const url = new URL(window.location.href)
+      url.searchParams.set('save', modelId)
+      window.history.replaceState({}, '', url)
+      setShowSignIn(true)
+      return
+    }
     if (pending) return
     setPending(true)
 

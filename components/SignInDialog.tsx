@@ -18,6 +18,11 @@ function GoogleIcon() {
 export default function SignInDialog({ onClose }: { onClose: () => void }) {
   async function signInWithGoogle() {
     const supabase = createClient()
+    // Carries the page this dialog was opened from through the OAuth round
+    // trip, so /auth/callback can send the user back here instead of always
+    // home — a generic fix here covers every SignInDialog call site at once
+    // (Save, Report, Request a Car, Garage, the header's own Sign In button).
+    const next = `${window.location.pathname}${window.location.search}`
     await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -27,7 +32,7 @@ export default function SignInDialog({ onClose }: { onClose: () => void }) {
         // is currently being tested. Supabase validates this against its
         // own Redirect URLs allow-list (Dashboard -> Authentication -> URL
         // Configuration), so any origin used here must be added there too.
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
         queryParams: { prompt: 'select_account' },
       },
     })
