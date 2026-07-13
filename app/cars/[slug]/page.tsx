@@ -39,7 +39,7 @@ function formatMoney(n: number) {
 function Section({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return (
     <section id={id} className="border-t border-border pt-10 mt-10">
-      <h2 className="eyebrow mb-6">{label}</h2>
+      <h2 className="text-lg font-bold text-text-primary tracking-tight mb-6">{label}</h2>
       {children}
     </section>
   )
@@ -245,7 +245,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           {/* Overview */}
           {car.overview && (
             <section id="overview" className="mt-2">
-              <h2 className="eyebrow mb-5">Overview</h2>
+              <h2 className="text-lg font-bold text-text-primary tracking-tight mb-5">Overview</h2>
               <div className="max-w-170">
                 {renderText(car.overview)}
               </div>
