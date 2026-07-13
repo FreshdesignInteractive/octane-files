@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import type { Metadata } from 'next'
 import SiteHeader from '@/components/SiteHeader'
@@ -11,6 +10,7 @@ import CarGallery from '@/components/CarGallery'
 import ShareButton from '@/components/ShareButton'
 import OverflowNav from '@/components/OverflowNav'
 import BackToTop from '@/components/BackToTop'
+import CarCard from '@/components/CarCard'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car, CarRelation } from '@/lib/types'
 
@@ -54,34 +54,15 @@ function Unavailable() {
 
 const NA = '—'
 
-// Shared by the Lineage and Rivals sections — identical card rendering,
-// only the entries differ.
+// Shared by the Lineage and Rivals sections — identical CarCard grid, only
+// the entries differ. Same card component Browse/Garage use; a relation
+// with no linked catalog row (a free-text entry) renders CarCard's
+// title-only, "Data unavailable" variant instead.
 function RelationCards({ entries }: { entries: CarRelation[] }) {
   return (
-    <div className="flex flex-wrap gap-3">
-      {entries.map(r => r.linked ? (
-        <Link
-          key={r.id}
-          href={`/cars/${r.linked.slug}`}
-          className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg no-underline transition-colors w-60"
-        >
-          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
-            <Image
-              src={r.linked.hero_image || '/placeholder.png'} alt="" fill
-              className={r.linked.hero_image ? 'object-cover' : 'object-contain'}
-            />
-          </div>
-          <span className="text-body font-medium text-text-primary">
-            {r.linked.make} {r.linked.model} {r.linked.code}
-          </span>
-        </Link>
-      ) : (
-        <span key={r.id} className="flex items-center gap-3 px-3 py-2 bg-white border border-border rounded-lg w-60">
-          <div className="relative w-12 h-12 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
-            <Image src="/placeholder.png" alt="" fill className="object-contain" />
-          </div>
-          <span className="text-body font-medium text-text-primary">{r.label_text}</span>
-        </span>
+    <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
+      {entries.map(r => (
+        <CarCard key={r.id} car={r.linked ?? { title: r.label_text ?? 'Unknown' }} />
       ))}
     </div>
   )

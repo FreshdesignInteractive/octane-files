@@ -91,18 +91,13 @@ export interface CarSummary {
 }
 
 // A car_relations row resolved for public display — either a link to a real
-// catalog entry (linked non-null) or a plain-text label (linked null).
+// catalog entry (linked non-null, a full CarSummary so it can render as a
+// standard CarCard) or a plain-text label (linked null).
 export interface CarRelation {
   id: string
   relation_type: 'related' | 'rival'
   label_text: string | null
-  linked: {
-    slug: string
-    code: string
-    hero_image: string | null
-    make: string
-    model: string
-  } | null
+  linked: CarSummary | null
 }
 
 export interface CarTrim {

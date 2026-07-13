@@ -5,7 +5,32 @@ function formatYears(start: number, end: number | null) {
   return end ? `${start}–${end}` : `${start}–present`
 }
 
-export default function CarCard({ car }: { car: CarSummary }) {
+// A relation entry (see the Rivals/Where it comes from sections on the car
+// detail page) can point at a real catalog car, or just be free text typed
+// by an admin with no underlying row — there's no image, country, years, or
+// class to show for that case, so the card falls back to a title-only,
+// "Data unavailable" variant instead of forcing a real CarSummary shape.
+type CarCardEntry = CarSummary | { title: string }
+
+export default function CarCard({ car }: { car: CarCardEntry }) {
+  if (!('slug' in car)) {
+    return (
+      <article className="card cursor-default hover:shadow-none hover:translate-y-0">
+        <div className="aspect-video bg-bg-elevated relative overflow-hidden flex items-center justify-center">
+          <img
+            src="/placeholder.png"
+            alt="Image unavailable"
+            className="w-1/2 h-1/2 object-contain block opacity-40"
+          />
+        </div>
+        <div className="p-4">
+          <h3 className="text-base font-bold text-text-primary leading-tight mb-1.5">{car.title}</h3>
+          <div className="text-xs text-text-tertiary">Data unavailable</div>
+        </div>
+      </article>
+    )
+  }
+
   return (
     <Link href={`/cars/${car.slug}`} className="no-underline">
       <article className="card group">

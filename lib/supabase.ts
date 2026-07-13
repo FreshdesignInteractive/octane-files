@@ -173,7 +173,7 @@ type RelationRow = {
   id: string
   relation_type: 'related' | 'rival'
   label_text: string | null
-  linked: { slug: string; code: string; hero_image: string | null; models: { name: string; makes: { name: string } } } | null
+  linked: GenerationJoinRow | null
 }
 
 export async function getModel(slug: string): Promise<Car | null> {
@@ -194,7 +194,10 @@ export async function getModel(slug: string): Promise<Car | null> {
       .from('car_relations')
       .select(`
         id, relation_type, label_text,
-        linked:generations!car_relations_linked_generation_id_fkey(slug, code, hero_image, models(name, makes(name)))
+        linked:generations!car_relations_linked_generation_id_fkey(
+          id, slug, code, year_start, year_end, class, hero_image, units_produced,
+          models(name, makes(name, country))
+        )
       `)
       .eq('generation_id', car.id)
       .order('relation_type')
@@ -209,13 +212,7 @@ export async function getModel(slug: string): Promise<Car | null> {
     id: r.id,
     relation_type: r.relation_type,
     label_text: r.label_text,
-    linked: r.linked ? {
-      slug: r.linked.slug,
-      code: r.linked.code,
-      hero_image: r.linked.hero_image,
-      make: r.linked.models.makes.name,
-      model: r.linked.models.name,
-    } : null,
+    linked: r.linked ? mapCarSummary(r.linked) : null,
   }))
 
   return { ...mapCar(car), trims, relations }
