@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import CarCard from './CarCard'
 import type { CarSummary } from '@/lib/types'
 
@@ -73,7 +74,13 @@ export default function CarGrid() {
   if (cars.length === 0) {
     return (
       <div className="text-center py-20">
-        <p className="text-sm text-text-tertiary">No cars found. Try adjusting your filters.</p>
+        <p className="text-sm text-text-tertiary mb-2">
+          No cars found. Try adjusting your filters or request a car to be added.
+        </p>
+        <p className="text-xs text-text-tertiary">
+          We curate every car to meet collector standards. Missing one?{' '}
+          <Link href="/request-car" className="text-accent underline">Send a request</Link>.
+        </p>
       </div>
     )
   }
