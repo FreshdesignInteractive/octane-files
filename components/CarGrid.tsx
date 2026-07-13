@@ -75,7 +75,7 @@ export default function CarGrid() {
     return (
       <div className="text-center py-20">
         {/* eslint-disable-next-line @next/next/no-img-element -- static local asset, same as the logo in SiteHeader */}
-        <img src="/Missing.svg" alt="" className="w-24 h-24 mx-auto mb-6" />
+        <img src="/Missing.svg" alt="" className="w-36 h-36 mx-auto mb-6" />
         <h2 className="text-heading font-bold text-text-primary mb-2">No cars found</h2>
         <p className="text-paragraph text-text-secondary mb-4">
           Try adjusting your filters or request a car to be added.
