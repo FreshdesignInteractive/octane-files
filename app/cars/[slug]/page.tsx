@@ -142,7 +142,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   return (
     <>
       <SiteHeader />
-      <main>
+      <main className="flex-1">
         {/* Hero — breadcrumb + title above a flat image, no gradient overlay */}
         <div className="detail-container pt-8 pb-6">
           <div className="flex items-center gap-1 text-xs mb-3">

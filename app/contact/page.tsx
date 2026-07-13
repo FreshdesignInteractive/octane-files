@@ -8,7 +8,7 @@ export default function ContactPage() {
   return (
     <>
       <SiteHeader />
-      <main className="site-container pt-15 pb-20">
+      <main className="site-container pt-15 pb-20 flex-1">
         <div className="max-w-180">
           <h1 className="text-heading font-bold mb-2">Contact Us</h1>
           <p className="text-paragraph text-text-secondary mb-8">

@@ -8,7 +8,7 @@ export default function AboutPage() {
   return (
     <>
       <SiteHeader />
-      <main className="site-container pt-15 pb-20">
+      <main className="site-container pt-15 pb-20 flex-1">
         <div className="max-w-180">
           <h1 className="text-heading font-bold mb-2">
             Every Car Has a Story. We&apos;re Just Here to Help You Keep It.

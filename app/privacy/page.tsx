@@ -11,7 +11,7 @@ export default function PrivacyPage() {
   return (
     <>
       <SiteHeader />
-      <main className="site-container pt-15 pb-20">
+      <main className="site-container pt-15 pb-20 flex-1">
         <div className="max-w-180">
           <h1 className="text-heading font-bold mb-2">Privacy Policy</h1>
           <p className="text-body text-text-tertiary mb-10">Effective Date: July 10, 2026</p>
