@@ -193,7 +193,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
               { label: 'Class', value: car.class || NA },
               {
-                label: 'Moniker',
+                label: 'Nickname',
                 value: (
                   <span className="inline-flex items-center gap-2 flex-wrap">
                     <span>{car.nickname || NA}</span>
