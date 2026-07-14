@@ -66,7 +66,7 @@ export default function FilterBar() {
         />
         <FilterDropdown
           label="Class"
-          allLabel="All Class"
+          allLabel="All Classes"
           options={classOptions}
           activeValue={activeClass}
           onChange={v => update('class', v)}
