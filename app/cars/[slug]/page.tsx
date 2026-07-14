@@ -192,17 +192,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               { label: 'Production', value: years },
               { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
               { label: 'Class', value: car.class || NA },
-              {
-                label: 'Nickname',
-                value: (
-                  <span className="inline-flex items-center gap-2 flex-wrap">
-                    <span>{car.nickname || NA}</span>
-                    {car.is_icon && <span className="pill pill-active">★ Icon</span>}
-                    {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
-                    {car.poster_car && <span className="pill pill-active">Poster Car</span>}
-                  </span>
-                ),
-              },
             ] as { label: string; value: React.ReactNode }[])
               .map(stat => (
                 <div key={stat.label} className="stat-cell">
@@ -219,9 +208,28 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           {/* Everything below holds multiple/longer values (a list, a
               paragraph, a link) rather than one short fact, so it gets its
               own icon + label + value row instead of being squeezed into a
-              stat-cell. */}
-          <div className="flex flex-col gap-6 mb-8">
+              stat-cell. Nickname lives here too — it can run long, and
+              sometimes carries the Icon/Homologation Special/Poster Car
+              badges alongside it. */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 mb-8">
             {([
+              {
+                label: 'Nickname',
+                value: (
+                  <span className="inline-flex items-center gap-2 flex-wrap">
+                    <span>{car.nickname || NA}</span>
+                    {car.is_icon && <span className="pill pill-active">★ Icon</span>}
+                    {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
+                    {car.poster_car && <span className="pill pill-active">Poster Car</span>}
+                  </span>
+                ),
+                icon: (
+                  <>
+                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                    <line x1="7" y1="7" x2="7.01" y2="7" />
+                  </>
+                ),
+              },
               {
                 label: 'Drivetrain',
                 value: car.drivetrain || NA,
