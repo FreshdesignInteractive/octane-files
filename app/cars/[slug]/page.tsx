@@ -101,6 +101,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   // Always the full, fixed list — sections no longer disappear when a car
   // is missing that data, they show Unavailable inside instead.
   const sections = [
+    { id: 'quick-facts', label: 'Quick Facts' },
     { id: 'overview', label: 'Overview' },
     { id: 'collectibility', label: 'Why collectors want it' },
     { id: 'ratings', label: 'How it scores' },
@@ -183,6 +184,11 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               the subnav instead, without changing the desktop layout. */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
           <div>
+          {/* Quick Facts — its own scrollspy landmark so the subnav's first
+              tab tracks what's actually visible right under it, instead of
+              staying stuck on "Overview" (whose own section starts further
+              down the page). */}
+          <section id="quick-facts">
           {/* Quick stats bar — single-value facts only (a date range, a
               count, a short label). mt-6 (24px) matches the sidebar's own
               top offset below, so both columns start at the same height. */}
@@ -318,6 +324,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 </div>
               ))}
           </div>
+          </section>
 
           {/* Overview */}
           <section id="overview" className="mt-2">
