@@ -167,24 +167,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           <CarGallery images={allImages} alt={name} />
         </div>
 
-        {/* TEMP: relocated from the old hero overlay — placeholder position, to be
-            repositioned/restyled once the redesign reaches this content. */}
-        <div className="detail-container flex flex-wrap items-center gap-3 pb-6">
-          <span className="text-label font-semibold tracking-widest text-accent uppercase">
-            {car.country} &middot; {car.class}
-          </span>
-          {car.nickname && (
-            <span className="text-text-secondary italic text-sm">&ldquo;{car.nickname}&rdquo;</span>
-          )}
-          {car.is_icon && <span className="pill pill-active">★ Icon</span>}
-          {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
-          {car.poster_car && <span className="pill pill-active">Poster Car</span>}
-          <span className="text-text-tertiary text-sm">
-            {years}
-            {car.units_produced && ` · ${car.units_produced.toLocaleString()} produced`}
-          </span>
-        </div>
-
         {/* Body */}
         <div className="detail-container pb-20">
           {/* Sticky subnav */}
