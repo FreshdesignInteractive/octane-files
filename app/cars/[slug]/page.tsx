@@ -201,25 +201,16 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               the subnav instead, without changing the desktop layout. */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
           <div>
-          {/* Quick stats bar — mt-6 (24px) matches the sidebar's own top
-              offset below, so both columns start at the same height. */}
+          {/* Quick stats bar — single-value facts only (a date range, a
+              count, a short label). mt-6 (24px) matches the sidebar's own
+              top offset below, so both columns start at the same height. */}
           <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] mt-6 mb-8">
             {([
+              { label: 'Country', value: car.country || NA },
               { label: 'Production', value: years },
-              { label: 'Drivetrain', value: car.drivetrain || NA },
-              { label: 'Engine', value: car.engine_layout || NA },
-              { label: 'Engine Detail', value: car.engine_signature || NA },
-              { label: 'Body', value: car.body_styles?.length ? car.body_styles.join(', ') : NA },
               { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
-              { label: 'Designer', value: car.designer || NA },
-              {
-                label: 'Wikipedia',
-                value: car.wikipedia_url ? (
-                  <a href={car.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-accent no-underline">
-                    View ↗
-                  </a>
-                ) : NA,
-              },
+              { label: 'Class', value: car.class || NA },
+              { label: 'Moniker', value: car.nickname || NA },
             ] as { label: string; value: React.ReactNode }[])
               .map(stat => (
                 <div key={stat.label} className="stat-cell">
@@ -228,6 +219,101 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   </div>
                   <div className="text-sm font-medium text-text-primary">
                     {stat.value}
+                  </div>
+                </div>
+              ))}
+          </div>
+
+          {/* Everything below holds multiple/longer values (a list, a
+              paragraph, a link) rather than one short fact, so it gets its
+              own icon + label + value row instead of being squeezed into a
+              stat-cell. */}
+          <div className="flex flex-col gap-6 mb-8">
+            {([
+              {
+                label: 'Drivetrain',
+                value: car.drivetrain || NA,
+                icon: (
+                  <>
+                    <circle cx="12" cy="12" r="10" />
+                    <circle cx="12" cy="12" r="3" />
+                  </>
+                ),
+              },
+              {
+                label: 'Engine',
+                value: car.engine_layout || NA,
+                icon: (
+                  <>
+                    <rect x="4" y="4" width="16" height="16" rx="2" />
+                    <rect x="9" y="9" width="6" height="6" />
+                    <line x1="9" y1="1" x2="9" y2="4" />
+                    <line x1="15" y1="1" x2="15" y2="4" />
+                    <line x1="9" y1="20" x2="9" y2="23" />
+                    <line x1="15" y1="20" x2="15" y2="23" />
+                    <line x1="20" y1="9" x2="23" y2="9" />
+                    <line x1="20" y1="14" x2="23" y2="14" />
+                    <line x1="1" y1="9" x2="4" y2="9" />
+                    <line x1="1" y1="14" x2="4" y2="14" />
+                  </>
+                ),
+              },
+              {
+                label: 'Engine Detail',
+                value: car.engine_signature || NA,
+                icon: (
+                  <>
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14,2 14,8 20,8" />
+                    <line x1="16" y1="13" x2="8" y2="13" />
+                    <line x1="16" y1="17" x2="8" y2="17" />
+                  </>
+                ),
+              },
+              {
+                label: 'Body',
+                value: car.body_styles?.length ? car.body_styles.join(', ') : NA,
+                icon: (
+                  <>
+                    <polygon points="12,2 2,7 12,12 22,7 12,2" />
+                    <polyline points="2,17 12,22 22,17" />
+                    <polyline points="2,12 12,17 22,12" />
+                  </>
+                ),
+              },
+              {
+                label: 'Designer',
+                value: car.designer || NA,
+                icon: <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />,
+              },
+              {
+                label: 'Wikipedia',
+                value: car.wikipedia_url ? (
+                  <a href={car.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-accent no-underline">
+                    View ↗
+                  </a>
+                ) : NA,
+                icon: (
+                  <>
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                    <polyline points="15,3 21,3 21,9" />
+                    <line x1="10" y1="14" x2="21" y2="3" />
+                  </>
+                ),
+              },
+            ] as { label: string; value: React.ReactNode; icon: React.ReactNode }[])
+              .map(row => (
+                <div key={row.label} className="flex gap-4">
+                  <svg
+                    width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                    className="text-text-secondary shrink-0 mt-0.5"
+                  >
+                    {row.icon}
+                  </svg>
+                  <div>
+                    <div className="text-body font-semibold text-text-primary mb-1">{row.label}</div>
+                    <div className="text-body text-text-secondary">{row.value}</div>
                   </div>
                 </div>
               ))}
