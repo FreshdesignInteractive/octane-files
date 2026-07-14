@@ -36,9 +36,13 @@ function formatMoney(n: number) {
   return n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`
 }
 
+// scroll-mt-40 (160px) clears the sticky header (h-14, 56px) + sticky
+// subnav pill (h-16 + py-4, 96px) so an anchor jump or scrollspy-driven
+// click lands with the section's own heading visible below both, not
+// hidden underneath them.
 function Section({ id, label, children }: { id: string; label: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="border-t border-border pt-10 mt-10">
+    <section id={id} className="border-t border-border pt-10 mt-10 scroll-mt-40">
       <h2 className="text-lg font-bold text-text-primary tracking-tight mb-6">{label}</h2>
       {children}
     </section>
@@ -188,7 +192,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               tab tracks what's actually visible right under it, instead of
               staying stuck on "Overview" (whose own section starts further
               down the page). */}
-          <section id="quick-facts">
+          <section id="quick-facts" className="scroll-mt-40">
           {/* Quick stats bar — single-value facts only (a date range, a
               count, a short label). mt-6 (24px) matches the sidebar's own
               top offset below, so both columns start at the same height. */}
@@ -327,7 +331,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           </section>
 
           {/* Overview */}
-          <section id="overview" className="mt-2">
+          <section id="overview" className="mt-2 scroll-mt-40">
             <h2 className="text-lg font-bold text-text-primary tracking-tight mb-5">Overview</h2>
             <div className="max-w-170">
               {car.overview ? renderText(car.overview) : <Unavailable />}
