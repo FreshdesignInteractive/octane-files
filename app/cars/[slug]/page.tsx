@@ -192,7 +192,17 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               { label: 'Production', value: years },
               { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
               { label: 'Class', value: car.class || NA },
-              { label: 'Moniker', value: car.nickname || NA },
+              {
+                label: 'Moniker',
+                value: (
+                  <span className="inline-flex items-center gap-2 flex-wrap">
+                    <span>{car.nickname || NA}</span>
+                    {car.is_icon && <span className="pill pill-active">★ Icon</span>}
+                    {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
+                    {car.poster_car && <span className="pill pill-active">Poster Car</span>}
+                  </span>
+                ),
+              },
             ] as { label: string; value: React.ReactNode }[])
               .map(stat => (
                 <div key={stat.label} className="stat-cell">
