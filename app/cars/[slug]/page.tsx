@@ -174,8 +174,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
         {/* Body */}
         <div className="detail-container pb-20">
-          {/* Sticky subnav */}
-          <nav className="sticky top-14 z-40 py-4">
+          {/* Sticky subnav — pt-6 (24px) is the gap below the gallery images */}
+          <nav className="sticky top-14 z-40 pt-6 pb-4">
             <OverflowNav items={sections} />
           </nav>
 
