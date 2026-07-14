@@ -293,7 +293,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                       <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
                         <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
                         <div className="flex-1 flex items-center gap-4">
-                          <div className="flex-1 h-2 rounded-full bg-bg-elevated overflow-hidden">
+                          <div className="flex-1 h-2 rounded-full bg-border-mid overflow-hidden">
                             {score !== null && (
                               <div className="h-full rounded-full bg-accent-secondary" style={{ width: `${score * 10}%` }} />
                             )}
