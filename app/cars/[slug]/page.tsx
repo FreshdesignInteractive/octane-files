@@ -286,7 +286,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                     <div className="text-xl font-semibold text-accent-secondary tracking-heading">{car.analog_index}/10</div>
                   </div>
                 )}
-                <div className="flex flex-col gap-4 max-w-150">
+                <div className="flex flex-col gap-4">
                   {RADAR_AXES.map(axis => {
                     const score = car.radar_scores?.[axis.key] ?? null
                     return (
