@@ -193,38 +193,61 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           {/* Quick Facts — its own scrollspy landmark so the subnav's first
               tab tracks what's actually visible right under it, instead of
               staying stuck on "Overview" (whose own section starts further
-              down the page). */}
-          <section id="quick-facts" className="scroll-mt-40">
-          {/* Quick stats bar — single-value facts only (a date range, a
-              count, a short label). mt-6 (24px) matches the sidebar's own
-              top offset below, so both columns start at the same height. */}
-          <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] mt-6 mb-8">
+              down the page). One container, one column — every fact gets
+              an icon + label + value row, single vs. multi-value no longer
+              splits it into two separate blocks. */}
+          <section id="quick-facts" className="scroll-mt-40 mt-6 mb-8">
+            <h2 className="text-lg font-bold text-text-primary tracking-tight mb-6">Quick Facts</h2>
+            <div className="bg-white border border-border rounded-card p-6">
+            <div className="flex flex-col gap-6">
             {([
-              { label: 'Country', value: car.country || NA },
-              { label: 'Production', value: years },
-              { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
-              { label: 'Class', value: car.class || NA },
-            ] as { label: string; value: React.ReactNode }[])
-              .map(stat => (
-                <div key={stat.label} className="stat-cell">
-                  <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">
-                    {stat.label}
-                  </div>
-                  <div className="text-sm font-medium text-text-primary">
-                    {stat.value}
-                  </div>
-                </div>
-              ))}
-          </div>
-
-          {/* Everything below holds multiple/longer values (a list, a
-              paragraph, a link) rather than one short fact, so it gets its
-              own icon + label + value row instead of being squeezed into a
-              stat-cell. Nickname lives here too — it can run long, and
-              sometimes carries the Icon/Homologation Special/Poster Car
-              badges alongside it. */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-6 mb-8">
-            {([
+              {
+                label: 'Country',
+                value: car.country || NA,
+                icon: (
+                  <>
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="2" y1="12" x2="22" y2="12" />
+                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+                  </>
+                ),
+              },
+              {
+                label: 'Production',
+                value: years,
+                icon: (
+                  <>
+                    <rect x="3" y="4" width="18" height="18" rx="2" />
+                    <line x1="16" y1="2" x2="16" y2="6" />
+                    <line x1="8" y1="2" x2="8" y2="6" />
+                    <line x1="3" y1="10" x2="21" y2="10" />
+                  </>
+                ),
+              },
+              {
+                label: 'Units built',
+                value: car.units_produced ? car.units_produced.toLocaleString() : NA,
+                icon: (
+                  <>
+                    <line x1="4" y1="9" x2="20" y2="9" />
+                    <line x1="4" y1="15" x2="20" y2="15" />
+                    <line x1="10" y1="3" x2="8" y2="21" />
+                    <line x1="16" y1="3" x2="14" y2="21" />
+                  </>
+                ),
+              },
+              {
+                label: 'Class',
+                value: car.class || NA,
+                icon: (
+                  <>
+                    <rect x="3" y="3" width="7" height="7" />
+                    <rect x="14" y="3" width="7" height="7" />
+                    <rect x="14" y="14" width="7" height="7" />
+                    <rect x="3" y="14" width="7" height="7" />
+                  </>
+                ),
+              },
               {
                 label: 'Nickname',
                 value: (
@@ -329,7 +352,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   </div>
                 </div>
               ))}
-          </div>
+            </div>
+            </div>
           </section>
 
           {/* Overview */}
