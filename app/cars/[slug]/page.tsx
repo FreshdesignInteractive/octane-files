@@ -494,7 +494,9 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 since this instance sits as a standalone sidebar card next
                 to one below that also has a shadow — the other .stat-grid
                 usage (Market Data tiers) is inline content, not a card,
-                and shouldn't pick this up. */}
+                and shouldn't pick this up. .stat-grid's own rounded-2xl
+                already matches the gallery images and the icon-row card,
+                no override needed here. */}
             <div className="stat-grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 shadow-sm">
               {([
                 { label: 'Country of Origin', value: car.country || NA },

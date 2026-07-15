@@ -59,7 +59,7 @@ export default function CarGrid() {
     return (
       <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className="border border-border rounded-card overflow-hidden">
+          <div key={i} className="border border-border rounded-2xl overflow-hidden">
             <div className="aspect-video bg-bg-elevated" />
             <div className="p-4">
               <div className="h-5 w-3/5 bg-bg-elevated rounded-sm mb-2" />

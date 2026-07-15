@@ -46,9 +46,10 @@
   --text-hero:      clamp(1.625rem, 4vw, 2.75rem); /* car detail hero title */
   --text-display:   7.5rem;    /* 120px — 404 page only */
 
-  /* Radius — 4/6/8/16px already exist as rounded-sm/md/lg/2xl; pills and
-     circles use Tailwind's built-in rounded-full. Only 10px (cards) is new. */
-  --radius-card: 0.625rem;
+  /* Radius — every card-shaped element (gallery images, .card, .stat-grid)
+     uses Tailwind's native rounded-2xl (16px) so they're all visually
+     consistent; pills and circles use Tailwind's built-in rounded-full.
+     No custom radius token needed. */
 
   /* Shadows — custom names so we don't redefine Tailwind's own shadow-sm/md/lg,
      which carry different default values we're not touching. */
@@ -150,7 +151,7 @@ body {
   }
 
   .card {
-    @apply bg-white border border-border rounded-card overflow-hidden cursor-pointer
+    @apply bg-white border border-border rounded-2xl overflow-hidden cursor-pointer
            transition duration-200 hover:shadow-md hover:-translate-y-0.5;
   }
 
@@ -189,7 +190,7 @@ body {
   }
 
   .stat-grid {
-    @apply grid gap-px bg-border border border-border rounded-card overflow-hidden;
+    @apply grid gap-px bg-border border border-border rounded-2xl overflow-hidden;
   }
 
   .stat-cell {
