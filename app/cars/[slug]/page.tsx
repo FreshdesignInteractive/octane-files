@@ -476,10 +476,10 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 inline content, not a card, and shouldn't pick this up. */}
             <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] shadow-sm">
               {([
-                { label: 'Country', value: car.country || NA },
-                { label: 'Production', value: years },
-                { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
+                { label: 'Country of Origin', value: car.country || NA },
                 { label: 'Class', value: car.class || NA },
+                { label: 'Production Years', value: years },
+                { label: 'Units Built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
               ] as { label: string; value: React.ReactNode }[])
                 .map(stat => (
                   <div key={stat.label} className="stat-cell">
