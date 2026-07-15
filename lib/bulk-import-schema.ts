@@ -10,17 +10,20 @@
 //
 // Covers GenerationInput's flat, CSV-shaped fields only. Deliberately
 // excludes: hero_image/gallery_images (image upload flow), specs/market_data
-// low-mid-high/resources (structured/nested, not flat CSV columns), lineage/
-// rivals (car_relations — linked-vs-text doesn't fit a flat cell), trims
+// low-mid-high (structured/nested, not flat CSV columns), resources, trims
 // (separate CSV type), and year_start/year_end/production_years/code
 // (identity fields — changing these redefines the car and belongs in the
 // form, not a bulk import).
 //
-// The 7 radar axes are synthetic keys (radar_desirability, etc.) — there is
-// no literal generations.radar_desirability column. They merge into the
-// radar_scores JSONB column via bulk_update_generation_enrichment (see
-// imports/step18_callout_rename.sql). lib/bulk-import.ts special-cases these
-// keys when building the SELECT list and when diffing against current values.
+// The 7 radar axes, plus market_notes/rivals/lineage, are synthetic keys —
+// there is no literal generations.radar_desirability/market_notes column,
+// and rivals/lineage don't land on generations at all (they become plain-
+// text car_relations rows, see bulk_add_car_relations in
+// imports/step21_bulk_relations_and_market_notes.sql). The radar axes and
+// market_notes merge into the radar_scores/market_data JSONB columns via
+// bulk_update_generation_enrichment. lib/bulk-import.ts special-cases all
+// of these keys when building the SELECT list and when diffing against
+// current values.
 
 import {
   CAR_CLASSES, BODY_STYLES, DRIVETRAIN_TYPES, ENGINE_LAYOUTS,
@@ -31,6 +34,12 @@ export type RadarFieldKey =
   | 'radar_desirability' | 'radar_rarity' | 'radar_driving_thrill' | 'radar_investment_trajectory'
   | 'radar_usability' | 'radar_ease_of_restoration' | 'radar_cultural_impact'
 
+// Not literal generations columns — rivals/lineage become plain-text
+// car_relations rows (relation_type rival/related) instead of a column
+// value. Free text, not linked-car entries; upgrading a text entry to a
+// real linked car is still a picker-only action in the edit form.
+export type RelationFieldKey = 'rivals' | 'lineage'
+
 export type EnrichmentFieldKey =
   | 'nickname' | 'designer' | 'wikipedia_url' | 'engine_signature' | 'transmission' | 'class' | 'engine_layout'
   | 'units_produced' | 'units_produced_estimated' | 'is_icon' | 'homologation_special' | 'poster_car' | 'body_styles' | 'drivetrain'
@@ -39,10 +48,11 @@ export type EnrichmentFieldKey =
   | 'analog_index' | RadarFieldKey
   | 'variants_to_know'
   | 'driving_character' | 'design_notes' | 'motorsport_pedigree' | 'cultural_notes'
-  | 'desirability_tier' | 'value_trajectory'
+  | RelationFieldKey
+  | 'desirability_tier' | 'value_trajectory' | 'market_notes'
   | 'known_issues' | 'maintenance'
 
-export type FieldType = 'text' | 'enum' | 'enum_array' | 'boolean' | 'integer'
+export type FieldType = 'text' | 'text_list' | 'enum' | 'enum_array' | 'boolean' | 'integer'
 
 export interface FieldSpec {
   key: EnrichmentFieldKey
@@ -68,6 +78,17 @@ export const RADAR_FIELD_TO_AXIS: Record<RadarFieldKey, RadarAxisKey> = {
 
 export function isRadarField(key: EnrichmentFieldKey): key is RadarFieldKey {
   return key in RADAR_FIELD_TO_AXIS
+}
+
+// Maps each relation CSV field to the car_relations.relation_type it
+// becomes — shared with lib/bulk-import.ts's commit-payload builder.
+export const RELATION_FIELD_TYPE: Record<RelationFieldKey, 'rival' | 'related'> = {
+  rivals: 'rival',
+  lineage: 'related',
+}
+
+export function isRelationField(key: EnrichmentFieldKey): key is RelationFieldKey {
+  return key in RELATION_FIELD_TYPE
 }
 
 // Headers are hand-written, not derived from RADAR_AXES' labels — a naive
@@ -127,8 +148,17 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'motorsport_pedigree', header: 'MotorsportPedigree', type: 'text' },
   { key: 'cultural_notes', header: 'CulturalNotes', type: 'text' },
 
+  // Semicolon-separated; each entry lands as its own plain-text
+  // car_relations row (relation_type rival/related, linked_generation_id
+  // null). A duplicate label_text for the same car+type is silently
+  // skipped on re-upload (DB-level unique index), so re-running an
+  // unchanged CSV is always safe.
+  { key: 'lineage', header: 'Lineage', type: 'text_list' },
+  { key: 'rivals', header: 'Rivals', type: 'text_list' },
+
   { key: 'desirability_tier', header: 'DesirabilityTier', type: 'enum', allowedValues: DESIRABILITY_TIERS },
   { key: 'value_trajectory', header: 'ValueTrajectory', type: 'enum', allowedValues: VALUE_TRAJECTORIES.map(v => v.value) },
+  { key: 'market_notes', header: 'MarketNotes', type: 'text' },
 
   { key: 'known_issues', header: 'KnownIssues', type: 'text' },
   { key: 'maintenance', header: 'Maintenance', type: 'text' },
@@ -166,6 +196,9 @@ function csvLine(fields: string[]): string {
 function exampleValueFor(spec: FieldSpec): string {
   if (spec.type === 'enum') return spec.allowedValues![0]
   if (spec.type === 'enum_array') return spec.allowedValues!.slice(0, 2).join(';')
+  // No allowedValues to demonstrate (free text), but still worth showing
+  // the ';' delimiter format for a multi-entry field.
+  if (spec.type === 'text_list') return 'Example A;Example B'
   if (spec.type === 'boolean') return 'Yes'
   if (spec.type === 'integer') return spec.range ? String(spec.range[0]) : '1'
   return ''

@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { parseCsvToRows, downloadCsv } from '@/lib/csv-parse'
-import { buildEnrichmentTemplateCsv, buildEnrichmentCatalogCsv } from '@/lib/bulk-import-schema'
+import { buildEnrichmentTemplateCsv, buildEnrichmentCatalogCsv, type EnrichmentFieldKey } from '@/lib/bulk-import-schema'
+import { buildRelationInserts, type EnrichmentValue } from '@/lib/bulk-import'
 
 interface FieldDiff { field: string; header: string; from: unknown; to: unknown }
 interface FieldError { field: string; header: string; value: string; reason: string }
@@ -85,10 +86,17 @@ export default function BulkImportEnrichment() {
       const m = r.match as Extract<RowMatch, { status: 'matched' }>
       return { generation_id: m.generation_id, ...m.fields }
     })
+    // Rivals/lineage don't land via bulk_update_generation_enrichment (they
+    // aren't generations columns) — flattened separately into their own
+    // car_relations insert list, one entry per rival/lineage value.
+    const relations = toCommit.flatMap(r => {
+      const m = r.match as Extract<RowMatch, { status: 'matched' }>
+      return buildRelationInserts(m.generation_id, m.fields as Partial<Record<EnrichmentFieldKey, EnrichmentValue>>)
+    })
     const res = await fetch('/api/admin/bulk-import/enrichment/commit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ rows: payload }),
+      body: JSON.stringify({ rows: payload, relations }),
     })
     setCommitting(false)
     if (!res.ok) {
@@ -97,7 +105,7 @@ export default function BulkImportEnrichment() {
       return
     }
     const data = await res.json()
-    setMsg(`Committed ✓ — ${data.updated} rows updated`)
+    setMsg(`Committed ✓ — ${data.updated} rows updated${data.relationsAdded ? `, ${data.relationsAdded} rivals/lineage entries added` : ''}`)
     setPreview(null)
     setRows([])
     setHeaders([])
@@ -160,6 +168,7 @@ export default function BulkImportEnrichment() {
               <div className="flex flex-col gap-3">
                 {matched.map(r => {
                   const m = r.match as Extract<RowMatch, { status: 'matched' }>
+                  const relations = buildRelationInserts(m.generation_id, m.fields as Partial<Record<EnrichmentFieldKey, EnrichmentValue>>)
                   return (
                     <div key={r.row_index} className="p-3 rounded-lg border border-border flex gap-3">
                       <input
@@ -172,7 +181,7 @@ export default function BulkImportEnrichment() {
                           {r.make} {r.model} {r.generation}
                           {m.archived && <span className="pill ml-2">Archived</span>}
                         </div>
-                        {m.diffs.length === 0 ? (
+                        {m.diffs.length === 0 && relations.length === 0 ? (
                           <p className="text-label text-text-tertiary mt-1">No changes (values match what&apos;s already saved)</p>
                         ) : (
                           <div className="mt-2 flex flex-col gap-1">
@@ -181,6 +190,11 @@ export default function BulkImportEnrichment() {
                                 <span className="font-medium">{d.header}:</span> {formatValue(d.from)} → <span className="text-accent font-medium">{formatValue(d.to)}</span>
                               </div>
                             ))}
+                            {relations.length > 0 && (
+                              <div className="text-label text-text-secondary">
+                                <span className="font-medium">Rivals/Lineage:</span> +{relations.length} entr{relations.length === 1 ? 'y' : 'ies'} <span className="text-accent font-medium">{relations.map(rel => rel.label_text).join(', ')}</span> (already-existing entries are skipped automatically)
+                              </div>
+                            )}
                           </div>
                         )}
                       </div>

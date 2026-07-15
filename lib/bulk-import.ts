@@ -11,8 +11,21 @@
 // API route or a 'use client' component.
 
 import type { SupabaseClient } from '@supabase/supabase-js'
-import { ENRICHMENT_FIELDS, isRadarField, RADAR_FIELD_TO_AXIS, type EnrichmentFieldKey } from './bulk-import-schema'
+import {
+  ENRICHMENT_FIELDS, isRadarField, isRelationField, RADAR_FIELD_TO_AXIS, RELATION_FIELD_TYPE,
+  type EnrichmentFieldKey,
+} from './bulk-import-schema'
 import type { RadarScores, GenerationInput } from './car-schema'
+
+// True for any EnrichmentFieldKey that isn't a literal generations column —
+// radar axes and market_notes merge into a JSONB column instead, and
+// rivals/lineage don't touch generations at all. resolveGeneration must
+// never name one of these in its SELECT list (see the units_produced_
+// estimated live-breakage lesson — an explicit SELECT of a nonexistent
+// column 42703s the whole query, not just that field).
+function isSyntheticField(key: EnrichmentFieldKey): boolean {
+  return isRadarField(key) || isRelationField(key) || key === 'market_notes'
+}
 
 export interface ResolvedGeneration {
   id: string
@@ -32,10 +45,13 @@ export async function resolveGeneration(
   const { data: modelRow } = await supabase.from('models').select('id').eq('make_id', makeRow.id).ilike('name', model.trim()).maybeSingle()
   if (!modelRow) return null
 
-  // radar_* keys are synthetic (no literal generations.radar_desirability
-  // column) — select the real radar_scores JSONB column once instead.
-  const realColumns = ENRICHMENT_FIELDS.filter(f => !isRadarField(f.key)).map(f => f.key)
-  const selectCols = ['id', 'slug', 'archived_at', 'radar_scores', ...realColumns].join(', ')
+  // Synthetic keys (radar axes, market_notes, rivals/lineage) aren't real
+  // columns — select the real radar_scores/market_data JSONB columns once
+  // instead. rivals/lineage have no equivalent column at all (they read
+  // car_relations, a child table); diffEnrichmentFields deliberately never
+  // diffs those two, so nothing else needs selecting for them here.
+  const realColumns = ENRICHMENT_FIELDS.filter(f => !isSyntheticField(f.key)).map(f => f.key)
+  const selectCols = ['id', 'slug', 'archived_at', 'radar_scores', 'market_data', ...realColumns].join(', ')
   const { data: gen } = await supabase
     .from('generations')
     .select(selectCols)
@@ -87,6 +103,12 @@ export function parseEnrichmentFields(row: Record<string, string>): ParsedEnrich
         else resolved.push(match)
       }
       if (resolved.length) values[spec.key] = resolved
+    } else if (spec.type === 'text_list') {
+      // Free text, no allowlist — just split/trim/dedupe-empty. Duplicate
+      // label_text for the same car+type is a DB-level unique index, so
+      // there's no need to dedupe within the row either.
+      const parts = raw.split(';').map(s => s.trim()).filter(Boolean)
+      if (parts.length) values[spec.key] = parts
     } else if (spec.type === 'boolean') {
       const v = raw.toLowerCase()
       if (v === 'yes' || v === 'true') values[spec.key] = true
@@ -120,16 +142,24 @@ export interface FieldDiff {
 
 // Only fields present in `incoming` are compared — a blank cell never
 // produces a diff entry, since it was never a candidate for change.
+// rivals/lineage are deliberately never diffed here — they're additive
+// (a duplicate label_text is a silent DB-level no-op, not an "update"),
+// not a single before/after value like every other field. The preview UI
+// reads them straight off `incoming` (i.e. the parsed values) instead.
 export function diffEnrichmentFields(
   current: ResolvedGeneration,
   incoming: Partial<Record<EnrichmentFieldKey, EnrichmentValue>>
 ): FieldDiff[] {
   const diffs: FieldDiff[] = []
   const radarScores = (current.radar_scores as RadarScores | null) ?? {}
+  const marketData = (current.market_data as { notes?: string | null } | null) ?? null
   for (const spec of ENRICHMENT_FIELDS) {
     if (!(spec.key in incoming)) continue
+    if (isRelationField(spec.key)) continue
     const to = incoming[spec.key]!
-    const from = isRadarField(spec.key) ? radarScores[RADAR_FIELD_TO_AXIS[spec.key]] ?? null : current[spec.key]
+    const from = isRadarField(spec.key) ? radarScores[RADAR_FIELD_TO_AXIS[spec.key]] ?? null
+      : spec.key === 'market_notes' ? (marketData?.notes ?? null)
+      : current[spec.key]
     const changed = spec.type === 'enum_array'
       ? JSON.stringify([...(from as string[] ?? [])].sort()) !== JSON.stringify([...(to as string[])].sort())
       : from !== to
@@ -147,20 +177,50 @@ export function diffEnrichmentFields(
 // dynamic EnrichmentFieldKey onto GenerationInput's specifically-typed
 // fields (e.g. `class: CarClassValue`) — same pattern the edit form's own
 // <select> onChange handlers already use.
+//
+// rivals/lineage are skipped here, not applied — GenerationInput has no
+// such field (car_relations is a separate child table, edited via
+// CarRelationsEditor's own state in AdminModelForm). This per-car quick-
+// import path doesn't create relation rows; only the bulk /commit route
+// does, via buildRelationInserts below.
 export function applyEnrichmentValues(
   current: GenerationInput,
   values: Partial<Record<EnrichmentFieldKey, EnrichmentValue>>
 ): GenerationInput {
   const next = { ...current } as unknown as Record<string, unknown>
   const radarScores: RadarScores = { ...(current.radar_scores ?? {}) }
+  let marketData = current.market_data
 
   for (const spec of ENRICHMENT_FIELDS) {
     if (!(spec.key in values)) continue
+    if (isRelationField(spec.key)) continue
     const v = values[spec.key]!
     if (isRadarField(spec.key)) radarScores[RADAR_FIELD_TO_AXIS[spec.key]] = v as number
-    else next[spec.key] = v
+    else if (spec.key === 'market_notes') {
+      marketData = { currency: 'USD', as_of: null, low: null, mid: null, high: null, ...marketData, notes: v as string }
+    } else next[spec.key] = v
   }
 
   next.radar_scores = radarScores
+  next.market_data = marketData
   return next as unknown as GenerationInput
+}
+
+// Flattens a matched row's parsed rivals/lineage arrays into the row shape
+// bulk_add_car_relations expects. Called once per matched+included row when
+// building the bulk /commit payload — every entry becomes its own plain-
+// text car_relations row (relation_type from RELATION_FIELD_TYPE,
+// linked_generation_id always null; upgrading to a real linked car is a
+// picker-only action in the edit form).
+export function buildRelationInserts(
+  generationId: string,
+  values: Partial<Record<EnrichmentFieldKey, EnrichmentValue>>
+): { generation_id: string; relation_type: 'rival' | 'related'; label_text: string }[] {
+  const inserts: { generation_id: string; relation_type: 'rival' | 'related'; label_text: string }[] = []
+  for (const [key, relationType] of Object.entries(RELATION_FIELD_TYPE) as [keyof typeof RELATION_FIELD_TYPE, 'rival' | 'related'][]) {
+    const entries = values[key] as string[] | undefined
+    if (!entries?.length) continue
+    for (const label_text of entries) inserts.push({ generation_id: generationId, relation_type: relationType, label_text })
+  }
+  return inserts
 }

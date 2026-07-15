@@ -379,6 +379,7 @@ BEGIN
       'usability', e.radar_usability, 'ease_of_restoration', e.radar_ease_of_restoration,
       'cultural_impact', e.radar_cultural_impact
     )),
+    market_data = COALESCE(g.market_data, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object('notes', e.market_notes)), -- step21
     updated_at = NOW()
   FROM jsonb_to_recordset(rows) AS e(
     generation_id UUID, nickname TEXT, desirability_tier TEXT, overview TEXT, why_collectible TEXT,
@@ -387,7 +388,7 @@ BEGIN
     drivetrain TEXT[], engine_layout TEXT, units_produced INTEGER, units_produced_estimated BOOLEAN,
     wikipedia_url TEXT, callout TEXT, driving_character TEXT, design_notes TEXT, cultural_notes TEXT,
     motorsport_pedigree TEXT, maintenance TEXT, value_trajectory TEXT, analog_index INTEGER,
-    homologation_special BOOLEAN, poster_car BOOLEAN,
+    homologation_special BOOLEAN, poster_car BOOLEAN, market_notes TEXT,
     radar_desirability INTEGER, radar_rarity INTEGER, radar_driving_thrill INTEGER,
     radar_investment_trajectory INTEGER, radar_usability INTEGER, radar_ease_of_restoration INTEGER,
     radar_cultural_impact INTEGER
@@ -399,6 +400,49 @@ END;
 $$;
 
 GRANT EXECUTE ON FUNCTION bulk_update_generation_enrichment(JSONB) TO authenticated;
+
+-- step21: rows: [{ generation_id, relation_type: 'rival'|'related', label_text }].
+-- Plain-text car_relations inserts only (linked_generation_id always
+-- null) — upgrading a text entry to a real linked car stays a picker-only
+-- action in the edit form. Idempotent: car_relations_label_uniq (a
+-- partial unique index on (generation_id, relation_type, label_text)
+-- WHERE linked_generation_id IS NULL) makes a duplicate label_text a
+-- silent no-op via ON CONFLICT ... DO NOTHING, not an error or a second row.
+CREATE OR REPLACE FUNCTION bulk_add_car_relations(rows JSONB)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_missing UUID[];
+  v_inserted INT;
+BEGIN
+  SELECT array_agg(DISTINCT e.generation_id) INTO v_missing
+  FROM jsonb_to_recordset(rows) AS e(generation_id UUID)
+  WHERE NOT EXISTS (SELECT 1 FROM generations g WHERE g.id = e.generation_id);
+
+  IF v_missing IS NOT NULL THEN
+    RAISE EXCEPTION 'bulk_add_car_relations: % generation_id(s) not found: %.', array_length(v_missing, 1), v_missing;
+  END IF;
+
+  INSERT INTO car_relations (generation_id, relation_type, label_text, sort_order)
+  SELECT
+    e.generation_id,
+    e.relation_type::car_relation_type,
+    trim(e.label_text),
+    COALESCE((
+      SELECT MAX(cr.sort_order) FROM car_relations cr
+      WHERE cr.generation_id = e.generation_id AND cr.relation_type = e.relation_type::car_relation_type
+    ), -1) + row_number() OVER (PARTITION BY e.generation_id, e.relation_type ORDER BY e.label_text)
+  FROM jsonb_to_recordset(rows) AS e(generation_id UUID, relation_type TEXT, label_text TEXT)
+  WHERE trim(e.label_text) != ''
+  ON CONFLICT (generation_id, relation_type, label_text) WHERE linked_generation_id IS NULL DO NOTHING;
+
+  GET DIAGNOSTICS v_inserted = ROW_COUNT;
+  RETURN v_inserted;
+END;
+$$;
+
+GRANT EXECUTE ON FUNCTION bulk_add_car_relations(JSONB) TO authenticated;
 
 CREATE OR REPLACE FUNCTION bulk_upsert_trims(rows JSONB)
 RETURNS TABLE(generation_id UUID, name TEXT, action TEXT)
