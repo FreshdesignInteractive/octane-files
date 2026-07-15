@@ -193,167 +193,26 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           {/* Quick Facts — its own scrollspy landmark so the subnav's first
               tab tracks what's actually visible right under it, instead of
               staying stuck on "Overview" (whose own section starts further
-              down the page). One container, one column — every fact gets
-              an icon + label + value row, single vs. multi-value no longer
-              splits it into two separate blocks. */}
-          <section id="quick-facts" className="scroll-mt-40 mt-6 mb-8">
-            <h2 className="text-lg font-bold text-text-primary tracking-tight mb-6">Quick Facts</h2>
-            <div className="bg-white border border-border rounded-card p-6">
-            <div className="flex flex-col gap-6">
+              down the page). */}
+          <section id="quick-facts" className="scroll-mt-40">
+          <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] mt-6 mb-8">
             {([
-              {
-                label: 'Country',
-                value: car.country || NA,
-                icon: (
-                  <>
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="2" y1="12" x2="22" y2="12" />
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-                  </>
-                ),
-              },
-              {
-                label: 'Production',
-                value: years,
-                icon: (
-                  <>
-                    <rect x="3" y="4" width="18" height="18" rx="2" />
-                    <line x1="16" y1="2" x2="16" y2="6" />
-                    <line x1="8" y1="2" x2="8" y2="6" />
-                    <line x1="3" y1="10" x2="21" y2="10" />
-                  </>
-                ),
-              },
-              {
-                label: 'Units built',
-                value: car.units_produced ? car.units_produced.toLocaleString() : NA,
-                icon: (
-                  <>
-                    <line x1="4" y1="9" x2="20" y2="9" />
-                    <line x1="4" y1="15" x2="20" y2="15" />
-                    <line x1="10" y1="3" x2="8" y2="21" />
-                    <line x1="16" y1="3" x2="14" y2="21" />
-                  </>
-                ),
-              },
-              {
-                label: 'Class',
-                value: car.class || NA,
-                icon: (
-                  <>
-                    <rect x="3" y="3" width="7" height="7" />
-                    <rect x="14" y="3" width="7" height="7" />
-                    <rect x="14" y="14" width="7" height="7" />
-                    <rect x="3" y="14" width="7" height="7" />
-                  </>
-                ),
-              },
-              {
-                label: 'Nickname',
-                value: (
-                  <span className="inline-flex items-center gap-2 flex-wrap">
-                    <span>{car.nickname || NA}</span>
-                    {car.is_icon && <span className="pill pill-active">★ Icon</span>}
-                    {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
-                    {car.poster_car && <span className="pill pill-active">Poster Car</span>}
-                  </span>
-                ),
-                icon: (
-                  <>
-                    <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
-                    <line x1="7" y1="7" x2="7.01" y2="7" />
-                  </>
-                ),
-              },
-              {
-                label: 'Drivetrain',
-                value: car.drivetrain || NA,
-                icon: (
-                  <>
-                    <circle cx="12" cy="12" r="10" />
-                    <circle cx="12" cy="12" r="3" />
-                  </>
-                ),
-              },
-              {
-                label: 'Engine',
-                value: car.engine_layout || NA,
-                icon: (
-                  <>
-                    <rect x="4" y="4" width="16" height="16" rx="2" />
-                    <rect x="9" y="9" width="6" height="6" />
-                    <line x1="9" y1="1" x2="9" y2="4" />
-                    <line x1="15" y1="1" x2="15" y2="4" />
-                    <line x1="9" y1="20" x2="9" y2="23" />
-                    <line x1="15" y1="20" x2="15" y2="23" />
-                    <line x1="20" y1="9" x2="23" y2="9" />
-                    <line x1="20" y1="14" x2="23" y2="14" />
-                    <line x1="1" y1="9" x2="4" y2="9" />
-                    <line x1="1" y1="14" x2="4" y2="14" />
-                  </>
-                ),
-              },
-              {
-                label: 'Engine Detail',
-                value: car.engine_signature || NA,
-                icon: (
-                  <>
-                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                    <polyline points="14,2 14,8 20,8" />
-                    <line x1="16" y1="13" x2="8" y2="13" />
-                    <line x1="16" y1="17" x2="8" y2="17" />
-                  </>
-                ),
-              },
-              {
-                label: 'Body',
-                value: car.body_styles?.length ? car.body_styles.join(', ') : NA,
-                icon: (
-                  <>
-                    <polygon points="12,2 2,7 12,12 22,7 12,2" />
-                    <polyline points="2,17 12,22 22,17" />
-                    <polyline points="2,12 12,17 22,12" />
-                  </>
-                ),
-              },
-              {
-                label: 'Designer',
-                value: car.designer || NA,
-                icon: <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />,
-              },
-              {
-                label: 'Wikipedia',
-                value: car.wikipedia_url ? (
-                  <a href={car.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-accent no-underline">
-                    View ↗
-                  </a>
-                ) : NA,
-                icon: (
-                  <>
-                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                    <polyline points="15,3 21,3 21,9" />
-                    <line x1="10" y1="14" x2="21" y2="3" />
-                  </>
-                ),
-              },
-            ] as { label: string; value: React.ReactNode; icon: React.ReactNode }[])
-              .map(row => (
-                <div key={row.label} className="flex gap-4">
-                  <svg
-                    width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                    strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                    className="text-text-secondary shrink-0 mt-0.5"
-                  >
-                    {row.icon}
-                  </svg>
-                  <div>
-                    <div className="text-body font-semibold text-text-primary mb-1">{row.label}</div>
-                    <div className="text-body text-text-secondary">{row.value}</div>
+              { label: 'Country', value: car.country || NA },
+              { label: 'Production', value: years },
+              { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
+              { label: 'Class', value: car.class || NA },
+            ] as { label: string; value: React.ReactNode }[])
+              .map(stat => (
+                <div key={stat.label} className="stat-cell">
+                  <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">
+                    {stat.label}
+                  </div>
+                  <div className="text-sm font-medium text-text-primary">
+                    {stat.value}
                   </div>
                 </div>
               ))}
-            </div>
-            </div>
+          </div>
           </section>
 
           {/* Overview */}
@@ -609,22 +468,134 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           </div>
           </div>
 
-          {/* Sidebar — two empty placeholder containers for now; heights are
-              illustrative only, pending real content. Same shadow as the
-              subnav pill, same corner radius as the gallery/hero images.
-              mt-6 (24px) lines its top up with the stat-grid opposite it —
-              and since sticky offsets are measured from the margin edge,
-              the same mt-6 also keeps that 24px gap once stuck: 56px
-              (site header, h-14) + 96px (subnav's own h-16 + py-4) = 152px
-              to the subnav's bottom edge, +24px margin = the card's actual
-              top when pinned. lg-only — below that breakpoint this is a
-              single stacked column, not the two-column layout, so sticking
-              here would pin it awkwardly mid-page. self-start keeps it at
-              its own natural height instead of stretching to match the
-              main column (grid's default stretch), which would leave it
-              no room to actually stick. */}
+          {/* Sidebar. Same shadow as the subnav pill, same corner radius as
+              the gallery/hero images. mt-6 (24px) lines its top up with the
+              stat-grid opposite it — and since sticky offsets are measured
+              from the margin edge, the same mt-6 also keeps that 24px gap
+              once stuck: 56px (site header, h-14) + 96px (subnav's own h-16
+              + py-4) = 152px to the subnav's bottom edge, +24px margin =
+              the card's actual top when pinned. lg-only — below that
+              breakpoint this is a single stacked column, not the
+              two-column layout, so sticking here would pin it awkwardly
+              mid-page. self-start keeps it at its own natural height
+              instead of stretching to match the main column (grid's
+              default stretch), which would leave it no room to actually
+              stick. */}
           <div className="flex flex-col gap-10 mt-6 order-first lg:order-none lg:sticky lg:top-[152px] lg:self-start">
-            <div className="bg-white rounded-2xl shadow-lg min-h-40" />
+            {/* Everything below holds multiple/longer values (a list, a
+                paragraph, a link) rather than one short fact, so it gets
+                its own icon + label + value row instead of a stat-cell.
+                Single column — this card is narrower than the main
+                content column, no room for two. */}
+            <div className="bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex flex-col gap-6">
+                {([
+                  {
+                    label: 'Nickname',
+                    value: (
+                      <span className="inline-flex items-center gap-2 flex-wrap">
+                        <span>{car.nickname || NA}</span>
+                        {car.is_icon && <span className="pill pill-active">★ Icon</span>}
+                        {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
+                        {car.poster_car && <span className="pill pill-active">Poster Car</span>}
+                      </span>
+                    ),
+                    icon: (
+                      <>
+                        <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                        <line x1="7" y1="7" x2="7.01" y2="7" />
+                      </>
+                    ),
+                  },
+                  {
+                    label: 'Drivetrain',
+                    value: car.drivetrain || NA,
+                    icon: (
+                      <>
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="12" r="3" />
+                      </>
+                    ),
+                  },
+                  {
+                    label: 'Engine',
+                    value: car.engine_layout || NA,
+                    icon: (
+                      <>
+                        <rect x="4" y="4" width="16" height="16" rx="2" />
+                        <rect x="9" y="9" width="6" height="6" />
+                        <line x1="9" y1="1" x2="9" y2="4" />
+                        <line x1="15" y1="1" x2="15" y2="4" />
+                        <line x1="9" y1="20" x2="9" y2="23" />
+                        <line x1="15" y1="20" x2="15" y2="23" />
+                        <line x1="20" y1="9" x2="23" y2="9" />
+                        <line x1="20" y1="14" x2="23" y2="14" />
+                        <line x1="1" y1="9" x2="4" y2="9" />
+                        <line x1="1" y1="14" x2="4" y2="14" />
+                      </>
+                    ),
+                  },
+                  {
+                    label: 'Engine Detail',
+                    value: car.engine_signature || NA,
+                    icon: (
+                      <>
+                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                        <polyline points="14,2 14,8 20,8" />
+                        <line x1="16" y1="13" x2="8" y2="13" />
+                        <line x1="16" y1="17" x2="8" y2="17" />
+                      </>
+                    ),
+                  },
+                  {
+                    label: 'Body',
+                    value: car.body_styles?.length ? car.body_styles.join(', ') : NA,
+                    icon: (
+                      <>
+                        <polygon points="12,2 2,7 12,12 22,7 12,2" />
+                        <polyline points="2,17 12,22 22,17" />
+                        <polyline points="2,12 12,17 22,12" />
+                      </>
+                    ),
+                  },
+                  {
+                    label: 'Designer',
+                    value: car.designer || NA,
+                    icon: <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />,
+                  },
+                  {
+                    label: 'Wikipedia',
+                    value: car.wikipedia_url ? (
+                      <a href={car.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-accent no-underline">
+                        View ↗
+                      </a>
+                    ) : NA,
+                    icon: (
+                      <>
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                        <polyline points="15,3 21,3 21,9" />
+                        <line x1="10" y1="14" x2="21" y2="3" />
+                      </>
+                    ),
+                  },
+                ] as { label: string; value: React.ReactNode; icon: React.ReactNode }[])
+                  .map(row => (
+                    <div key={row.label} className="flex gap-4">
+                      <svg
+                        width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+                        className="text-text-secondary shrink-0 mt-0.5"
+                      >
+                        {row.icon}
+                      </svg>
+                      <div>
+                        <div className="text-body font-semibold text-text-primary mb-1">{row.label}</div>
+                        <div className="text-body text-text-secondary">{row.value}</div>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
             <div className="bg-white rounded-2xl shadow-lg min-h-96" />
 
             {/* Report an issue — links to a dedicated page rather than a
