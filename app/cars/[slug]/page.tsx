@@ -190,33 +190,13 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               the subnav instead, without changing the desktop layout. */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
           <div>
-          {/* Quick Facts — its own scrollspy landmark so the subnav's first
-              tab tracks what's actually visible right under it, instead of
-              staying stuck on "Overview" (whose own section starts further
-              down the page). */}
-          <section id="quick-facts" className="scroll-mt-40">
-          <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] mt-6 mb-8">
-            {([
-              { label: 'Country', value: car.country || NA },
-              { label: 'Production', value: years },
-              { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
-              { label: 'Class', value: car.class || NA },
-            ] as { label: string; value: React.ReactNode }[])
-              .map(stat => (
-                <div key={stat.label} className="stat-cell">
-                  <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">
-                    {stat.label}
-                  </div>
-                  <div className="text-sm font-medium text-text-primary">
-                    {stat.value}
-                  </div>
-                </div>
-              ))}
-          </div>
-          </section>
-
-          {/* Overview */}
-          <section id="overview" className="mt-2 scroll-mt-40">
+          {/* Overview. Note: the "Quick Facts" subnav tab (top of the
+              sections list) no longer has a matching id in this column —
+              its content moved to the sidebar below. Left as-is per your
+              call to revisit that tab separately later; OverflowNav's
+              scrollspy already filters out missing ids safely, so this
+              doesn't error, the tab just won't scroll anywhere yet. */}
+          <section id="overview" className="mt-6 scroll-mt-40">
             <h2 className="text-lg font-bold text-text-primary tracking-tight mb-5">Overview</h2>
             <div className="max-w-170">
               {car.overview ? renderText(car.overview) : <Unavailable />}
@@ -482,6 +462,29 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               default stretch), which would leave it no room to actually
               stick. */}
           <div className="flex flex-col gap-10 mt-6 order-first lg:order-none lg:sticky lg:top-[152px] lg:self-start">
+            {/* Single-value facts — same stat-grid card/cells used
+                everywhere else on this page, just relocated here. auto-fit
+                naturally reflows to fewer columns at this narrower width,
+                no separate layout needed. */}
+            <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
+              {([
+                { label: 'Country', value: car.country || NA },
+                { label: 'Production', value: years },
+                { label: 'Units built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
+                { label: 'Class', value: car.class || NA },
+              ] as { label: string; value: React.ReactNode }[])
+                .map(stat => (
+                  <div key={stat.label} className="stat-cell">
+                    <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">
+                      {stat.label}
+                    </div>
+                    <div className="text-sm font-medium text-text-primary">
+                      {stat.value}
+                    </div>
+                  </div>
+                ))}
+            </div>
+
             {/* Everything below holds multiple/longer values (a list, a
                 paragraph, a link) rather than one short fact, so it gets
                 its own icon + label + value row instead of a stat-cell.
@@ -596,7 +599,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   ))}
               </div>
             </div>
-            <div className="bg-white rounded-2xl shadow-lg min-h-96" />
 
             {/* Report an issue — links to a dedicated page rather than a
                 dialog, so Google sign-in's redirect (which always lands on
