@@ -462,10 +462,10 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               default stretch), which would leave it no room to actually
               stick. */}
           <div className="flex flex-col gap-4 mt-6 order-first lg:order-none lg:sticky lg:top-[152px] lg:self-start">
-            {/* Cards keep their own gap-10 (40px) between each other; the
+            {/* Cards keep their own gap-8 (32px) between each other; the
                 outer gap-4 (16px) only applies below, between this group
                 and the report-a-mistake text. */}
-            <div className="flex flex-col gap-10">
+            <div className="flex flex-col gap-8">
             {/* Single-value facts — same stat-grid card/cells used
                 everywhere else on this page, just relocated here. auto-fit
                 naturally reflows to fewer columns at this narrower width,
