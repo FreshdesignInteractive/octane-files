@@ -469,8 +469,12 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             {/* Single-value facts — same stat-grid card/cells used
                 everywhere else on this page, just relocated here. auto-fit
                 naturally reflows to fewer columns at this narrower width,
-                no separate layout needed. */}
-            <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
+                no separate layout needed. shadow-sm added here (not on the
+                shared .stat-grid class) since this instance sits as a
+                standalone sidebar card next to one below that also has a
+                shadow — the other .stat-grid usage (Market Data tiers) is
+                inline content, not a card, and shouldn't pick this up. */}
+            <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] shadow-sm">
               {([
                 { label: 'Country', value: car.country || NA },
                 { label: 'Production', value: years },
@@ -494,7 +498,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 its own icon + label + value row instead of a stat-cell.
                 Single column — this card is narrower than the main
                 content column, no room for two. */}
-            <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="bg-white border border-border rounded-2xl shadow-sm p-6">
               <div className="flex flex-col gap-6">
                 {([
                   {
