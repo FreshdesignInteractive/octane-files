@@ -503,7 +503,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               ] as { label: string; value: React.ReactNode }[])
                 .map(stat => (
                   <div key={stat.label} className="stat-cell">
-                    <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">
+                    <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-0.5">
                       {stat.label}
                     </div>
                     <div className="text-sm font-medium text-text-primary">
@@ -519,7 +519,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 Single column — this card is narrower than the main
                 content column, no room for two. */}
             <div className="bg-white border border-border rounded-2xl shadow-sm p-6">
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-4">
                 {([
                   {
                     label: 'Nickname',
@@ -605,7 +605,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                         {row.icon}
                       </svg>
                       <div>
-                        <div className="text-body font-semibold text-text-primary mb-1">{row.label}</div>
+                        <div className="text-body font-semibold text-text-primary mb-0.5">{row.label}</div>
                         <div className="text-body text-text-secondary">{row.value}</div>
                       </div>
                     </div>
@@ -616,8 +616,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   line, never a label/value row like the facts above. Falls
                   back to a Wikipedia search (not the homepage) when no
                   wikipedia_url is entered, so the link still keeps its
-                  promise. */}
-              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-border">
+                  promise. Centered, unlike the left-aligned facts above. */}
+              <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-border">
                 <span
                   className="w-5 h-5 flex items-center justify-center rounded-sm border border-border text-text-primary text-xs font-serif font-bold shrink-0"
                   aria-hidden="true"
