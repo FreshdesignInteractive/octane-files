@@ -62,14 +62,14 @@ export default function CarCard({ car }: { car: CarCardEntry }) {
           </h3>
           <div className="text-xs text-text-tertiary flex gap-2 flex-wrap">
             <span>{car.country}</span>
-            <span>&middot;</span>
-            <span>{formatYears(car.year_start, car.year_end)}</span>
             {car.class && (
               <>
                 <span>&middot;</span>
                 <span>{car.class}</span>
               </>
             )}
+            <span>&middot;</span>
+            <span>{formatYears(car.year_start, car.year_end)}</span>
           </div>
         </div>
       </article>
