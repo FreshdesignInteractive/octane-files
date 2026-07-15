@@ -94,6 +94,23 @@ const VALUE_TRAJECTORY_DISPLAY: Record<string, string> = {
   cooling: '↘ Cooling',
 }
 
+// Fixed UI copy, not per-car data — same one-liner for every car with a
+// given tier/trajectory, so this lives in code (shown as a title tooltip
+// on the badge) rather than as a DB column that would just repeat itself
+// across ~217 rows.
+const DESIRABILITY_TIER_EXPLAINER: Record<string, string> = {
+  'Blue-chip': 'Established at the top of the market. Values are set by rarity and provenance, not condition alone.',
+  'High': 'Strongly desirable and well-established, below the very top tier.',
+  'Solid': 'Genuinely collectible with a real following; accessible entry to the hobby.',
+  'Entry': 'The affordable way in. Values driven by condition more than scarcity.',
+}
+
+const VALUE_TRAJECTORY_EXPLAINER: Record<string, string> = {
+  appreciating: 'Values are rising.',
+  stable: 'Values have plateaued and are holding.',
+  cooling: 'Values are softening from a recent high.',
+}
+
 export default async function CarPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params
   const car: Car | null = await getModel(slug)
@@ -108,7 +125,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
   const hasCollectibility = !!(car.callout || car.claim_to_fame || car.why_collectible || car.buyers_flag)
   const hasRatings = car.analog_index !== null || !!(car.radar_scores && Object.keys(car.radar_scores).length > 0)
-  const hasSpecifications = car.specs?.length > 0
   const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
   const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
@@ -128,7 +144,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
     { id: 'overview', label: 'Overview' },
     { id: 'collectibility', label: 'Why collectors want it' },
     { id: 'ratings', label: 'How it scores' },
-    { id: 'specifications', label: 'Specifications' },
     { id: 'variants-trims', label: 'Which one to look for' },
     { id: 'character', label: "What it's like" },
     { id: 'lineage', label: 'Where it comes from' },
@@ -223,16 +238,22 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             {hasCollectibility ? (
               <>
                 {(car.callout || car.claim_to_fame) && (
-                  <div className="flex gap-2 flex-wrap mb-5">
+                  <div className="flex gap-8 flex-wrap mb-5">
                     {car.callout && (
-                      <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
-                        {car.callout}
-                      </span>
+                      <div>
+                        <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Callout</div>
+                        <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
+                          {car.callout}
+                        </span>
+                      </div>
                     )}
                     {car.claim_to_fame && (
-                      <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
-                        {car.claim_to_fame}
-                      </span>
+                      <div>
+                        <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Claim to Fame</div>
+                        <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
+                          {car.claim_to_fame}
+                        </span>
+                      </div>
                     )}
                   </div>
                 )}
@@ -283,29 +304,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                     )
                   })}
                 </div>
-              </div>
-            ) : <Unavailable />}
-          </Section>
-
-          {/* Specifications — numbers only */}
-          <Section id="specifications" label="Specifications">
-            {hasSpecifications ? (
-              <div className="grid gap-6 grid-cols-[repeat(auto-fit,minmax(260px,1fr))]">
-                {car.specs.map(group => (
-                  <div key={group.group}>
-                    <div className="text-label font-bold tracking-widest text-accent uppercase mb-3">
-                      {group.group}
-                    </div>
-                    <div className="flex flex-col gap-0">
-                      {group.specs.map(spec => (
-                        <div key={spec.label} className="flex justify-between items-baseline py-2 border-b border-border gap-3">
-                          <span className="text-body text-text-secondary flex-shrink-0">{spec.label}</span>
-                          <span className="text-body text-text-primary font-medium text-right">{spec.value}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
               </div>
             ) : <Unavailable />}
           </Section>
@@ -382,11 +380,20 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             {hasMarketSection ? (
               <>
                 {(car.desirability_tier || car.value_trajectory) && (
-                  <div className="flex gap-3 mb-5">
-                    {car.desirability_tier && <span className="pill pill-active">{car.desirability_tier}</span>}
-                    {car.value_trajectory && (
-                      <span className="pill">{VALUE_TRAJECTORY_DISPLAY[car.value_trajectory]}</span>
-                    )}
+                  <div className="mb-5">
+                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Collector Status</div>
+                    <div className="flex gap-3">
+                      {car.desirability_tier && (
+                        <span className="pill pill-active" title={DESIRABILITY_TIER_EXPLAINER[car.desirability_tier]}>
+                          {car.desirability_tier}
+                        </span>
+                      )}
+                      {car.value_trajectory && (
+                        <span className="pill" title={VALUE_TRAJECTORY_EXPLAINER[car.value_trajectory]}>
+                          {VALUE_TRAJECTORY_DISPLAY[car.value_trajectory]}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 )}
                 {marketTiers.length > 0 && (

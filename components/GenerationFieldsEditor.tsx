@@ -3,7 +3,6 @@
 import {
   CAR_CLASSES, BODY_STYLES, DRIVETRAIN_TYPES, RESOURCE_TYPES,
   ENGINE_LAYOUTS, DESIRABILITY_TIERS, VALUE_TRAJECTORIES, RADAR_AXES,
-  parseSpecGroups,
   type GenerationInput, type BodyStyle, type DrivetrainType, type ResourceType,
   type TrimInput, type CarRelationInput,
 } from '@/lib/car-schema'
@@ -33,7 +32,6 @@ const SECTIONS = [
   { id: 'overview', label: 'Overview' },
   { id: 'collectibility', label: 'Why collectors want it' },
   { id: 'ratings', label: 'How it scores' },
-  { id: 'specifications', label: 'Specifications' },
   { id: 'variants-trims', label: 'Which one to look for' },
   { id: 'character', label: "What it's like" },
   { id: 'lineage', label: 'Where it comes from' },
@@ -243,72 +241,6 @@ export default function GenerationFieldsEditor({
             </div>
           ))}
         </div>
-      </section>
-
-      {/* Specifications — numbers only */}
-      <section id="specifications">
-        <h2 className={sectionHeading}>Specifications</h2>
-        {(() => {
-          const parsed = parseSpecGroups(value.specs as unknown)
-          if (parsed === null) {
-            return (
-              <div>
-                <p className="text-body text-error mb-3">
-                  Existing specs data isn&apos;t in the expected group/label/value shape and can&apos;t be edited here safely — showing the raw value below instead of silently discarding it. Fix it in the database directly, or clear it to start fresh with the editor.
-                </p>
-                <pre className="textarea min-h-30 font-mono text-xs overflow-auto">{JSON.stringify(value.specs, null, 2)}</pre>
-                <button type="button" onClick={() => onChange({ specs: [] })} className="btn-secondary px-3 mt-3">Clear and start fresh</button>
-              </div>
-            )
-          }
-          return (
-            <div className="flex flex-col gap-5">
-              {parsed.map((group, gi) => (
-                <div key={gi} className="p-4 rounded-lg border border-border">
-                  <div className="flex gap-2 items-center mb-3">
-                    <input
-                      className="input flex-1" placeholder="Group name (e.g. Engine, Drivetrain)"
-                      value={group.group}
-                      onChange={e => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, group: e.target.value } : g) })}
-                    />
-                    <button type="button" onClick={() => onChange({ specs: parsed.filter((_, j) => j !== gi) })} className="btn-secondary px-3">Remove group</button>
-                  </div>
-                  <div className="flex flex-col gap-2">
-                    {group.specs.map((s, si) => (
-                      <div key={si} className="grid grid-cols-[1fr_1fr_auto] gap-2">
-                        <input
-                          className="input" placeholder="Label"
-                          value={s.label}
-                          onChange={e => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: g.specs.map((x, k) => k === si ? { ...x, label: e.target.value } : x) } : g) })}
-                        />
-                        <input
-                          className="input" placeholder="Value"
-                          value={s.value}
-                          onChange={e => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: g.specs.map((x, k) => k === si ? { ...x, value: e.target.value } : x) } : g) })}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: g.specs.filter((_, k) => k !== si) } : g) })}
-                          className="btn-secondary px-3"
-                        >Remove</button>
-                      </div>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => onChange({ specs: parsed.map((g, j) => j === gi ? { ...g, specs: [...g.specs, { label: '', value: '' }] } : g) })}
-                      className="btn-secondary self-start px-3"
-                    >+ Add spec</button>
-                  </div>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={() => onChange({ specs: [...parsed, { group: '', specs: [] }] })}
-                className="btn-secondary self-start px-3"
-              >+ Add group</button>
-            </div>
-          )
-        })()}
       </section>
 
       {/* Which one to look for — Variants & Trims */}
