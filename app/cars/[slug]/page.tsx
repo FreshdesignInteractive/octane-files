@@ -482,14 +482,20 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 and the report-a-mistake text. */}
             <div className="flex flex-col gap-8">
             {/* Single-value facts — same stat-grid card/cells used
-                everywhere else on this page, just relocated here. auto-fit
-                naturally reflows to fewer columns at this narrower width,
-                no separate layout needed. shadow-sm added here (not on the
-                shared .stat-grid class) since this instance sits as a
-                standalone sidebar card next to one below that also has a
-                shadow — the other .stat-grid usage (Market Data tiers) is
-                inline content, not a card, and shouldn't pick this up. */}
-            <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] shadow-sm">
+                everywhere else on this page, just relocated here.
+                Explicit grid-cols-2/4 steps rather than auto-fit — with 4
+                items, auto-fit could land on 3 columns (leaving one item
+                stranded alone on its own row) at in-between widths below
+                the lg breakpoint, where this card is still full main-
+                column width rather than squeezed into the 380px sidebar.
+                2 up narrow, 4 across once there's room, back to 2 once
+                the lg two-column layout narrows this card again.
+                shadow-sm added here (not on the shared .stat-grid class)
+                since this instance sits as a standalone sidebar card next
+                to one below that also has a shadow — the other .stat-grid
+                usage (Market Data tiers) is inline content, not a card,
+                and shouldn't pick this up. */}
+            <div className="stat-grid grid-cols-2 md:grid-cols-4 lg:grid-cols-2 shadow-sm">
               {([
                 { label: 'Country of Origin', value: car.country || NA },
                 { label: 'Class', value: car.class || NA },
