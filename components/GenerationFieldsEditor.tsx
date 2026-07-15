@@ -98,7 +98,15 @@ export default function GenerationFieldsEditor({
               {CAR_CLASSES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           )}
-          {field('Units Produced', <input className="input" type="number" value={value.units_produced ?? ''} onChange={e => onChange({ units_produced: e.target.value ? parseInt(e.target.value) : null })} />)}
+          {field('Units Produced', (
+            <div className="flex items-center gap-3">
+              <input className="input" type="number" value={value.units_produced ?? ''} onChange={e => onChange({ units_produced: e.target.value ? parseInt(e.target.value) : null })} />
+              <label className="flex items-center gap-1.5 whitespace-nowrap">
+                <input type="checkbox" checked={value.units_produced_estimated} onChange={e => onChange({ units_produced_estimated: e.target.checked })} />
+                <span className="text-body text-text-secondary">Estimated figure</span>
+              </label>
+            </div>
+          ))}
         </div>
 
         <div className="flex gap-6 mt-4">

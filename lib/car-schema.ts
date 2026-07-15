@@ -115,6 +115,10 @@ export interface GenerationRecord {
   drivetrain: DrivetrainType[]
   engine_layout: EngineLayout | null
   units_produced: number | null
+  // Roundness alone can't say exact vs. approximate — 500 can be a
+  // documented figure while 15,000,000 is round *because* it's an estimate.
+  // Drives "~15 million" vs. "15,000,000" on the public page.
+  units_produced_estimated: boolean
   hero_image: string | null
   gallery_images: string[]
   wikipedia_url: string | null
@@ -197,6 +201,7 @@ export function emptyGenerationInput(): GenerationInput {
     drivetrain: [],
     engine_layout: null,
     units_produced: null,
+    units_produced_estimated: false,
     hero_image: null,
     gallery_images: [],
     wikipedia_url: null,

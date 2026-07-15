@@ -33,7 +33,7 @@ export type RadarFieldKey =
 
 export type EnrichmentFieldKey =
   | 'nickname' | 'designer' | 'wikipedia_url' | 'engine_signature' | 'class' | 'engine_layout'
-  | 'units_produced' | 'is_icon' | 'homologation_special' | 'poster_car' | 'body_styles' | 'drivetrain'
+  | 'units_produced' | 'units_produced_estimated' | 'is_icon' | 'homologation_special' | 'poster_car' | 'body_styles' | 'drivetrain'
   | 'overview'
   | 'callout' | 'claim_to_fame' | 'why_collectible' | 'buyers_flag'
   | 'analog_index' | RadarFieldKey
@@ -102,6 +102,7 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'engine_layout', header: 'EngineLayout', type: 'enum', allowedValues: ENGINE_LAYOUTS },
   { key: 'class', header: 'Class', type: 'enum', allowedValues: CAR_CLASSES.map(c => c.value) },
   { key: 'units_produced', header: 'UnitsProduced', type: 'integer' },
+  { key: 'units_produced_estimated', header: 'UnitsProducedEstimated', type: 'boolean' },
   { key: 'is_icon', header: 'IsIcon', type: 'boolean' },
   { key: 'homologation_special', header: 'HomologationSpecial', type: 'boolean' },
   { key: 'poster_car', header: 'PosterCar', type: 'boolean' },

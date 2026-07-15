@@ -36,6 +36,22 @@ function formatMoney(n: number) {
   return n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`
 }
 
+// Roundness alone can't say exact vs. approximate — 500 can be a documented
+// figure while 15,000,000 is round *because* it's an estimate, so the flag
+// (not the magnitude) decides the format. Exact: full figure, separators,
+// any magnitude. Estimated: "~" prefix, abbreviated to millions only at
+// >=1M ("~15 million" / "~1.5 million"); below 1M it's still "~" + the
+// figure with separators, same as the exact path.
+function formatUnitsProduced(value: number | null, estimated: boolean): string {
+  if (value === null) return NA
+  if (!estimated) return value.toLocaleString()
+  if (value >= 1_000_000) {
+    const millions = Math.round((value / 1_000_000) * 10) / 10
+    return `~${millions} million`
+  }
+  return `~${value.toLocaleString()}`
+}
+
 // scroll-mt-40 (160px) clears the sticky header (h-14, 56px) + sticky
 // subnav pill (h-16 + py-4, 96px) so an anchor jump or scrollspy-driven
 // click lands with the section's own heading visible below both, not
@@ -479,7 +495,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 { label: 'Country of Origin', value: car.country || NA },
                 { label: 'Class', value: car.class || NA },
                 { label: 'Production Years', value: years },
-                { label: 'Units Built', value: car.units_produced ? car.units_produced.toLocaleString() : NA },
+                { label: 'Units Built', value: formatUnitsProduced(car.units_produced, car.units_produced_estimated) },
               ] as { label: string; value: React.ReactNode }[])
                 .map(stat => (
                   <div key={stat.label} className="stat-cell">

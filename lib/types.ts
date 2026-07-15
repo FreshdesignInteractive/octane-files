@@ -107,6 +107,11 @@ export interface CarTrim {
 }
 
 export interface Car extends CarSummary {
+  // Only needed on the detail page — CarSummary (shared with Browse/Garage/
+  // relation cards) doesn't render units_produced at all, so this stays off
+  // that shared type rather than forcing every CarSummary producer (the
+  // search_generations RPC included) to also supply it.
+  units_produced_estimated: boolean
   body_styles: string[]
   drivetrain: string | null
   engine_layout: string | null
