@@ -99,6 +99,11 @@ export interface GenerationRecord {
   overview: string | null
   why_collectible: string | null
   engine_signature: string | null
+  // Free text by design, like engine_signature above — most generations
+  // offered several transmissions, so this is an inventory of ALL of them
+  // ("2-speed Powerglide automatic, 3-speed manual, 4-speed manual"), not
+  // a single filterable value.
+  transmission: string | null
   variants_to_know: string | null
   known_issues: string | null
   claim_to_fame: string | null
@@ -192,6 +197,7 @@ export function emptyGenerationInput(): GenerationInput {
     overview: null,
     why_collectible: null,
     engine_signature: null,
+    transmission: null,
     variants_to_know: null,
     known_issues: null,
     claim_to_fame: null,

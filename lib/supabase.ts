@@ -28,6 +28,12 @@ const CLASS_ENUM_TO_LABEL: Record<string, string> = Object.fromEntries(
   CAR_CLASSES.map(c => [c.value, c.label])
 )
 
+// TEMP: transmission is deliberately NOT selected yet — the column only
+// exists in imports/step20_transmission.sql, not run against the live DB
+// yet. Naming a nonexistent column here 42703s every car page (see the
+// units_produced_estimated incident) — add "transmission," to this list
+// only once step20 has actually been run live and verified. mapCar()
+// already defaults it to null when absent from the row.
 const CAR_SELECT = `
   id, slug, code, year_start, year_end, class, hero_image, units_produced,
   units_produced_estimated,
@@ -75,6 +81,7 @@ function mapCar(row: GenerationJoinRow & Record<string, unknown>): Omit<Car, 'tr
   return {
     ...mapCarSummary(row),
     units_produced_estimated: (row.units_produced_estimated as boolean) ?? false,
+    transmission: (row.transmission as string | null) ?? null,
     body_styles: (row.body_styles as string[]) ?? [],
     drivetrain: Array.isArray(row.drivetrain) && row.drivetrain.length > 0
       ? (row.drivetrain as string[]).join(' / ')

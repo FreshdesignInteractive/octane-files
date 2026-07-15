@@ -87,6 +87,7 @@ export default function GenerationFieldsEditor({
           {field('Designer', <DesignerAutocomplete value={value.designer} onChange={v => onChange({ designer: v })} />)}
           {field('Wikipedia URL', <input className="input" value={value.wikipedia_url ?? ''} onChange={e => onChange({ wikipedia_url: e.target.value || null })} placeholder="https://en.wikipedia.org/..." />)}
           {field('Engine Signature', <input className="input" value={value.engine_signature ?? ''} onChange={e => onChange({ engine_signature: e.target.value || null })} />)}
+          {field('Transmission', <input className="input" value={value.transmission ?? ''} onChange={e => onChange({ transmission: e.target.value || null })} placeholder="e.g. 2-speed Powerglide automatic, 3-speed manual, 4-speed manual" />)}
           {field('Engine Layout',
             <select className="select" value={value.engine_layout ?? ''} onChange={e => onChange({ engine_layout: (e.target.value || null) as GenerationInput['engine_layout'] })}>
               <option value="">—</option>

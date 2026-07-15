@@ -135,6 +135,7 @@ export interface Car extends CarSummary {
   desirability_tier: string | null
   why_collectible: string | null
   engine_signature: string | null
+  transmission: string | null
   variants_to_know: string | null
   known_issues: string | null
   claim_to_fame: string | null

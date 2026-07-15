@@ -133,6 +133,7 @@ CREATE TABLE IF NOT EXISTS generations (
   overview            TEXT,
   why_collectible     TEXT,
   engine_signature    TEXT,
+  transmission        TEXT, -- step20: free text, not enum-able — inventory of ALL transmissions offered for the generation, e.g. "2-speed Powerglide automatic, 3-speed manual, 4-speed manual"
   variants_to_know    TEXT,
   known_issues        TEXT,
   claim_to_fame       TEXT,
@@ -348,6 +349,7 @@ BEGIN
     overview = COALESCE(e.overview, g.overview),
     why_collectible = COALESCE(e.why_collectible, g.why_collectible),
     engine_signature = COALESCE(e.engine_signature, g.engine_signature),
+    transmission = COALESCE(e.transmission, g.transmission),
     variants_to_know = COALESCE(e.variants_to_know, g.variants_to_know),
     known_issues = COALESCE(e.known_issues, g.known_issues),
     claim_to_fame = COALESCE(e.claim_to_fame, g.claim_to_fame),
@@ -380,7 +382,7 @@ BEGIN
     updated_at = NOW()
   FROM jsonb_to_recordset(rows) AS e(
     generation_id UUID, nickname TEXT, desirability_tier TEXT, overview TEXT, why_collectible TEXT,
-    engine_signature TEXT, variants_to_know TEXT, known_issues TEXT, claim_to_fame TEXT,
+    engine_signature TEXT, transmission TEXT, variants_to_know TEXT, known_issues TEXT, claim_to_fame TEXT,
     buyers_flag TEXT, designer TEXT, class TEXT, is_icon BOOLEAN, body_styles TEXT[],
     drivetrain TEXT[], engine_layout TEXT, units_produced INTEGER, units_produced_estimated BOOLEAN,
     wikipedia_url TEXT, callout TEXT, driving_character TEXT, design_notes TEXT, cultural_notes TEXT,

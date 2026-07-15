@@ -32,7 +32,7 @@ export type RadarFieldKey =
   | 'radar_usability' | 'radar_ease_of_restoration' | 'radar_cultural_impact'
 
 export type EnrichmentFieldKey =
-  | 'nickname' | 'designer' | 'wikipedia_url' | 'engine_signature' | 'class' | 'engine_layout'
+  | 'nickname' | 'designer' | 'wikipedia_url' | 'engine_signature' | 'transmission' | 'class' | 'engine_layout'
   | 'units_produced' | 'units_produced_estimated' | 'is_icon' | 'homologation_special' | 'poster_car' | 'body_styles' | 'drivetrain'
   | 'overview'
   | 'callout' | 'claim_to_fame' | 'why_collectible' | 'buyers_flag'
@@ -99,6 +99,7 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'designer', header: 'Designer', type: 'text' },
   { key: 'wikipedia_url', header: 'WikipediaURL', type: 'text' },
   { key: 'engine_signature', header: 'EngineSignature', type: 'text' },
+  { key: 'transmission', header: 'Transmission', type: 'text' },
   { key: 'engine_layout', header: 'EngineLayout', type: 'enum', allowedValues: ENGINE_LAYOUTS },
   { key: 'class', header: 'Class', type: 'enum', allowedValues: CAR_CLASSES.map(c => c.value) },
   { key: 'units_produced', header: 'UnitsProduced', type: 'integer' },
