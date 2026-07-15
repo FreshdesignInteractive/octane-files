@@ -125,7 +125,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   // Always the full, fixed list — sections no longer disappear when a car
   // is missing that data, they show Unavailable inside instead.
   const sections = [
-    { id: 'quick-facts', label: 'Quick Facts' },
     { id: 'overview', label: 'Overview' },
     { id: 'collectibility', label: 'Why collectors want it' },
     { id: 'ratings', label: 'How it scores' },
@@ -210,12 +209,8 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               the subnav instead, without changing the desktop layout. */}
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-10">
           <div>
-          {/* Overview. Note: the "Quick Facts" subnav tab (top of the
-              sections list) no longer has a matching id in this column —
-              its content moved to the sidebar below. Left as-is per your
-              call to revisit that tab separately later; OverflowNav's
-              scrollspy already filters out missing ids safely, so this
-              doesn't error, the tab just won't scroll anywhere yet. */}
+          {/* Overview — first in the sections list, so it's also the
+              subnav's default-active tab. */}
           <section id="overview" className="mt-6 scroll-mt-40">
             <h2 className="text-lg font-bold text-text-primary tracking-tight mb-5">Overview</h2>
             <div className="max-w-170">
