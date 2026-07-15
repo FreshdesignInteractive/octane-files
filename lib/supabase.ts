@@ -28,14 +28,9 @@ const CLASS_ENUM_TO_LABEL: Record<string, string> = Object.fromEntries(
   CAR_CLASSES.map(c => [c.value, c.label])
 )
 
-// TEMP: units_produced_estimated is deliberately NOT in this select yet —
-// the column doesn't exist on the live DB until imports/step19_units_
-// produced_estimated.sql is run (it broke every car detail page with a
-// live 42703 "column does not exist" error when it was here). mapCar()
-// below already defaults to false when the field is absent from the row,
-// so re-add it here the moment the migration has been applied live.
 const CAR_SELECT = `
   id, slug, code, year_start, year_end, class, hero_image, units_produced,
+  units_produced_estimated,
   body_styles, drivetrain, engine_layout, overview, gallery_images, specs,
   market_data, maintenance, resources, is_icon, nickname, desirability_tier,
   why_collectible, engine_signature, variants_to_know, known_issues,
