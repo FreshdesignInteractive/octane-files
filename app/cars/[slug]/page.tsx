@@ -101,6 +101,10 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
   const name = `${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`
   const years = car.year_end ? `${car.year_start}–${car.year_end}` : `${car.year_start}–present`
+  // A search, not the homepage — nearly every car has a Wikipedia page, so
+  // this fallback (un-entered wikipedia_url) still keeps the link's promise
+  // instead of dumping the visitor on wikipedia.org with nothing to show.
+  const wikipediaHref = car.wikipedia_url || `https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: name })}`
 
   const hasCollectibility = !!(car.callout || car.claim_to_fame || car.why_collectible || car.buyers_flag)
   const hasRatings = car.analog_index !== null || !!(car.radar_scores && Object.keys(car.radar_scores).length > 0)
@@ -590,21 +594,6 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                     value: car.designer || NA,
                     icon: <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />,
                   },
-                  {
-                    label: 'Wikipedia',
-                    value: car.wikipedia_url ? (
-                      <a href={car.wikipedia_url} target="_blank" rel="noopener noreferrer" className="text-accent no-underline">
-                        View ↗
-                      </a>
-                    ) : NA,
-                    icon: (
-                      <>
-                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                        <polyline points="15,3 21,3 21,9" />
-                        <line x1="10" y1="14" x2="21" y2="3" />
-                      </>
-                    ),
-                  },
                 ] as { label: string; value: React.ReactNode; icon: React.ReactNode }[])
                   .map(row => (
                     <div key={row.label} className="flex gap-4">
@@ -621,6 +610,23 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                       </div>
                     </div>
                   ))}
+              </div>
+
+              {/* Wikipedia is an exit link, not a spec — always a single
+                  line, never a label/value row like the facts above. Falls
+                  back to a Wikipedia search (not the homepage) when no
+                  wikipedia_url is entered, so the link still keeps its
+                  promise. */}
+              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-border">
+                <span
+                  className="w-5 h-5 flex items-center justify-center rounded-sm border border-border text-text-primary text-xs font-serif font-bold shrink-0"
+                  aria-hidden="true"
+                >
+                  W
+                </span>
+                <a href={wikipediaHref} target="_blank" rel="noopener noreferrer" className="text-body text-accent no-underline">
+                  Read more about this car on Wikipedia
+                </a>
               </div>
             </div>
             </div>
