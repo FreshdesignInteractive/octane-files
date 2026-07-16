@@ -28,15 +28,10 @@ const CLASS_ENUM_TO_LABEL: Record<string, string> = Object.fromEntries(
   CAR_CLASSES.map(c => [c.value, c.label])
 )
 
-// TEMP: electronic_dependence/electronic_dependence_notes are deliberately
-// NOT selected yet — those columns only exist after imports/step22_
-// electronic_dependence.sql is run. analog_index is removed here on
-// purpose (not deferred) — it's being renamed to analog_index_legacy in
-// imports/step23_analog_index_rename.sql, and that rename isn't safe to
-// run until this line has shipped live (see step23's own header comment).
-// Add "electronic_dependence, electronic_dependence_notes," back to this
-// list once step22 has been run and confirmed live — mapCar() below
-// already defaults both to null when absent from the row.
+// analog_index remains removed on purpose — it's being renamed to
+// analog_index_legacy in imports/step23_analog_index_rename.sql, and that
+// rename isn't safe to run until this file (with analog_index already
+// gone from here) is confirmed live. See step23's own header comment.
 const CAR_SELECT = `
   id, slug, code, year_start, year_end, class, hero_image, units_produced,
   units_produced_estimated,
@@ -44,7 +39,8 @@ const CAR_SELECT = `
   market_data, maintenance, resources, is_icon, nickname, desirability_tier,
   why_collectible, engine_signature, transmission, variants_to_know, known_issues,
   claim_to_fame, buyers_flag, designer, wikipedia_url,
-  radar_scores, homologation_special, poster_car, value_trajectory,
+  radar_scores, electronic_dependence, electronic_dependence_notes,
+  homologation_special, poster_car, value_trajectory,
   callout, driving_character, design_notes, cultural_notes,
   motorsport_pedigree,
   models!inner(name, makes!inner(name, country))
