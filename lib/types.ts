@@ -146,7 +146,11 @@ export interface Car extends CarSummary {
     'desirability' | 'rarity' | 'driving_thrill' | 'investment_trajectory' |
     'usability' | 'ease_of_restoration' | 'cultural_impact', number
   >> | null
-  analog_index: number | null
+  // 1 = Fully analog, 5 = Heavily electronic. The public page treats a
+  // position with no note as unscored (renders neither) — see the render
+  // logic in app/cars/[slug]/page.tsx.
+  electronic_dependence: number | null
+  electronic_dependence_notes: string | null
   homologation_special: boolean
   poster_car: boolean
   value_trajectory: 'appreciating' | 'stable' | 'cooling' | null

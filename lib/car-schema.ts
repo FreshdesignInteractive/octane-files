@@ -132,7 +132,17 @@ export interface GenerationRecord {
   maintenance: string | null
   resources: ResourceLink[]
   radar_scores: RadarScores | null
-  analog_index: number | null
+  // Superseded by electronic_dependence below — read-only reference so old
+  // scores aren't lost, same treatment as desirability_tier_legacy above:
+  // never form-editable, never shown publicly, not part of GenerationInput.
+  analog_index_legacy: number | null
+  // 1 = Fully analog, 5 = Heavily electronic — direction is deliberately
+  // the opposite of the old analog_index scale. Position alone is a rough
+  // placement; electronic_dependence_notes is what makes a specific
+  // position defensible, and the public page treats "position with no
+  // note" as unscored rather than rendering a bare, unjustified dot.
+  electronic_dependence: number | null
+  electronic_dependence_notes: string | null
   homologation_special: boolean
   poster_car: boolean
   value_trajectory: ValueTrajectory | null
@@ -151,11 +161,13 @@ export interface GenerationRecord {
 // fields that aren't directly form-editable (id, model_id, timestamps,
 // archived_at is a dedicated action, not a raw field), plus the two legacy
 // text fields superseded by car_relations (see the comment on
-// rivals_alternatives above).
+// rivals_alternatives above), plus analog_index_legacy (superseded by
+// electronic_dependence, same non-form-editable treatment as
+// desirability_tier_legacy).
 export type GenerationInput = Omit<
   GenerationRecord,
   'id' | 'model_id' | 'created_at' | 'updated_at' | 'archived_at' | 'desirability_tier_legacy' |
-  'rivals_alternatives' | 'related_cars'
+  'rivals_alternatives' | 'related_cars' | 'analog_index_legacy'
 >
 
 export interface MakeRecord {
@@ -216,7 +228,8 @@ export function emptyGenerationInput(): GenerationInput {
     maintenance: null,
     resources: [],
     radar_scores: null,
-    analog_index: null,
+    electronic_dependence: null,
+    electronic_dependence_notes: null,
     homologation_special: false,
     poster_car: false,
     value_trajectory: null,

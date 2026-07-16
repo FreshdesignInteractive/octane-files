@@ -124,7 +124,11 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const wikipediaHref = car.wikipedia_url || `https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: name })}`
 
   const hasCollectibility = !!(car.callout || car.claim_to_fame || car.why_collectible || car.buyers_flag)
-  const hasRatings = car.analog_index !== null || !!(car.radar_scores && Object.keys(car.radar_scores).length > 0)
+  // A position with no note counts the same as unset here too, not just in
+  // the row's own render check below — an unexplained Electronic Dependence
+  // shouldn't be the sole reason this section reports "has ratings."
+  const hasRatings = (car.electronic_dependence !== null && !!car.electronic_dependence_notes)
+    || !!(car.radar_scores && Object.keys(car.radar_scores).length > 0)
   const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
   const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
@@ -143,7 +147,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const sections = [
     { id: 'overview', label: 'Overview' },
     { id: 'collectibility', label: 'Why collectors want it' },
-    { id: 'ratings', label: 'How it scores' },
+    { id: 'ratings', label: 'The scorecard' },
     { id: 'variants-trims', label: 'Which one to look for' },
     { id: 'character', label: "What it's like" },
     { id: 'lineage', label: 'Where it comes from' },
@@ -272,37 +276,73 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
             ) : <Unavailable />}
           </Section>
 
-          {/* How it scores — analog index + per-axis score bars. All 7 axes
-              always render (label + track); one with no score just stays
-              an empty grey track with a — value, never a fabricated zero. */}
-          <Section id="ratings" label="How it scores">
+          {/* The scorecard — 7 radar axes as bars, then Electronic
+              Dependence as a position-on-a-spectrum control below a
+              divider. All 7 axes always render (label + track); one with
+              no score just stays an empty grey track with a — value,
+              never a fabricated zero. */}
+          <Section id="ratings" label="The scorecard">
             {hasRatings ? (
               <div className="flex flex-col gap-8">
-                {car.analog_index !== null && (
-                  <div className="stat-cell">
-                    <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1">Analog Index</div>
-                    <div className="text-xl font-semibold text-accent-secondary tracking-heading">{car.analog_index}/10</div>
-                  </div>
-                )}
-                <div className="flex flex-col gap-4">
-                  {RADAR_AXES.map(axis => {
-                    const score = car.radar_scores?.[axis.key] ?? null
-                    return (
-                      <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-                        <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
-                        <div className="flex-1 flex items-center gap-4">
-                          <div className="flex-1 h-2 rounded-full bg-border-mid overflow-hidden">
-                            {score !== null && (
-                              <div className="h-full rounded-full bg-accent-secondary" style={{ width: `${score * 10}%` }} />
-                            )}
-                          </div>
-                          <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
-                            {score !== null ? `${score}/10` : NA}
+                <div>
+                  <p className="text-body text-text-tertiary mb-4">Rated 1 to 10 on the traits that matter for owning, driving, and holding on to a car like this.</p>
+                  <div className="flex flex-col gap-4">
+                    {RADAR_AXES.map(axis => {
+                      const score = car.radar_scores?.[axis.key] ?? null
+                      return (
+                        <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+                          <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
+                          <div className="flex-1 flex items-center gap-4">
+                            <div className="flex-1 h-2 rounded-full bg-border-mid overflow-hidden">
+                              {score !== null && (
+                                <div className="h-full rounded-full bg-accent-secondary" style={{ width: `${score * 10}%` }} />
+                              )}
+                            </div>
+                            <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
+                              {score !== null ? `${score}/10` : NA}
+                            </div>
                           </div>
                         </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Electronic dependence — a position on a spectrum, not a
+                    rated amount, so the track is a plain line (no fill)
+                    with tick marks and a single dot, not a progress bar.
+                    A position with no note renders as unscored, same as
+                    fully null — an unexplained position is exactly the
+                    failure mode this design exists to avoid (the admin
+                    form nudges toward always pairing the two). */}
+                <div className="pt-8 border-t border-border">
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
+                    <div className="w-45 shrink-0 text-body text-text-secondary">Electronic dependence</div>
+                    {car.electronic_dependence !== null && car.electronic_dependence_notes ? (
+                      <div className="flex-1">
+                        <div className="relative h-px bg-border-mid mt-3 mb-2">
+                          {[1, 2, 3, 4, 5].map(pos => (
+                            <span
+                              key={pos}
+                              className="absolute top-1/2 w-1.5 h-1.5 rounded-full bg-border-mid -translate-x-1/2 -translate-y-1/2"
+                              style={{ left: `${((pos - 1) / 4) * 100}%` }}
+                            />
+                          ))}
+                          <span
+                            className="absolute top-1/2 w-3 h-3 rounded-full bg-accent-secondary -translate-x-1/2 -translate-y-1/2"
+                            style={{ left: `${((car.electronic_dependence - 1) / 4) * 100}%` }}
+                          />
+                        </div>
+                        <div className="flex justify-between text-label text-text-tertiary">
+                          <span>Fully analog</span>
+                          <span>Heavily electronic</span>
+                        </div>
+                        <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">{car.electronic_dependence_notes}</p>
                       </div>
-                    )
-                  })}
+                    ) : (
+                      <div className="flex-1 text-body text-text-tertiary">{NA}</div>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : <Unavailable />}

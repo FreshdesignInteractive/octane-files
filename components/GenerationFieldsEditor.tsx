@@ -218,16 +218,13 @@ export default function GenerationFieldsEditor({
         <div className="mt-4">{field("Buyer's Guide", <textarea className="textarea min-h-20" value={value.buyers_flag ?? ''} onChange={e => onChange({ buyers_flag: e.target.value || null })} />)}</div>
       </section>
 
-      {/* How it scores */}
+      {/* The scorecard */}
       <section id="ratings">
         <h2 className={sectionHeading}>
-          How it scores
-          <span className="font-normal text-label text-text-tertiary ml-2 normal-case">1–10, powers the radar chart</span>
+          The scorecard
+          <span className="font-normal text-label text-text-tertiary ml-2 normal-case">Rated 1 to 10 on the traits that matter for owning, driving, and holding on to a car like this.</span>
         </h2>
-        <div className="grid grid-cols-3 gap-4 mb-4">
-          {field('Analog Index', <input className="input" type="number" min={1} max={10} value={value.analog_index ?? ''} onChange={e => onChange({ analog_index: e.target.value ? parseInt(e.target.value) : null })} placeholder="Mechanical-purity score" />)}
-        </div>
-        <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+        <div className="grid grid-cols-2 gap-x-8 gap-y-4 mb-6">
           {RADAR_AXES.map(axis => (
             <div key={axis.key} className="flex items-center gap-4">
               <label className="field-label w-45 flex-shrink-0">{axis.label}</label>
@@ -241,6 +238,37 @@ export default function GenerationFieldsEditor({
             </div>
           ))}
         </div>
+
+        {/* Electronic dependence — not a 1-10 rated trait like the axes
+            above, so it's deliberately outside the "Rated 1 to 10..."
+            one-liner. Reuses the same range-slider control as the radar
+            axes rather than a new component; only the two ends are
+            labeled — naming the middle 3 stops reintroduces the false-
+            precision problem this replaced Analog Index to fix. */}
+        <div className="flex items-center gap-4 mb-2">
+          <label className="field-label w-45 flex-shrink-0">Electronic dependence</label>
+          <input
+            type="range" min={1} max={5} step={1}
+            value={value.electronic_dependence ?? 3}
+            onChange={e => onChange({ electronic_dependence: parseInt(e.target.value) })}
+            className="flex-1"
+          />
+          <span className="text-body font-medium text-text-primary w-6 text-right">{value.electronic_dependence ?? '—'}</span>
+        </div>
+        <div className="flex justify-between text-label text-text-tertiary ml-49 mr-10 mb-4">
+          <span>Fully analog</span>
+          <span>Heavily electronic</span>
+        </div>
+        {field('Why this position', <textarea className="textarea min-h-20" value={value.electronic_dependence_notes ?? ''} onChange={e => onChange({ electronic_dependence_notes: e.target.value || null })} placeholder="The specific mechanical/electrical facts that put it here — not a restatement of the position." />)}
+        {/* UI nudge, not a hard block — matches every other field in this
+            form being freely saveable at any completeness. A position with
+            no note still saves, it just won't render on the public page
+            (see the render condition in app/cars/[slug]/page.tsx). */}
+        {value.electronic_dependence !== null && !value.electronic_dependence_notes && (
+          <p className="text-label text-accent-secondary mt-2">
+            A position without a note won&apos;t render on the public page — add the reasoning above.
+          </p>
+        )}
       </section>
 
       {/* Which one to look for — Variants & Trims */}

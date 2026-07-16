@@ -45,7 +45,7 @@ export type EnrichmentFieldKey =
   | 'units_produced' | 'units_produced_estimated' | 'is_icon' | 'homologation_special' | 'poster_car' | 'body_styles' | 'drivetrain'
   | 'overview'
   | 'callout' | 'claim_to_fame' | 'why_collectible' | 'buyers_flag'
-  | 'analog_index' | RadarFieldKey
+  | 'electronic_dependence' | 'electronic_dependence_notes' | RadarFieldKey
   | 'variants_to_know'
   | 'driving_character' | 'design_notes' | 'motorsport_pedigree' | 'cultural_notes'
   | RelationFieldKey
@@ -59,7 +59,7 @@ export interface FieldSpec {
   header: string
   type: FieldType
   allowedValues?: readonly string[]
-  // Inclusive range for integer fields (AnalogIndex + the 7 radar axes).
+  // Inclusive range for integer fields (ElectronicDependence + the 7 radar axes).
   range?: readonly [number, number]
 }
 
@@ -112,7 +112,7 @@ const radarFieldSpecs: FieldSpec[] = RADAR_AXES.map(axis => {
 })
 
 // Canonical order — mirrors Identity & Classification -> Overview -> Why
-// collectors want it -> How it scores -> Which one to look for -> What it's
+// collectors want it -> The scorecard -> Which one to look for -> What it's
 // like -> Market Data -> What owning one is like, i.e. the same section
 // order as the edit and public pages, skipping structured-only sections.
 export const ENRICHMENT_FIELDS: FieldSpec[] = [
@@ -138,7 +138,12 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'why_collectible', header: 'WhyCollectible', type: 'text' },
   { key: 'buyers_flag', header: 'BuyersGuide', type: 'text' },
 
-  { key: 'analog_index', header: 'AnalogIndex', type: 'integer', range: [1, 10] },
+  // Analog Index (1-10) is retired — superseded by these two, same
+  // position in column order. The old column survives read-only as
+  // analog_index_legacy, same non-bulk-editable treatment as
+  // desirability_tier_legacy, so it's not in ENRICHMENT_FIELDS at all.
+  { key: 'electronic_dependence', header: 'ElectronicDependence', type: 'integer', range: [1, 5] },
+  { key: 'electronic_dependence_notes', header: 'ElectronicDependenceNotes', type: 'text' },
   ...radarFieldSpecs,
 
   { key: 'variants_to_know', header: 'VariantsToKnow', type: 'text' },

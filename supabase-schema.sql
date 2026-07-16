@@ -153,7 +153,9 @@ CREATE TABLE IF NOT EXISTS generations (
   maintenance         TEXT,
   resources           JSONB DEFAULT '[]',
   radar_scores        JSONB, -- up to 7 keys (desirability/rarity/driving_thrill/investment_trajectory/usability/ease_of_restoration/cultural_impact), 1-10 each, higher always better (step17)
-  analog_index        INTEGER CHECK (analog_index BETWEEN 1 AND 10),
+  analog_index_legacy INTEGER, -- step22/23: renamed from analog_index (was CHECK ...BETWEEN 1 AND 10) — read-only reference, same treatment as desirability_tier_legacy, never form-editable, never shown publicly. Superseded by electronic_dependence below.
+  electronic_dependence       INTEGER CHECK (electronic_dependence IS NULL OR electronic_dependence BETWEEN 1 AND 5), -- 1 = Fully analog, 5 = Heavily electronic (step22)
+  electronic_dependence_notes TEXT, -- per-car reasoning for the position — not optional, see AGENTS.md/handoff doc
   homologation_special BOOLEAN NOT NULL DEFAULT FALSE,
   poster_car          BOOLEAN NOT NULL DEFAULT FALSE,
   value_trajectory    value_trajectory_type,
@@ -370,7 +372,8 @@ BEGIN
     motorsport_pedigree = COALESCE(e.motorsport_pedigree, g.motorsport_pedigree),
     maintenance = COALESCE(e.maintenance, g.maintenance),
     value_trajectory = COALESCE(e.value_trajectory::value_trajectory_type, g.value_trajectory),
-    analog_index = COALESCE(e.analog_index, g.analog_index),
+    electronic_dependence = COALESCE(e.electronic_dependence, g.electronic_dependence), -- step22
+    electronic_dependence_notes = COALESCE(e.electronic_dependence_notes, g.electronic_dependence_notes), -- step22
     homologation_special = COALESCE(e.homologation_special, g.homologation_special),
     poster_car = COALESCE(e.poster_car, g.poster_car),
     radar_scores = COALESCE(g.radar_scores, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object(
@@ -387,7 +390,8 @@ BEGIN
     buyers_flag TEXT, designer TEXT, class TEXT, is_icon BOOLEAN, body_styles TEXT[],
     drivetrain TEXT[], engine_layout TEXT, units_produced INTEGER, units_produced_estimated BOOLEAN,
     wikipedia_url TEXT, callout TEXT, driving_character TEXT, design_notes TEXT, cultural_notes TEXT,
-    motorsport_pedigree TEXT, maintenance TEXT, value_trajectory TEXT, analog_index INTEGER,
+    motorsport_pedigree TEXT, maintenance TEXT, value_trajectory TEXT,
+    electronic_dependence INTEGER, electronic_dependence_notes TEXT,
     homologation_special BOOLEAN, poster_car BOOLEAN, market_notes TEXT,
     radar_desirability INTEGER, radar_rarity INTEGER, radar_driving_thrill INTEGER,
     radar_investment_trajectory INTEGER, radar_usability INTEGER, radar_ease_of_restoration INTEGER,
