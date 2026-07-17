@@ -61,6 +61,11 @@ export interface FieldSpec {
   allowedValues?: readonly string[]
   // Inclusive range for integer fields (ElectronicDependence + the 7 radar axes).
   range?: readonly [number, number]
+  // Old header names this field used to be exported/imported under, still
+  // accepted on read so CSVs generated before a header rename keep working.
+  // Never used for the template/catalog CSV we generate — only as a
+  // fallback in parseEnrichmentFields when the current header is blank.
+  legacyHeaders?: readonly string[]
 }
 
 // Maps each synthetic radar CSV field to the RadarAxisKey it merges into
@@ -119,7 +124,7 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'nickname', header: 'Nickname', type: 'text' },
   { key: 'designer', header: 'Designer', type: 'text' },
   { key: 'wikipedia_url', header: 'WikipediaURL', type: 'text' },
-  { key: 'engine_signature', header: 'EngineSignature', type: 'text' },
+  { key: 'engine_signature', header: 'Engine', type: 'text', legacyHeaders: ['EngineSignature'] },
   { key: 'transmission', header: 'Transmission', type: 'text' },
   { key: 'engine_layout', header: 'EngineLayout', type: 'enum', allowedValues: ENGINE_LAYOUTS },
   { key: 'class', header: 'Class', type: 'enum', allowedValues: CAR_CLASSES.map(c => c.value) },
@@ -173,7 +178,11 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
 // never part of ENRICHMENT_FIELDS, always required, never diffed/written.
 export const KEY_COLUMNS = ['Make', 'Model', 'Generation'] as const
 
-export const KNOWN_ENRICHMENT_HEADERS = new Set<string>([...KEY_COLUMNS, ...ENRICHMENT_FIELDS.map(f => f.header)])
+export const KNOWN_ENRICHMENT_HEADERS = new Set<string>([
+  ...KEY_COLUMNS,
+  ...ENRICHMENT_FIELDS.map(f => f.header),
+  ...ENRICHMENT_FIELDS.flatMap(f => f.legacyHeaders ?? []),
+])
 
 export const TRIM_FIELDS = [
   { key: 'name', header: 'Name' },

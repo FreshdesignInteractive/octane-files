@@ -84,14 +84,8 @@ export default function GenerationFieldsEditor({
           {field('Nickname', <input className="input" value={value.nickname ?? ''} onChange={e => onChange({ nickname: e.target.value || null })} />)}
           {field('Designer', <DesignerAutocomplete value={value.designer} onChange={v => onChange({ designer: v })} />)}
           {field('Wikipedia URL', <input className="input" value={value.wikipedia_url ?? ''} onChange={e => onChange({ wikipedia_url: e.target.value || null })} placeholder="https://en.wikipedia.org/..." />)}
-          {field('Engine Signature', <input className="input" value={value.engine_signature ?? ''} onChange={e => onChange({ engine_signature: e.target.value || null })} />)}
+          {field('Engine', <input className="input" value={value.engine_signature ?? ''} onChange={e => onChange({ engine_signature: e.target.value || null })} />)}
           {field('Transmission', <input className="input" value={value.transmission ?? ''} onChange={e => onChange({ transmission: e.target.value || null })} placeholder="e.g. 2-speed Powerglide automatic, 3-speed manual, 4-speed manual" />)}
-          {field('Engine Layout',
-            <select className="select" value={value.engine_layout ?? ''} onChange={e => onChange({ engine_layout: (e.target.value || null) as GenerationInput['engine_layout'] })}>
-              <option value="">—</option>
-              {ENGINE_LAYOUTS.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-          )}
           {field('Class',
             <select className="select" value={value.class} onChange={e => onChange({ class: e.target.value as GenerationInput['class'] })}>
               {CAR_CLASSES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
@@ -141,22 +135,36 @@ export default function GenerationFieldsEditor({
           ))}
         </div>
 
-        <div className="mt-4">
-          {field('Drivetrain', (
-            <div className="flex flex-wrap gap-2">
-              {DRIVETRAIN_TYPES.map(dt => (
-                <label key={dt} className={`pill ${value.drivetrain.includes(dt) ? 'pill-active' : ''}`}>
-                  <input
-                    type="checkbox"
-                    className="sr-only"
-                    checked={value.drivetrain.includes(dt)}
-                    onChange={() => onChange({ drivetrain: toggleArrayValue<DrivetrainType>(value.drivetrain, dt) })}
-                  />
-                  {dt}
-                </label>
-              ))}
-            </div>
-          ))}
+        {/* Engine Layout and Drivetrain stay two separate enum inputs (they
+            validate independently), but grouped under one sub-heading so
+            this mirrors the public page's combined "Layout" row. */}
+        <div className="mt-6">
+          <div className="text-label font-bold tracking-widest text-text-tertiary uppercase mb-3">Layout</div>
+          <div className="grid grid-cols-3 gap-4">
+            {field('Engine Layout',
+              <select className="select" value={value.engine_layout ?? ''} onChange={e => onChange({ engine_layout: (e.target.value || null) as GenerationInput['engine_layout'] })}>
+                <option value="">—</option>
+                {ENGINE_LAYOUTS.map(l => <option key={l} value={l}>{l}</option>)}
+              </select>
+            )}
+          </div>
+          <div className="mt-4">
+            {field('Drivetrain', (
+              <div className="flex flex-wrap gap-2">
+                {DRIVETRAIN_TYPES.map(dt => (
+                  <label key={dt} className={`pill ${value.drivetrain.includes(dt) ? 'pill-active' : ''}`}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={value.drivetrain.includes(dt)}
+                      onChange={() => onChange({ drivetrain: toggleArrayValue<DrivetrainType>(value.drivetrain, dt) })}
+                    />
+                    {dt}
+                  </label>
+                ))}
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 

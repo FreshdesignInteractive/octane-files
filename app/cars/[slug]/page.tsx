@@ -591,30 +591,52 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                     ),
                   },
                   {
-                    label: 'Drivetrain',
-                    value: car.drivetrain || NA,
+                    label: 'Body',
+                    value: car.body_styles?.length ? car.body_styles.join(', ') : NA,
                     icon: (
                       <>
-                        <circle cx="12" cy="12" r="10" />
-                        <circle cx="12" cy="12" r="3" />
+                        <path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8" />
+                        <path d="M7 14h.01" />
+                        <path d="M17 14h.01" />
+                        <rect width="18" height="8" x="3" y="10" rx="2" />
+                        <path d="M5 18v2" />
+                        <path d="M19 18v2" />
+                      </>
+                    ),
+                  },
+                  {
+                    // engine_layout + drivetrain rendered as one combined
+                    // fact rather than two rows — same underlying "how the
+                    // car is laid out" question, and drivetrain is
+                    // meaningless without knowing where the engine sits.
+                    label: 'Layout',
+                    value: [car.engine_layout, car.drivetrain].filter(Boolean).join(', ') || NA,
+                    icon: (
+                      <>
+                        <rect x="2" y="2" width="3" height="6" rx="1" />
+                        <rect x="19" y="2" width="3" height="6" rx="1" />
+                        <rect x="2" y="16" width="3" height="6" rx="1" />
+                        <rect x="19" y="16" width="3" height="6" rx="1" />
+                        <line x1="5" y1="5" x2="9" y2="5" />
+                        <line x1="15" y1="5" x2="19" y2="5" />
+                        <line x1="5" y1="19" x2="19" y2="19" />
+                        <rect x="9" y="3" width="6" height="4" rx="1" />
+                        <line x1="12" y1="7" x2="12" y2="17" />
+                        <circle cx="12" cy="19" r="2" />
                       </>
                     ),
                   },
                   {
                     label: 'Engine',
-                    value: car.engine_layout || NA,
+                    value: car.engine_signature || NA,
                     icon: (
                       <>
-                        <rect x="4" y="4" width="16" height="16" rx="2" />
-                        <rect x="9" y="9" width="6" height="6" />
-                        <line x1="9" y1="1" x2="9" y2="4" />
-                        <line x1="15" y1="1" x2="15" y2="4" />
-                        <line x1="9" y1="20" x2="9" y2="23" />
-                        <line x1="15" y1="20" x2="15" y2="23" />
-                        <line x1="20" y1="9" x2="23" y2="9" />
-                        <line x1="20" y1="14" x2="23" y2="14" />
-                        <line x1="1" y1="9" x2="4" y2="9" />
-                        <line x1="1" y1="14" x2="4" y2="14" />
+                        <path d="M6 10 L8 7 L17 7 L19 10 L19 12 L22 12 L22 16 L19 16 L19 18 L17 21 L8 21 L6 18 Z" />
+                        <line x1="11" y1="7" x2="11" y2="3" />
+                        <line x1="14" y1="7" x2="14" y2="3" />
+                        <line x1="10" y1="3" x2="15" y2="3" />
+                        <line x1="1" y1="9" x2="1" y2="17" />
+                        <line x1="1" y1="13" x2="6" y2="13" />
                       </>
                     ),
                   },
@@ -623,38 +645,20 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                     value: car.transmission || NA,
                     icon: (
                       <>
-                        <circle cx="12" cy="12" r="3" />
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
-                      </>
-                    ),
-                  },
-                  {
-                    label: 'Engine Detail',
-                    value: car.engine_signature || NA,
-                    icon: (
-                      <>
-                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-                        <polyline points="14,2 14,8 20,8" />
-                        <line x1="16" y1="13" x2="8" y2="13" />
-                        <line x1="16" y1="17" x2="8" y2="17" />
-                      </>
-                    ),
-                  },
-                  {
-                    label: 'Body',
-                    value: car.body_styles?.length ? car.body_styles.join(', ') : NA,
-                    icon: (
-                      <>
-                        <polygon points="12,2 2,7 12,12 22,7 12,2" />
-                        <polyline points="2,17 12,22 22,17" />
-                        <polyline points="2,12 12,17 22,12" />
+                        <path d="M3 6 L16 6 L16 9 L19 9 L19 11 L22 11 L22 13 L19 13 L19 15 L16 15 L16 18 L9 18 L9 20 L5 20 L5 18 L3 18 Z" />
                       </>
                     ),
                   },
                   {
                     label: 'Designer',
                     value: car.designer || NA,
-                    icon: <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" />,
+                    icon: (
+                      <>
+                        <circle cx="12" cy="12" r="10" />
+                        <circle cx="12" cy="10" r="4" />
+                        <path d="M18 20a6 6 0 0 0-12 0" />
+                      </>
+                    ),
                   },
                 ] as { label: string; value: React.ReactNode; icon: React.ReactNode }[])
                   .map(row => (

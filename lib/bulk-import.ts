@@ -85,7 +85,17 @@ export function parseEnrichmentFields(row: Record<string, string>): ParsedEnrich
   const errors: FieldValidationError[] = []
 
   for (const spec of ENRICHMENT_FIELDS) {
-    const raw = (row[spec.header] ?? '').trim()
+    // Falls back to a legacy header only when the current one is blank —
+    // a CSV built before a header rename (e.g. EngineSignature -> Engine)
+    // still resolves to the same field, without a real column ever having
+    // two values to reconcile (a row can't sensibly have both).
+    let raw = (row[spec.header] ?? '').trim()
+    if (raw === '') {
+      for (const legacyHeader of spec.legacyHeaders ?? []) {
+        raw = (row[legacyHeader] ?? '').trim()
+        if (raw !== '') break
+      }
+    }
     if (raw === '') continue
 
     if (spec.type === 'text') {
