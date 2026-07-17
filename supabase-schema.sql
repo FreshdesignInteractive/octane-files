@@ -130,7 +130,7 @@ CREATE TABLE IF NOT EXISTS generations (
   desirability_tier         desirability_tier_type,
   desirability_tier_legacy  TEXT, -- pre-enum compound strings not yet remapped to a headline tier; read-only reference, never form-editable
   nickname            TEXT,
-  overview            TEXT,
+  introduction        TEXT, -- step38: renamed from overview — the field, not the public page's "Overview" tab (a UI-only grouping label, unaffected by this rename)
   why_collectible     TEXT,
   engine_signature    TEXT,
   transmission        TEXT, -- step20: free text, not enum-able — inventory of ALL transmissions offered for the generation, e.g. "2-speed Powerglide automatic, 3-speed manual, 4-speed manual"
@@ -243,7 +243,7 @@ BEGIN
     setweight(to_tsvector('english', coalesce(v_model, '')), 'A') ||
     setweight(to_tsvector('english', coalesce(NEW.code, '')), 'A') ||
     setweight(to_tsvector('english', coalesce(NEW.nickname, '')), 'A') ||
-    setweight(to_tsvector('english', coalesce(NEW.overview, '')), 'B') ||
+    setweight(to_tsvector('english', coalesce(NEW.introduction, '')), 'B') ||
     setweight(to_tsvector('english', coalesce(NEW.why_collectible, '')), 'B');
   RETURN NEW;
 END;
@@ -348,7 +348,7 @@ BEGIN
   UPDATE generations g SET
     nickname = COALESCE(e.nickname, g.nickname),
     desirability_tier = COALESCE(e.desirability_tier::desirability_tier_type, g.desirability_tier),
-    overview = COALESCE(e.overview, g.overview),
+    introduction = COALESCE(e.introduction, g.introduction),
     why_collectible = COALESCE(e.why_collectible, g.why_collectible),
     engine_signature = COALESCE(e.engine_signature, g.engine_signature),
     transmission = COALESCE(e.transmission, g.transmission),
@@ -385,7 +385,7 @@ BEGIN
     market_data = COALESCE(g.market_data, '{}'::jsonb) || jsonb_strip_nulls(jsonb_build_object('notes', e.market_notes)), -- step21
     updated_at = NOW()
   FROM jsonb_to_recordset(rows) AS e(
-    generation_id UUID, nickname TEXT, desirability_tier TEXT, overview TEXT, why_collectible TEXT,
+    generation_id UUID, nickname TEXT, desirability_tier TEXT, introduction TEXT, why_collectible TEXT,
     engine_signature TEXT, transmission TEXT, variants_to_know TEXT, known_issues TEXT, claim_to_fame TEXT,
     buyers_flag TEXT, designer TEXT, class TEXT, is_icon BOOLEAN, body_styles TEXT[],
     drivetrain TEXT[], engine_layout TEXT, units_produced INTEGER, units_produced_estimated BOOLEAN,

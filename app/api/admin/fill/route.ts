@@ -41,7 +41,7 @@ Engine layout: ${car.engine_layout ?? 'unknown'}
 
 Return this exact JSON structure:
 {
-  "overview": "2-3 paragraphs covering history, what made this car significant, key highlights and variants. Be specific and accurate.",
+  "introduction": "2-3 paragraphs covering history, what made this car significant, key highlights and variants. Be specific and accurate.",
   "specs": [
     {
       "group": "Engine",

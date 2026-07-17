@@ -35,7 +35,7 @@ const CLASS_ENUM_TO_LABEL: Record<string, string> = Object.fromEntries(
 const CAR_SELECT = `
   id, slug, code, year_start, year_end, class, hero_image, units_produced,
   units_produced_estimated,
-  body_styles, drivetrain, engine_layout, overview, gallery_images, specs,
+  body_styles, drivetrain, engine_layout, introduction, gallery_images, specs,
   market_data, maintenance, resources, is_icon, nickname, desirability_tier,
   why_collectible, engine_signature, transmission, variants_to_know, known_issues,
   claim_to_fame, buyers_flag, designer, wikipedia_url,
@@ -86,7 +86,7 @@ function mapCar(row: GenerationJoinRow & Record<string, unknown>): Omit<Car, 'tr
       ? (row.drivetrain as string[]).join(' / ')
       : null,
     engine_layout: (row.engine_layout as string | null) ?? null,
-    overview: (row.overview as string | null) ?? null,
+    introduction: (row.introduction as string | null) ?? null,
     gallery_images: (row.gallery_images as string[]) ?? [],
     specs: (row.specs as Car['specs']) ?? [],
     market_data: (row.market_data as Car['market_data']) ?? null,

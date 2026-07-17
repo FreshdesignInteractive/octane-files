@@ -11,7 +11,7 @@ export interface AdminRow {
   class: string
   archived_at: string | null
   hero_image: string | null
-  overview: string | null
+  introduction: string | null
   specs: unknown[]
   market_data: unknown
   make: string
@@ -27,7 +27,7 @@ const dot = (filled: boolean) => (
 // (app/admin/archived), not bundled into this list via a toggle.
 export default function AdminModelsTable({ rows, archivedCount }: { rows: AdminRow[]; archivedCount: number }) {
   const hasImage = rows.filter(r => r.hero_image).length
-  const hasOverview = rows.filter(r => r.overview).length
+  const hasIntroduction = rows.filter(r => r.introduction).length
   const hasSpecs = rows.filter(r => Array.isArray(r.specs) && r.specs.length > 0).length
 
   return (
@@ -38,7 +38,7 @@ export default function AdminModelsTable({ rows, archivedCount }: { rows: AdminR
         </div>
         <div className="flex gap-5 text-xs text-text-secondary items-center">
           <span>🖼 {hasImage}/{rows.length} images</span>
-          <span>📝 {hasOverview}/{rows.length} overviews</span>
+          <span>📝 {hasIntroduction}/{rows.length} introductions</span>
           <span>⚙️ {hasSpecs}/{rows.length} specs</span>
           <Link href="/admin/archived" className="text-xs text-text-primary no-underline border border-border-mid rounded-md py-2 px-3.5">
             View archived ({archivedCount})
@@ -89,7 +89,7 @@ export default function AdminModelsTable({ rows, archivedCount }: { rows: AdminR
                 <td className="py-2.5 px-4 text-center">
                   <div className="flex gap-2 justify-center">
                     {dot(!!r.hero_image)}
-                    {dot(!!r.overview)}
+                    {dot(!!r.introduction)}
                     {dot(Array.isArray(r.specs) && r.specs.length > 0)}
                     {dot(!!r.market_data)}
                   </div>

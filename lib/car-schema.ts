@@ -96,7 +96,7 @@ export interface GenerationRecord {
   // part of GenerationInput.
   desirability_tier_legacy: string | null
   nickname: string | null
-  overview: string | null
+  introduction: string | null
   why_collectible: string | null
   engine_signature: string | null
   // Free text by design, like engine_signature above — most generations
@@ -216,7 +216,7 @@ export function emptyGenerationInput(): GenerationInput {
     is_icon: false,
     desirability_tier: null,
     nickname: null,
-    overview: null,
+    introduction: null,
     why_collectible: null,
     engine_signature: null,
     transmission: null,

@@ -29,7 +29,7 @@ const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking
 const SECTIONS = [
   { id: 'identity', label: 'Identity & Classification' },
   { id: 'images', label: 'Images' },
-  { id: 'overview', label: 'Overview' },
+  { id: 'introduction', label: 'Introduction' },
   { id: 'collectibility', label: 'Why collectors want it' },
   { id: 'ratings', label: 'How it scores' },
   { id: 'variants-trims', label: 'Which one to look for' },
@@ -209,10 +209,10 @@ export default function GenerationFieldsEditor({
         </div>
       </section>
 
-      {/* Overview */}
-      <section id="overview">
-        <h2 className={sectionHeading}>Overview</h2>
-        {field('', <textarea className="textarea min-h-40" value={value.overview ?? ''} onChange={e => onChange({ overview: e.target.value || null })} placeholder="History, significance, key highlights..." />)}
+      {/* Introduction */}
+      <section id="introduction">
+        <h2 className={sectionHeading}>Introduction</h2>
+        {field('', <textarea className="textarea min-h-40" value={value.introduction ?? ''} onChange={e => onChange({ introduction: e.target.value || null })} placeholder="History, significance, key highlights..." />)}
       </section>
 
       {/* Why collectors want it */}

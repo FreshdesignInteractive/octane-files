@@ -43,7 +43,7 @@ export type RelationFieldKey = 'rivals' | 'lineage'
 export type EnrichmentFieldKey =
   | 'nickname' | 'designer' | 'wikipedia_url' | 'engine_signature' | 'transmission' | 'class' | 'engine_layout'
   | 'units_produced' | 'units_produced_estimated' | 'is_icon' | 'homologation_special' | 'poster_car' | 'body_styles' | 'drivetrain'
-  | 'overview'
+  | 'introduction'
   | 'callout' | 'claim_to_fame' | 'why_collectible' | 'buyers_flag'
   | 'electronic_dependence' | 'electronic_dependence_notes' | RadarFieldKey
   | 'variants_to_know'
@@ -136,7 +136,7 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'body_styles', header: 'BodyStyles', type: 'enum_array', allowedValues: BODY_STYLES },
   { key: 'drivetrain', header: 'Drivetrain', type: 'enum_array', allowedValues: DRIVETRAIN_TYPES },
 
-  { key: 'overview', header: 'Overview', type: 'text' },
+  { key: 'introduction', header: 'Introduction', type: 'text', legacyHeaders: ['Overview'] },
 
   { key: 'callout', header: 'Callout', type: 'text' },
   { key: 'claim_to_fame', header: 'ClaimToFame', type: 'text' },

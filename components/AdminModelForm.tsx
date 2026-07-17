@@ -153,7 +153,7 @@ export default function AdminModelForm({
     const data = await res.json()
     setForm(f => ({
       ...f,
-      overview: data.overview ?? f.overview,
+      introduction: data.introduction ?? f.introduction,
       specs: data.specs ?? f.specs,
       market_data: data.market_data ?? f.market_data,
       maintenance: data.maintenance ?? f.maintenance,

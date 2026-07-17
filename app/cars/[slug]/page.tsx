@@ -8,7 +8,8 @@ import EditButton from '@/components/EditButton'
 import CarGallery from '@/components/CarGallery'
 import ShareButton from '@/components/ShareButton'
 import BackToTop from '@/components/BackToTop'
-import CarDetailTabs from '@/components/CarDetailTabs'
+import OverflowNav from '@/components/OverflowNav'
+import CarDetailTabs, { TABS } from '@/components/CarDetailTabs'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car } from '@/lib/types'
 import { carDisplayName } from '@/lib/car-schema'
@@ -27,7 +28,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const name = carDisplayName(car.make, car.model, car.generation)
   return {
     title: name,
-    description: car.overview?.slice(0, 160),
+    description: car.introduction?.slice(0, 160),
   }
 }
 
@@ -104,6 +105,14 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
         {/* Body */}
         <div className="detail-container pb-20">
+          {/* Nav sits outside the two-column grid below, deliberately —
+              it needs to span the full container width (matching the hero
+              image above it), which the grid's "1fr" content column alone
+              can never reach past the 380px sidebar column. */}
+          <nav className="sticky top-14 z-40 pb-4 bg-bg-base">
+            <OverflowNav items={TABS} />
+          </nav>
+
           {/* Body/side containership — main content column stays plain
               (inherits the page background), sidebar is fixed-width. Below
               lg, CSS Grid's default auto-placement would put the sidebar

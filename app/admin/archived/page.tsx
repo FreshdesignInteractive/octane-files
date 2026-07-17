@@ -10,7 +10,7 @@ export default async function AdminArchivedPage() {
 
   const { data: generations } = await supabase
     .from('generations')
-    .select('slug, code, year_start, year_end, class, archived_at, hero_image, overview, specs, market_data, models(name, makes(name))')
+    .select('slug, code, year_start, year_end, class, archived_at, hero_image, introduction, specs, market_data, models(name, makes(name))')
     .not('archived_at', 'is', null)
     .order('archived_at', { ascending: false })
 
@@ -24,7 +24,7 @@ export default async function AdminArchivedPage() {
       class: g.class,
       archived_at: g.archived_at,
       hero_image: g.hero_image,
-      overview: g.overview,
+      introduction: g.introduction,
       specs: (g.specs as unknown[]) ?? [],
       market_data: g.market_data,
       make: models?.makes?.name ?? '—',

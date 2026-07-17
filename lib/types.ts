@@ -45,7 +45,7 @@ export interface Model {
   drivetrain: string | null
   engine_layout: string | null
   units_produced: number | null
-  overview: string | null
+  introduction: string | null
   hero_image: string | null
   gallery_images: string[]
   specs: CarSpecGroup[]
@@ -115,7 +115,7 @@ export interface Car extends CarSummary {
   body_styles: string[]
   drivetrain: string | null
   engine_layout: string | null
-  overview: string | null
+  introduction: string | null
   gallery_images: string[]
   relations: CarRelation[]
   trims: CarTrim[]

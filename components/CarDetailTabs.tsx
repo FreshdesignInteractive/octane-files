@@ -1,7 +1,3 @@
-'use client'
-
-import { useEffect, useRef, useState } from 'react'
-import OverflowNav from '@/components/OverflowNav'
 import CarCard from '@/components/CarCard'
 import { RADAR_AXES } from '@/lib/car-schema'
 import type { Car, CarRelation } from '@/lib/types'
@@ -20,17 +16,34 @@ function Unavailable() {
 }
 
 // scroll-mt-40 (160px) clears the sticky header (h-14, 56px) + the sticky
-// tab bar below it (h-14/56px + its own pb-4/16px) so a deep-linked section
-// hash lands with the section's own heading visible below both, not hidden
-// underneath. `first` drops the top divider/spacing that every other
-// section in the tab gets — matches how the very first section on the page
-// used to render before tabs existed.
-function Section({ id, label, first, children }: { id: string; label: string; first?: boolean; children: React.ReactNode }) {
+// tab nav below it (h-16, plus its own pb-4) so a click or deep-linked hash
+// lands with the heading visible below both, not hidden underneath.
+//
+// Two heading tiers: TabSection is the big, "main" heading (text-lg — the
+// same size every section heading used before fields were grouped under
+// tabs) marking where each of the 3 tabs' content begins — this is what
+// the nav below scrolls/spies on. FieldSection is the individual field
+// inside it (Introduction, The scorecard, Rivals, etc.) — smaller
+// (text-sm) since the tab heading is now the one "main" title on the page,
+// everything else is a sub-heading under it. All three tabs' content is
+// always in the DOM, one continuous scroll — clicking a tab in the nav
+// just scrolls to it, the same plain-anchor behavior every section on this
+// page has always had.
+function TabSection({ id, label, first, children }: { id: string; label: string; first?: boolean; children: React.ReactNode }) {
   return (
     <section id={id} className={`scroll-mt-40 ${first ? 'mt-6' : 'border-t border-border pt-10 mt-10'}`}>
       <h2 className="text-lg font-bold text-text-primary tracking-tight mb-6">{label}</h2>
       {children}
     </section>
+  )
+}
+
+function FieldSection({ id, label, first, children }: { id: string; label: string; first?: boolean; children: React.ReactNode }) {
+  return (
+    <div id={id} className={`scroll-mt-40 ${first ? '' : 'border-t border-border pt-8 mt-8'}`}>
+      <h3 className="text-sm font-bold text-text-primary tracking-tight mb-4">{label}</h3>
+      {children}
+    </div>
   )
 }
 
@@ -87,94 +100,17 @@ function renderText(text: string) {
   })
 }
 
-type TabId = 'overview' | 'the-story' | 'owning-one'
-
-const TABS: { id: TabId; label: string }[] = [
+// Exported so the page can render the nav itself, outside the two-column
+// grid CarDetailTabs' own content sits in — the nav needs to span the full
+// page container width (matching the hero image above), which the grid's
+// "1fr" content column alone can never reach past the sidebar column.
+export const TABS = [
   { id: 'overview', label: 'Overview' },
   { id: 'the-story', label: 'The Story' },
   { id: 'owning-one', label: 'Owning One' },
 ]
 
-// Every section id maps to exactly one tab — resolves a deep link to a
-// specific section (e.g. #rivals) into which tab must be selected first,
-// so old section-level links (shared before tabs existed) keep working.
-const SECTION_TO_TAB: Record<string, TabId> = {
-  overview: 'overview', ratings: 'overview', 'market-data': 'overview',
-  character: 'the-story', lineage: 'the-story', rivals: 'the-story',
-  collectibility: 'owning-one', 'variants-trims': 'owning-one', 'known-issues': 'owning-one',
-  'upkeep-parts': 'owning-one', resources: 'owning-one',
-}
-
-function isTabId(id: string): id is TabId {
-  return TABS.some(t => t.id === id)
-}
-
 export default function CarDetailTabs({ car }: { car: Car }) {
-  const [activeTab, setActiveTab] = useState<TabId>('overview')
-  const rootRef = useRef<HTMLDivElement>(null)
-  // A ref, not state — set synchronously by the hash-resolution effect and
-  // read by the scroll effect right after, without itself triggering a
-  // render (only the activeTab change it causes does that).
-  const pendingSectionScroll = useRef<string | null>(null)
-  // Suppresses the scroll-to-top effect below on its very first run — the
-  // initial render (default Overview, or whatever a hash resolves to)
-  // shouldn't cause a scroll-jump, only a genuine later tab switch should.
-  const isInitialMount = useRef(true)
-
-  // Resolves the hash once on mount, and again on any hashchange — which
-  // fires both for browser back/forward AND for a plain <a href="#id">
-  // click (OverflowNav's tab links below are exactly that, nothing more;
-  // no manual navigation/router call needed anywhere in this component). A
-  // section hash selects its owning tab and queues a scroll to that
-  // specific section once it's mounted; a bare tab hash just selects the
-  // tab. No hash at all leaves the default (Overview) — this is never
-  // session-sticky, every fresh load starts here unless the URL itself
-  // says otherwise.
-  useEffect(() => {
-    function resolveHash() {
-      const hash = window.location.hash.replace('#', '')
-      if (!hash) return
-      if (isTabId(hash)) {
-        setActiveTab(hash)
-      } else if (hash in SECTION_TO_TAB) {
-        setActiveTab(SECTION_TO_TAB[hash])
-        pendingSectionScroll.current = hash
-      }
-    }
-    resolveHash()
-    window.addEventListener('hashchange', resolveHash)
-    return () => window.removeEventListener('hashchange', resolveHash)
-  }, [])
-
-  // Fires after every tab switch (click, hashchange, or the initial
-  // mount) — including twice on a hash-driven initial mount, since the
-  // hash-resolution effect's setActiveTab call means this effect's first
-  // pass still sees the OLD (default) tab's content in the DOM, before the
-  // new tab's sections exist to scroll to. A pending section deep-link is
-  // only cleared once its element is actually found — if not, it's left
-  // set for the pass right after the tab switch commits, which is when the
-  // element exists. isInitialMount suppresses the scroll-to-top-of-tab
-  // fallback only on the very first pass (a plain page load shouldn't
-  // scroll-jump); a hash-resolved tab switch's second pass still gets it,
-  // which is correct — landing directly on a tab's URL should show its top.
-  useEffect(() => {
-    const wasInitialMount = isInitialMount.current
-    isInitialMount.current = false
-
-    if (pendingSectionScroll.current) {
-      const el = document.getElementById(pendingSectionScroll.current)
-      if (el) {
-        pendingSectionScroll.current = null
-        el.scrollIntoView({ block: 'start' })
-      }
-      return
-    }
-
-    if (!wasInitialMount) {
-      rootRef.current?.scrollIntoView({ block: 'start' })
-    }
-  }, [activeTab])
-
   const hasCollectibility = !!(car.callout || car.claim_to_fame || car.why_collectible || car.buyers_flag)
   // A position with no note counts the same as unset here too, not just in
   // the row's own render check below — an unexplained Electronic Dependence
@@ -193,298 +129,279 @@ export default function CarDetailTabs({ car }: { car: Car }) {
   ].filter(Boolean) as { label: string; value: number }[]
 
   return (
-    <div ref={rootRef} className="scroll-mt-40">
-      {/* Just the 3 primary tabs — no per-tab section subnav. Sections
-          within a tab flow one after another with their own dividers
-          (Section's border-t), no anchor nav needed to get between them.
-          Same OverflowNav component the page always used for its nav pill
-          (rounded, shadowed, JS-measured collapse into a "more" menu if
-          items don't fit) — just given 3 items instead of 11, and an
-          `activeId` prop since there's no longer a full set of
-          simultaneously-mounted sections for it to scrollspy over. */}
-      <nav className="sticky top-14 z-40 pb-4 bg-bg-base">
-        <OverflowNav items={TABS} activeId={activeTab} />
-      </nav>
+    <div>
+      <TabSection id="overview" label="Overview" first>
+        <FieldSection id="introduction" label="Introduction" first>
+          <div className="max-w-170">
+            {car.introduction ? renderText(car.introduction) : <Unavailable />}
+          </div>
+        </FieldSection>
 
-      {activeTab === 'overview' && (
-        <>
-          <Section id="overview" label="Overview" first>
-            <div className="max-w-170">
-              {car.overview ? renderText(car.overview) : <Unavailable />}
-            </div>
-          </Section>
-
-          {/* The scorecard — 7 radar axes as bars, then Electronic
-              Dependence as a position-on-a-spectrum control below a
-              divider. All 7 axes always render (label + track); one with
-              no score just stays an empty grey track with a — value,
-              never a fabricated zero. */}
-          <Section id="ratings" label="The scorecard">
-            {hasRatings ? (
-              <div className="flex flex-col gap-8">
-                <div>
-                  <p className="text-body text-text-tertiary mb-4">Rated 1 to 10 on the traits that matter for owning, driving, and holding on to a car like this.</p>
-                  <div className="flex flex-col gap-4">
-                    {RADAR_AXES.map(axis => {
-                      const score = car.radar_scores?.[axis.key] ?? null
-                      return (
-                        <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-                          <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
-                          <div className="flex-1 flex items-center gap-4">
-                            <div className="flex-1 h-2 rounded-full bg-border-mid overflow-hidden">
-                              {score !== null && (
-                                <div className="h-full rounded-full bg-accent-secondary" style={{ width: `${score * 10}%` }} />
-                              )}
-                            </div>
-                            <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
-                              {score !== null ? `${score}/10` : NA}
-                            </div>
+        {/* The scorecard — 7 radar axes as bars, then Electronic Dependence
+            as a position-on-a-spectrum control below a divider. All 7 axes
+            always render (label + track); one with no score just stays an
+            empty grey track with a — value, never a fabricated zero. */}
+        <FieldSection id="ratings" label="The scorecard">
+          {hasRatings ? (
+            <div className="flex flex-col gap-8">
+              <div>
+                <p className="text-body text-text-tertiary mb-4">Rated 1 to 10 on the traits that matter for owning, driving, and holding on to a car like this.</p>
+                <div className="flex flex-col gap-4">
+                  {RADAR_AXES.map(axis => {
+                    const score = car.radar_scores?.[axis.key] ?? null
+                    return (
+                      <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+                        <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
+                        <div className="flex-1 flex items-center gap-4">
+                          <div className="flex-1 h-2 rounded-full bg-border-mid overflow-hidden">
+                            {score !== null && (
+                              <div className="h-full rounded-full bg-accent-secondary" style={{ width: `${score * 10}%` }} />
+                            )}
+                          </div>
+                          <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
+                            {score !== null ? `${score}/10` : NA}
                           </div>
                         </div>
-                      )
-                    })}
-                  </div>
+                      </div>
+                    )
+                  })}
                 </div>
+              </div>
 
-                {/* Electronic dependence — a position on a spectrum, not a
-                    rated amount, so the track is a plain line (no fill)
-                    with tick marks and a single dot, not a progress bar.
-                    A position with no note renders as unscored, same as
-                    fully null — an unexplained position is exactly the
-                    failure mode this design exists to avoid (the admin
-                    form nudges toward always pairing the two). */}
-                <div className="pt-8 border-t border-border">
-                  <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
-                    <div className="w-45 shrink-0 text-body text-text-secondary">Electronic dependence</div>
-                    {car.electronic_dependence !== null && car.electronic_dependence_notes ? (
-                      <div className="flex-1">
-                        <div className="relative h-px bg-border-mid mt-3 mb-2">
-                          {[1, 2, 3, 4, 5].map(pos => (
-                            <span
-                              key={pos}
-                              className="absolute top-1/2 w-1.5 h-1.5 rounded-full bg-border-mid -translate-x-1/2 -translate-y-1/2"
-                              style={{ left: `${((pos - 1) / 4) * 100}%` }}
-                            />
-                          ))}
+              {/* Electronic dependence — a position on a spectrum, not a
+                  rated amount, so the track is a plain line (no fill) with
+                  tick marks and a single dot, not a progress bar. A
+                  position with no note renders as unscored, same as fully
+                  null — an unexplained position is exactly the failure
+                  mode this design exists to avoid (the admin form nudges
+                  toward always pairing the two). */}
+              <div className="pt-8 border-t border-border">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
+                  <div className="w-45 shrink-0 text-body text-text-secondary">Electronic dependence</div>
+                  {car.electronic_dependence !== null && car.electronic_dependence_notes ? (
+                    <div className="flex-1">
+                      <div className="relative h-px bg-border-mid mt-3 mb-2">
+                        {[1, 2, 3, 4, 5].map(pos => (
                           <span
-                            className="absolute top-1/2 w-3 h-3 rounded-full bg-accent-secondary -translate-x-1/2 -translate-y-1/2"
-                            style={{ left: `${((car.electronic_dependence - 1) / 4) * 100}%` }}
+                            key={pos}
+                            className="absolute top-1/2 w-1.5 h-1.5 rounded-full bg-border-mid -translate-x-1/2 -translate-y-1/2"
+                            style={{ left: `${((pos - 1) / 4) * 100}%` }}
                           />
-                        </div>
-                        <div className="flex justify-between text-label text-text-tertiary">
-                          <span>Fully analog</span>
-                          <span>Heavily electronic</span>
-                        </div>
-                        <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">{car.electronic_dependence_notes}</p>
+                        ))}
+                        <span
+                          className="absolute top-1/2 w-3 h-3 rounded-full bg-accent-secondary -translate-x-1/2 -translate-y-1/2"
+                          style={{ left: `${((car.electronic_dependence - 1) / 4) * 100}%` }}
+                        />
                       </div>
-                    ) : (
-                      <div className="flex-1 text-body text-text-tertiary">{NA}</div>
+                      <div className="flex justify-between text-label text-text-tertiary">
+                        <span>Fully analog</span>
+                        <span>Heavily electronic</span>
+                      </div>
+                      <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">{car.electronic_dependence_notes}</p>
+                    </div>
+                  ) : (
+                    <div className="flex-1 text-body text-text-tertiary">{NA}</div>
+                  )}
+                </div>
+              </div>
+            </div>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        {/* Market Data */}
+        <FieldSection id="market-data" label="Market Data">
+          {hasMarketSection ? (
+            <>
+              {(car.desirability_tier || car.value_trajectory) && (
+                <div className="mb-5">
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Collector Status</div>
+                  <div className="flex gap-3">
+                    {car.desirability_tier && (
+                      <span className="pill pill-active" title={DESIRABILITY_TIER_EXPLAINER[car.desirability_tier]}>
+                        {car.desirability_tier}
+                      </span>
+                    )}
+                    {car.value_trajectory && (
+                      <span className="pill" title={VALUE_TRAJECTORY_EXPLAINER[car.value_trajectory]}>
+                        {VALUE_TRAJECTORY_DISPLAY[car.value_trajectory]}
+                      </span>
                     )}
                   </div>
                 </div>
-              </div>
-            ) : <Unavailable />}
-          </Section>
-
-          {/* Market Data */}
-          <Section id="market-data" label="Market Data">
-            {hasMarketSection ? (
-              <>
-                {(car.desirability_tier || car.value_trajectory) && (
-                  <div className="mb-5">
-                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Collector Status</div>
-                    <div className="flex gap-3">
-                      {car.desirability_tier && (
-                        <span className="pill pill-active" title={DESIRABILITY_TIER_EXPLAINER[car.desirability_tier]}>
-                          {car.desirability_tier}
-                        </span>
-                      )}
-                      {car.value_trajectory && (
-                        <span className="pill" title={VALUE_TRAJECTORY_EXPLAINER[car.value_trajectory]}>
-                          {VALUE_TRAJECTORY_DISPLAY[car.value_trajectory]}
-                        </span>
-                      )}
+              )}
+              {marketTiers.length > 0 && (
+                <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] max-w-120 mb-5">
+                  {marketTiers.map(tier => (
+                    <div key={tier.label} className="stat-cell">
+                      <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1.5">
+                        {tier.label}
+                      </div>
+                      <div className="text-xl font-semibold text-accent-secondary tracking-heading">
+                        {formatMoney(tier.value)}
+                      </div>
                     </div>
-                  </div>
-                )}
-                {marketTiers.length > 0 && (
-                  <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] max-w-120 mb-5">
-                    {marketTiers.map(tier => (
-                      <div key={tier.label} className="stat-cell">
-                        <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1.5">
-                          {tier.label}
-                        </div>
-                        <div className="text-xl font-semibold text-accent-secondary tracking-heading">
-                          {formatMoney(tier.value)}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {car.market_data?.notes && (
-                  <p className="text-body text-text-secondary leading-relaxed max-w-150">
-                    {car.market_data.notes}
-                  </p>
-                )}
-                {car.market_data?.as_of && (
-                  <p className="text-label text-text-tertiary mt-2">
-                    Values as of {new Date(car.market_data.as_of).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}.
-                  </p>
-                )}
-              </>
-            ) : <Unavailable />}
-          </Section>
-        </>
-      )}
+                  ))}
+                </div>
+              )}
+              {car.market_data?.notes && (
+                <p className="text-body text-text-secondary leading-relaxed max-w-150">
+                  {car.market_data.notes}
+                </p>
+              )}
+              {car.market_data?.as_of && (
+                <p className="text-label text-text-tertiary mt-2">
+                  Values as of {new Date(car.market_data.as_of).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}.
+                </p>
+              )}
+            </>
+          ) : <Unavailable />}
+        </FieldSection>
+      </TabSection>
 
-      {activeTab === 'the-story' && (
-        <>
-          {/* What it's like — Character */}
-          <Section id="character" label="What it's like" first>
-            {hasCharacter ? (
-              <div className="grid gap-8 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
-                {car.driving_character && (
-                  <div>
-                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Driving Character</div>
-                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.driving_character}</p>
-                  </div>
-                )}
-                {car.design_notes && (
-                  <div>
-                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Design</div>
-                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.design_notes}</p>
-                  </div>
-                )}
-                {car.motorsport_pedigree && (
-                  <div>
-                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Motorsport Pedigree</div>
-                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.motorsport_pedigree}</p>
-                  </div>
-                )}
-                {car.cultural_notes && (
-                  <div>
-                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">In Culture</div>
-                    <p className="text-body text-text-secondary leading-relaxed m-0">{car.cultural_notes}</p>
-                  </div>
-                )}
-              </div>
-            ) : <Unavailable />}
-          </Section>
+      <TabSection id="the-story" label="The Story">
+        {/* What it's like — Character */}
+        <FieldSection id="character" label="What it's like" first>
+          {hasCharacter ? (
+            <div className="grid gap-8 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
+              {car.driving_character && (
+                <div>
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Driving Character</div>
+                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.driving_character}</p>
+                </div>
+              )}
+              {car.design_notes && (
+                <div>
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Design</div>
+                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.design_notes}</p>
+                </div>
+              )}
+              {car.motorsport_pedigree && (
+                <div>
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Motorsport Pedigree</div>
+                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.motorsport_pedigree}</p>
+                </div>
+              )}
+              {car.cultural_notes && (
+                <div>
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">In Culture</div>
+                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.cultural_notes}</p>
+                </div>
+              )}
+            </div>
+          ) : <Unavailable />}
+        </FieldSection>
 
-          {/* Where it comes from — Lineage */}
-          <Section id="lineage" label="Where it comes from">
-            {relatedCars.length > 0 ? <RelationCards entries={relatedCars} /> : <Unavailable />}
-          </Section>
+        {/* Where it comes from — Lineage */}
+        <FieldSection id="lineage" label="Where it comes from">
+          {relatedCars.length > 0 ? <RelationCards entries={relatedCars} /> : <Unavailable />}
+        </FieldSection>
 
-          {/* Rivals */}
-          <Section id="rivals" label="Rivals">
-            {rivalCars.length > 0 ? <RelationCards entries={rivalCars} /> : <Unavailable />}
-          </Section>
-        </>
-      )}
+        {/* Rivals */}
+        <FieldSection id="rivals" label="Rivals">
+          {rivalCars.length > 0 ? <RelationCards entries={rivalCars} /> : <Unavailable />}
+        </FieldSection>
+      </TabSection>
 
-      {activeTab === 'owning-one' && (
-        <>
-          {/* Why collectors want it */}
-          <Section id="collectibility" label="Why collectors want it" first>
-            {hasCollectibility ? (
-              <>
-                {(car.callout || car.claim_to_fame) && (
-                  <div className="flex gap-8 flex-wrap mb-5">
-                    {car.callout && (
-                      <div>
-                        <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Callout</div>
-                        <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
-                          {car.callout}
-                        </span>
-                      </div>
-                    )}
-                    {car.claim_to_fame && (
-                      <div>
-                        <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Claim to Fame</div>
-                        <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
-                          {car.claim_to_fame}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {car.why_collectible && (
-                  <div className="max-w-170">
-                    {renderText(car.why_collectible)}
-                  </div>
-                )}
-                {car.buyers_flag && (
-                  <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-secondary-border bg-accent-secondary-subtle">
-                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Buyer&apos;s Guide</div>
-                    <p className="text-body text-text-secondary m-0">{car.buyers_flag}</p>
-                  </div>
-                )}
-              </>
-            ) : <Unavailable />}
-          </Section>
-
-          {/* Which one to look for — variants + trims */}
-          <Section id="variants-trims" label="Which one to look for">
-            {hasVariantsTrims ? (
-              <>
-                {car.variants_to_know && (
-                  <p className="text-body text-text-secondary leading-relaxed max-w-170 mb-6">
-                    {car.variants_to_know}
-                  </p>
-                )}
-                {car.trims?.length > 0 && (
-                  <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
-                    {car.trims.map(t => (
-                      <div key={t.name} className="stat-cell">
-                        <div className="text-sm font-medium text-text-primary">
-                          {t.name}{t.years && <span className="text-text-tertiary font-normal"> · {t.years}</span>}
-                        </div>
-                        {t.description && <p className="text-label text-text-secondary mt-1 m-0">{t.description}</p>}
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </>
-            ) : <Unavailable />}
-          </Section>
-
-          {/* What owning one is like — Known Issues */}
-          <Section id="known-issues" label="What owning one is like">
-            {car.known_issues ? (
-              <p className="text-body text-text-secondary leading-relaxed max-w-170 m-0">{car.known_issues}</p>
-            ) : <Unavailable />}
-          </Section>
-
-          {/* Upkeep & Parts — Maintenance */}
-          <Section id="upkeep-parts" label="Upkeep & Parts">
-            {car.maintenance ? (
-              <div className="max-w-170 prose">
-                {renderText(car.maintenance)}
-              </div>
-            ) : <Unavailable />}
-          </Section>
-
-          {/* Resources */}
-          <Section id="resources" label="Resources">
-            {car.resources?.length > 0 ? (
-              <div className="flex flex-col gap-2 max-w-120">
-                {car.resources.map(r => (
-                  <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-4 py-3 bg-white border border-border rounded-lg no-underline transition-colors gap-3">
+      <TabSection id="owning-one" label="Owning One">
+        {/* Why collectors want it */}
+        <FieldSection id="collectibility" label="Why collectors want it" first>
+          {hasCollectibility ? (
+            <>
+              {(car.callout || car.claim_to_fame) && (
+                <div className="flex gap-8 flex-wrap mb-5">
+                  {car.callout && (
                     <div>
-                      <div className="text-body font-medium text-text-primary">{r.title}</div>
-                      <div className="text-label text-text-tertiary capitalize mt-0.5">{r.type}</div>
+                      <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Callout</div>
+                      <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
+                        {car.callout}
+                      </span>
                     </div>
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-text-tertiary" strokeWidth="2">
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
-                    </svg>
-                  </a>
-                ))}
-              </div>
-            ) : <Unavailable />}
-          </Section>
-        </>
-      )}
+                  )}
+                  {car.claim_to_fame && (
+                    <div>
+                      <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Claim to Fame</div>
+                      <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
+                        {car.claim_to_fame}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              )}
+              {car.why_collectible && (
+                <div className="max-w-170">
+                  {renderText(car.why_collectible)}
+                </div>
+              )}
+              {car.buyers_flag && (
+                <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-secondary-border bg-accent-secondary-subtle">
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Buyer&apos;s Guide</div>
+                  <p className="text-body text-text-secondary m-0">{car.buyers_flag}</p>
+                </div>
+              )}
+            </>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        {/* Which one to look for — variants + trims */}
+        <FieldSection id="variants-trims" label="Which one to look for">
+          {hasVariantsTrims ? (
+            <>
+              {car.variants_to_know && (
+                <p className="text-body text-text-secondary leading-relaxed max-w-170 mb-6">
+                  {car.variants_to_know}
+                </p>
+              )}
+              {car.trims?.length > 0 && (
+                <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
+                  {car.trims.map(t => (
+                    <div key={t.name} className="stat-cell">
+                      <div className="text-sm font-medium text-text-primary">
+                        {t.name}{t.years && <span className="text-text-tertiary font-normal"> · {t.years}</span>}
+                      </div>
+                      {t.description && <p className="text-label text-text-secondary mt-1 m-0">{t.description}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        {/* What owning one is like — Known Issues */}
+        <FieldSection id="known-issues" label="What owning one is like">
+          {car.known_issues ? (
+            <p className="text-body text-text-secondary leading-relaxed max-w-170 m-0">{car.known_issues}</p>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        {/* Upkeep & Parts — Maintenance */}
+        <FieldSection id="upkeep-parts" label="Upkeep & Parts">
+          {car.maintenance ? (
+            <div className="max-w-170 prose">
+              {renderText(car.maintenance)}
+            </div>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        {/* Resources */}
+        <FieldSection id="resources" label="Resources">
+          {car.resources?.length > 0 ? (
+            <div className="flex flex-col gap-2 max-w-120">
+              {car.resources.map(r => (
+                <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-4 py-3 bg-white border border-border rounded-lg no-underline transition-colors gap-3">
+                  <div>
+                    <div className="text-body font-medium text-text-primary">{r.title}</div>
+                    <div className="text-label text-text-tertiary capitalize mt-0.5">{r.type}</div>
+                  </div>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" className="text-text-tertiary" strokeWidth="2">
+                    <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15,3 21,3 21,9"/><line x1="10" y1="14" x2="21" y2="3"/>
+                  </svg>
+                </a>
+              ))}
+            </div>
+          ) : <Unavailable />}
+        </FieldSection>
+      </TabSection>
     </div>
   )
 }
