@@ -196,6 +196,16 @@ export function computeProductionYears(yearStart: number, yearEnd: number | null
   return `${yearStart}–${yearEnd ?? 'Present'}`
 }
 
+// Omits the generation/code segment when it's redundant with the model name
+// (e.g. a single-generation car whose code was set to match the model
+// instead of the catalog's usual "Single Generation" placeholder) — same
+// guard the admin edit/list pages already apply, now shared instead of
+// duplicated at each call site.
+export function carDisplayName(make: string, model: string, generation: string | null): string {
+  const showGeneration = generation && generation.toLowerCase() !== model.toLowerCase()
+  return `${make} ${model}${showGeneration ? ` ${generation}` : ''}`
+}
+
 export function emptyGenerationInput(): GenerationInput {
   return {
     code: '',

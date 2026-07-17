@@ -12,7 +12,7 @@ import BackToTop from '@/components/BackToTop'
 import CarCard from '@/components/CarCard'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car, CarRelation } from '@/lib/types'
-import { RADAR_AXES } from '@/lib/car-schema'
+import { RADAR_AXES, carDisplayName } from '@/lib/car-schema'
 
 export const revalidate = 3600
 
@@ -25,7 +25,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const car = await getModel(slug)
   if (!car) return { title: 'Not Found' }
-  const name = `${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`
+  const name = carDisplayName(car.make, car.model, car.generation)
   return {
     title: name,
     description: car.overview?.slice(0, 160),
@@ -116,7 +116,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const car: Car | null = await getModel(slug)
   if (!car) notFound()
 
-  const name = `${car.make} ${car.model}${car.generation ? ` ${car.generation}` : ''}`
+  const name = carDisplayName(car.make, car.model, car.generation)
   const years = car.year_end ? `${car.year_start}–${car.year_end}` : `${car.year_start}–present`
   // A search, not the homepage — nearly every car has a Wikipedia page, so
   // this fallback (un-entered wikipedia_url) still keeps the link's promise
@@ -189,7 +189,9 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
           <div className="flex flex-wrap justify-between items-end gap-3 mb-6">
             <h1 className="text-hero font-bold text-text-primary leading-tight m-0">
               {car.make} {car.model}
-              {car.generation && <span className="text-text-secondary font-normal"> {car.generation}</span>}
+              {car.generation && car.generation.toLowerCase() !== car.model.toLowerCase() && (
+                <span className="text-text-secondary font-normal"> {car.generation}</span>
+              )}
             </h1>
             <div className="flex items-center gap-3">
               <ShareButton
