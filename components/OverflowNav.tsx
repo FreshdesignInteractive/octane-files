@@ -13,13 +13,22 @@ const ITEM_GAP = 32 // matches gap-8 below
 // on every resize, how many items actually fit before the meatball button
 // would be needed, and collapses the rest into a dropdown menu. Reusable
 // anywhere a horizontal list of links/tabs needs the same overflow behavior.
-export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
+//
+// `activeId`, when passed, is a controlled override for which item is
+// highlighted — skips the scrollspy IntersectionObserver entirely (there's
+// nothing to observe when the caller's own items don't correspond to
+// elements simultaneously present in the DOM, e.g. top-level tabs where
+// only the active one is ever mounted). Omit it for the original
+// uncontrolled behavior: highlight whichever item's target element is
+// nearest the top of the viewport while scrolling.
+export default function OverflowNav({ items, activeId: controlledActiveId }: { items: OverflowNavItem[]; activeId?: string }) {
   const trackRef = useRef<HTMLDivElement>(null)
   const measureRefs = useRef<(HTMLElement | null)[]>([])
   const [visibleCount, setVisibleCount] = useState(items.length)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
-  const [activeId, setActiveId] = useState<string | null>(items[0]?.id ?? null)
+  const [scrollspyActiveId, setScrollspyActiveId] = useState<string | null>(items[0]?.id ?? null)
+  const activeId = controlledActiveId ?? scrollspyActiveId
 
   useEffect(() => {
     function recalculate() {
@@ -49,7 +58,9 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
 
   // Scrollspy: highlight whichever section's heading is currently nearest
   // the top of the viewport, below the sticky header + this nav itself.
+  // Skipped entirely when the caller controls activeId itself.
   useEffect(() => {
+    if (controlledActiveId !== undefined) return
     const elements = items
       .map(item => document.getElementById(item.id))
       .filter((el): el is HTMLElement => el !== null)
@@ -60,14 +71,14 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
         const visible = entries.filter(e => e.isIntersecting)
         if (visible.length === 0) return
         const topMost = visible.reduce((a, b) => (a.boundingClientRect.top < b.boundingClientRect.top ? a : b))
-        setActiveId(topMost.target.id)
+        setScrollspyActiveId(topMost.target.id)
       },
       { rootMargin: '-140px 0px -70% 0px', threshold: 0 }
     )
 
     elements.forEach(el => observer.observe(el))
     return () => observer.disconnect()
-  }, [items])
+  }, [items, controlledActiveId])
 
   useEffect(() => {
     if (!menuOpen) return
@@ -87,7 +98,12 @@ export default function OverflowNav({ items }: { items: OverflowNavItem[] }) {
   const overflow = items.slice(visibleCount)
 
   return (
-    <div className="relative bg-white rounded-full shadow-lg h-16 px-8 flex items-center">
+    // w-full, not left to intrinsic content sizing — with a short item
+    // list (few tabs, or few items that fit before the overflow menu
+    // kicks in) the row's own content isn't wide enough to reach the full
+    // available width on its own, so the pill would otherwise shrink to
+    // fit instead of spanning the content column like this nav always has.
+    <div className="relative w-full bg-white rounded-full shadow-lg h-16 px-8 flex items-center">
       {/* Off-screen measuring clones — identical classes to the real links,
           so offsetWidth reflects true rendered width at the current font.
           `invisible` alone only hides them visually; it doesn't stop them
