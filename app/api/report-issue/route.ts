@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const { carName, carUrl, message } = await req.json()
-  if (!carName?.trim() || !carUrl?.trim() || !message?.trim()) {
+  if (!message?.trim()) {
     return NextResponse.json({ error: 'A message is required.' }, { status: 400 })
   }
 
@@ -39,8 +39,14 @@ export async function POST(req: NextRequest) {
     from: FROM_EMAIL,
     to: TO_EMAIL,
     replyTo: reporterEmail,
-    subject: `Octane Files report: ${carName}`,
-    text: `Car: ${carName}\nURL: ${carUrl}\n\nReported by: ${reporterName} <${reporterEmail}>\n\n${message}`,
+    subject: `Octane Files report: ${carName || 'General feedback'}`,
+    text: [
+      carName ? `Car: ${carName}` : null,
+      carUrl ? `URL: ${carUrl}` : null,
+      `Reported by: ${reporterName} <${reporterEmail}>`,
+      '',
+      message,
+    ].filter((line): line is string => line !== null).join('\n'),
   })
 
   if (error) {

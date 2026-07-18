@@ -7,7 +7,10 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
-export default function ReportForm({ carName, carSlug }: { carName: string; carSlug: string }) {
+// carName/carSlug are optional — omitted entirely for the general
+// (not-tied-to-a-car) report flow at /report, linked from the About page's
+// "Tell us" trust-section copy. Same sign-in gating either way.
+export default function ReportForm({ carName, carSlug }: { carName?: string; carSlug?: string }) {
   // undefined = auth state not yet resolved — avoids a signed-out flash on load
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [signInDismissed, setSignInDismissed] = useState(false)
@@ -42,7 +45,7 @@ export default function ReportForm({ carName, carSlug }: { carName: string; carS
         },
         body: JSON.stringify({
           carName,
-          carUrl: `${window.location.origin}/cars/${carSlug}`,
+          carUrl: carSlug ? `${window.location.origin}/cars/${carSlug}` : undefined,
           message,
         }),
       })
@@ -74,7 +77,7 @@ export default function ReportForm({ carName, carSlug }: { carName: string; carS
     return (
       <div>
         <p className="text-body text-text-secondary leading-relaxed mb-5">
-          Sign in to report a mistake on this vehicle profile.
+          {carName ? 'Sign in to report a mistake on this vehicle profile.' : 'Sign in to send your report.'}
         </p>
         <button type="button" onClick={() => setSignInDismissed(false)} className="btn-primary h-10 px-5">
           Sign in to continue

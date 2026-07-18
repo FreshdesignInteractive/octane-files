@@ -6,7 +6,10 @@ import { getLiveCarCount } from '@/lib/supabase'
 
 export const revalidate = 3600
 
-export const metadata = { title: 'About Us — Octane Files' }
+export const metadata = {
+  title: 'About',
+  description: 'A curated encyclopedia of collector cars. Why each one matters, which to look for, and what owning one is really like. Every number verified.',
+}
 
 const HERO_LINES = [
   'The car on your bedroom wall.',
@@ -88,28 +91,24 @@ export default async function AboutPage() {
       <main className="flex-1">
 
         {/* ── Section 1 — Hero ──────────────────────────────────────────
-            Full-bleed. No photo asset yet — this needs a real, rights-
-            cleared photo (owned/licensed/owner-submitted) per the brief;
-            nothing scraped or stock. Placeholder background stands in
-            until that file exists; the scrim below is already sized for
-            a photo, not just a flat color, so dropping the image in later
-            is a one-line change. */}
-        <section className="relative w-full bg-bg-elevated">
-          {/* TODO: replace with a real <Image> (next/image) once the hero
-              photo is supplied — a warm, personal shot, e.g. a car under a
-              cover in a home garage with the cover half pulled back, or a
-              faded snapshot-style photo in a 1970s driveway. Add a
-              bg-gradient-to-t from-black/60 scrim over it for text
-              legibility once it's a photo rather than a flat color. */}
-          {HERO_LINES.map((line, i) => (
-            <div key={i} className="min-h-[70vh] flex items-center justify-center px-6">
-              <ScrollReveal>
-                <p className="text-hero font-bold text-text-primary text-center max-w-220 m-0">
-                  {line}
-                </p>
+            One 16:9 card per line, same detail-container/1120px content
+            width as every other section on this page. No photo assets
+            yet — bg-text-primary (an existing token, not a new one) is
+            the placeholder fill so the card boundary is visible; swap
+            each one for a real <Image> (next/image, object-cover) plus
+            alt text once photos are sourced. */}
+        <section className="detail-container py-16 sm:py-20">
+          <div className="flex flex-col gap-12">
+            {HERO_LINES.map(line => (
+              <ScrollReveal key={line}>
+                <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-text-primary flex items-center justify-center p-6 sm:p-10">
+                  <p className="text-hero font-bold text-white text-center max-w-160 m-0">
+                    {line}
+                  </p>
+                </div>
               </ScrollReveal>
-            </div>
-          ))}
+            ))}
+          </div>
         </section>
 
         {/* ── Section 2 — The reveal ────────────────────────────────── */}
@@ -137,7 +136,6 @@ export default async function AboutPage() {
               {VALUE_CARDS.map(card => (
                 <div
                   key={card.title}
-                  id={card.title === 'How it scores' ? 'how-it-scores' : undefined}
                   className="bg-white border border-border rounded-2xl p-6"
                 >
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent mb-4">
@@ -168,7 +166,7 @@ export default async function AboutPage() {
               </div>
             </div>
             <p className="text-body text-text-secondary text-center mt-8">
-              Spot something wrong? <Link href="/contact" className="text-accent">Tell us.</Link> We&apos;d rather fix it than defend it.
+              Spot something wrong? <Link href="/report" className="text-accent">Tell us.</Link>{' '}We&apos;d rather fix it than defend it.
             </p>
           </ScrollReveal>
         </section>
@@ -179,22 +177,17 @@ export default async function AboutPage() {
             <ScrollReveal>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
                 <div>
-                  <div className="text-hero font-bold text-accent-secondary tracking-heading">{carCount}<sup className="text-label align-super">1</sup></div>
+                  <div className="text-hero font-bold text-accent-secondary tracking-heading">{carCount}</div>
                   <p className="text-body text-text-secondary mt-2 mb-0">Cars in the encyclopedia, each chosen on purpose</p>
                 </div>
                 <div>
-                  <div className="text-hero font-bold text-accent-secondary tracking-heading">8<sup className="text-label align-super">2</sup></div>
+                  <div className="text-hero font-bold text-accent-secondary tracking-heading">8</div>
                   <p className="text-body text-text-secondary mt-2 mb-0">Dimensions scored on every car, rarity to driving thrill</p>
                 </div>
                 <div>
-                  <div className="text-hero font-bold text-accent-secondary tracking-heading">1<sup className="text-label align-super">3</sup></div>
+                  <div className="text-hero font-bold text-accent-secondary tracking-heading">1</div>
                   <p className="text-body text-text-secondary mt-2 mb-0">Rule: if we state a number, we verified it</p>
                 </div>
-              </div>
-              <div className="flex flex-col items-center gap-1 mt-8 text-label text-text-tertiary">
-                <p className="m-0">1. Live catalog count.</p>
-                <p className="m-0"><a href="#how-it-scores" className="text-text-tertiary">2. See how we score.</a></p>
-                <p className="m-0">3. No exceptions.</p>
               </div>
             </ScrollReveal>
           </div>
@@ -203,7 +196,7 @@ export default async function AboutPage() {
         {/* ── Section 6 — Where we're going ─────────────────────────── */}
         <section className="detail-container py-20">
           <ScrollReveal className="max-w-160 mx-auto text-center">
-            <h2 className="text-body font-bold text-text-primary uppercase tracking-widest mb-3">
+            <h2 className="text-heading font-bold text-text-primary mb-3">
               The encyclopedia is where we start.
             </h2>
             <p className="text-body text-text-secondary leading-relaxed">
@@ -222,16 +215,10 @@ export default async function AboutPage() {
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
                 <Link href="/" className="btn-primary h-11 px-6">Explore the encyclopedia</Link>
-                <Link href="/contact" className="btn-secondary h-11 px-6">Report a mistake</Link>
               </div>
             </ScrollReveal>
           </div>
         </section>
-
-        {/* ── Section 8 — Footer line ───────────────────────────────── */}
-        <p className="text-label text-text-tertiary text-center py-6 m-0">
-          Based in San Jose, California.
-        </p>
       </main>
       <SiteFooter />
     </>
