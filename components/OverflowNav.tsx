@@ -157,7 +157,7 @@ export default function OverflowNav({ items, activeId: controlledActiveId }: { i
           </button>
 
           {menuOpen && (
-            <div className="absolute right-0 top-full mt-2 bg-white border border-border rounded-lg shadow-dropdown py-2 min-w-[200px] z-50">
+            <div className="absolute right-0 top-full mt-2 bg-white border border-border rounded-lg shadow-dropdown py-2 min-w-50 z-50">
               {overflow.map(item => (
                 <a
                   key={item.id}

@@ -125,7 +125,7 @@ export default function ShareDialog({ car, onClose }: { car: ShareCarInfo; onClo
 
   return (
     <div onClick={onClose} className="fixed inset-0 z-[var(--z-overlay)] bg-overlay flex items-center justify-center p-6">
-      <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl pt-8 px-8 pb-8 w-full max-w-[560px] relative shadow-modal">
+      <div onClick={e => e.stopPropagation()} className="bg-white rounded-2xl pt-8 px-8 pb-8 w-full max-w-140 relative shadow-modal">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-bold text-text-primary m-0">
             {view === 'share' ? 'Share this car' : 'Embed this car'}
@@ -162,7 +162,7 @@ export default function ShareDialog({ car, onClose }: { car: ShareCarInfo; onClo
           </div>
         ) : (
           <div>
-            <div className="w-full max-w-[280px] mx-auto mb-5 rounded-lg overflow-hidden border border-border">
+            <div className="w-full max-w-70 mx-auto mb-5 rounded-lg overflow-hidden border border-border">
               <div className="relative aspect-video bg-bg-elevated">
                 <Image src={car.image} alt="" fill className="object-cover" />
               </div>

@@ -33,7 +33,10 @@ const SECTIONS = [
   { id: 'collectibility', label: 'Why collectors want it' },
   { id: 'ratings', label: 'How it scores' },
   { id: 'variants-trims', label: 'Which one to look for' },
-  { id: 'character', label: "What it's like" },
+  { id: 'driving-character', label: 'Driving Character' },
+  { id: 'design', label: 'Design' },
+  { id: 'motorsport-pedigree', label: 'Motorsport Pedigree' },
+  { id: 'in-culture', label: 'In Culture' },
   { id: 'lineage', label: 'Where it comes from' },
   { id: 'rivals', label: 'Rivals' },
   { id: 'market-data', label: 'Market Data' },
@@ -288,13 +291,27 @@ export default function GenerationFieldsEditor({
         </div>
       </section>
 
-      {/* What it's like — Character */}
-      <section id="character">
-        <h2 className={sectionHeading}>What it&apos;s like</h2>
-        {field('Driving Character', <textarea className="textarea min-h-30" value={value.driving_character ?? ''} onChange={e => onChange({ driving_character: e.target.value || null })} placeholder="Sound signature, party trick, gearbox feel, power delivery" />)}
-        <div className="mt-4">{field('Design', <textarea className="textarea min-h-30" value={value.design_notes ?? ''} onChange={e => onChange({ design_notes: e.target.value || null })} placeholder="Design signatures, concept-car lineage, wheel/badge iconography" />)}</div>
-        <div className="mt-4">{field('Motorsport Pedigree', <textarea className="textarea min-h-30" value={value.motorsport_pedigree ?? ''} onChange={e => onChange({ motorsport_pedigree: e.target.value || null })} placeholder="Race series, championships, signature drivers" />)}</div>
-        <div className="mt-4">{field('In Culture', <textarea className="textarea min-h-30" value={value.cultural_notes ?? ''} onChange={e => onChange({ cultural_notes: e.target.value || null })} placeholder="Screen, music, video-game fame" />)}</div>
+      {/* Driving Character, Design, Motorsport Pedigree, In Culture — 4
+          independent sections, matching the view page's split of what
+          used to be one shared "What it's like" section. */}
+      <section id="driving-character">
+        <h2 className={sectionHeading}>Driving Character</h2>
+        {field('', <textarea className="textarea min-h-30" value={value.driving_character ?? ''} onChange={e => onChange({ driving_character: e.target.value || null })} placeholder="Sound signature, party trick, gearbox feel, power delivery" />)}
+      </section>
+
+      <section id="design">
+        <h2 className={sectionHeading}>Design</h2>
+        {field('', <textarea className="textarea min-h-30" value={value.design_notes ?? ''} onChange={e => onChange({ design_notes: e.target.value || null })} placeholder="Design signatures, concept-car lineage, wheel/badge iconography" />)}
+      </section>
+
+      <section id="motorsport-pedigree">
+        <h2 className={sectionHeading}>Motorsport Pedigree</h2>
+        {field('', <textarea className="textarea min-h-30" value={value.motorsport_pedigree ?? ''} onChange={e => onChange({ motorsport_pedigree: e.target.value || null })} placeholder="Race series, championships, signature drivers" />)}
+      </section>
+
+      <section id="in-culture">
+        <h2 className={sectionHeading}>In Culture</h2>
+        {field('', <textarea className="textarea min-h-30" value={value.cultural_notes ?? ''} onChange={e => onChange({ cultural_notes: e.target.value || null })} placeholder="Screen, music, video-game fame" />)}
       </section>
 
       {/* Where it comes from — Lineage */}

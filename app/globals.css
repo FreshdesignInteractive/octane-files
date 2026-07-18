@@ -9,11 +9,13 @@
      interface actions); accent-secondary is the demoted gold, used for
      luxury markers/editorial highlights (car detail section eyebrows,
      analog-index/market stat numbers, the radar chart). */
-  --color-bg-base:        #f8f9fa; /* premium off-white page canvas (was pure white) */
+  --color-bg-base:        #ffffff; /* pure white page canvas (was off-white #f8f9fa) */
+  --color-bg-subtle:      #f8f9fa; /* the old page-canvas off-white, kept as its own reusable light-grey token — lighter than bg-elevated */
   --color-bg-elevated:    #f5f5f5;
   --color-text-primary:   #1a1d20; /* deep graphite, was #111111 */
   --color-text-secondary: #38393b;
   --color-text-tertiary:  #555555;
+  --color-border-subtle:  #e9ebed; /* one step lighter than border, for hairline dividers on light bands */
   --color-border:         #dee2e6; /* metallic divider/card border, was #e8e8e8 */
   --color-border-mid:     #d0d0d0;
   --color-track:          #b3b3b3; /* score/progress bar backgrounds (radar bars, electronic dependence) — a step darker than border-mid */
@@ -40,7 +42,7 @@
   /* Font sizes with no exact match in Tailwind's default scale.
      12/14/16/20/24px already exist as text-xs/sm/base/xl/2xl — use those directly. */
   --text-micro:     0.625rem;  /* 10px */
-  --text-label:     0.6875rem; /* 11px — uppercase section eyebrows */
+  --text-label:     0.75rem;   /* 12px — uppercase section eyebrows (was 11px) */
   --text-body:      0.8125rem; /* 13px — most common UI text size site-wide */
   --text-paragraph:              0.9375rem; /* 15px — main paragraph/body copy */
   --text-paragraph--line-height: 1.5rem;    /* 24px */
@@ -52,6 +54,12 @@
      uses Tailwind's native rounded-2xl (16px) so they're all visually
      consistent; pills and circles use Tailwind's built-in rounded-full.
      No custom radius token needed. */
+
+  /* Slightly heavier border for an active/selected state (a selected pill,
+     the active gallery thumbnail) — Tailwind's own border-width scale
+     (0/1/2/4/8px) has no 1.5px step, and this exact value was already
+     showing up twice as a raw border-[1.5px] before being centralized. */
+  --border-width-active: 1.5px;
 
   /* Shadows — custom names so we don't redefine Tailwind's own shadow-sm/md/lg,
      which carry different default values we're not touching. */
@@ -179,7 +187,7 @@ body {
   }
 
   .pill-active {
-    @apply border-[1.5px] border-accent bg-accent text-white font-medium;
+    @apply border-active border-accent bg-accent text-white font-medium;
   }
 
   .icon-link {

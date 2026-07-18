@@ -22,7 +22,7 @@ function electronicDependencePosition(v: number): number {
 // this is the one, single fallback used wherever a given car just doesn't
 // have that data yet, instead of each section inventing its own wording.
 function Unavailable() {
-  return <p className="text-body text-text-tertiary m-0">Data unavailable</p>
+  return <p className="text-paragraph text-text-tertiary m-0">Data unavailable</p>
 }
 
 // scroll-mt-40 (160px) clears the sticky header (h-14, 56px) + the sticky
@@ -34,14 +34,18 @@ function Unavailable() {
 // tabs) marking where each of the 3 tabs' content begins — this is what
 // the nav below scrolls/spies on. FieldSection is the individual field
 // inside it (Introduction, The scorecard, Rivals, etc.) — smaller
-// (text-sm) since the tab heading is now the one "main" title on the page,
+// (text-base) since the tab heading is now the one "main" title on the page,
 // everything else is a sub-heading under it. All three tabs' content is
 // always in the DOM, one continuous scroll — clicking a tab in the nav
 // just scrolls to it, the same plain-anchor behavior every section on this
 // page has always had.
-function TabSection({ id, label, first, children }: { id: string; label: string; first?: boolean; children: React.ReactNode }) {
+// divider is an explicit opt-in exception — tabs default to no rule line
+// between them (Overview→The Story is a plain gap), but Owning One passes
+// divider so there's still one clear separator marking where The Story's
+// now-line-free run of sections ends and Owning One begins.
+function TabSection({ id, label, first, divider = false, children }: { id: string; label: string; first?: boolean; divider?: boolean; children: React.ReactNode }) {
   return (
-    <section id={id} className={`scroll-mt-40 ${first ? 'mt-6' : 'border-t border-border pt-10 mt-10'}`}>
+    <section id={id} className={`scroll-mt-40 ${first ? 'mt-6' : divider ? 'border-t border-border pt-10 mt-10' : 'mt-10'}`}>
       <h2 className="text-lg font-bold text-text-primary tracking-tight mb-5">{label}</h2>
       {children}
     </section>
@@ -52,10 +56,25 @@ function TabSection({ id, label, first, children }: { id: string; label: string;
 // directly under the "Overview" tab heading with no sub-heading of its
 // own), everything else still passes one. The field itself keeps its
 // label in the database, edit page, and CSV — this only hides it here.
-function FieldSection({ id, label, first, children }: { id: string; label?: string; first?: boolean; children: React.ReactNode }) {
+// divider defaults to true (border + double-gap spacing, matching Overview
+// and The Story). Owning One passes divider={false} for its non-first
+// fields — no rule line, just a single mt-9 (36px, Tailwind's own scale)
+// gap instead of the border's pt-8+mt-8 double gap.
+// card wraps the section in the same white/border/shadow/radius card the
+// sidebar's fact card already uses (bg-white border border-border
+// rounded-2xl shadow-sm p-6) — the card's own boundary is the separator,
+// so it always implies no border-t rule line, just a plain mt-4 (16px) gap
+// above — matching the sidebar's own gap-8 between its stacked cards.
+// subtext is the reusable "what this section is" pattern — a short line
+// explaining the section, sitting tight under the title (mb-1.5, closer
+// than the title's own default mb-4) so it reads as paired with the
+// heading, then a bigger gap (mb-6) before the actual content starts.
+function FieldSection({ id, label, first, divider = true, card = false, subtext, children }: { id: string; label?: string; first?: boolean; divider?: boolean; card?: boolean; subtext?: string; children: React.ReactNode }) {
+  const spacing = first ? '' : card ? 'mt-8' : divider ? 'border-t border-border pt-8 mt-8' : 'mt-9'
   return (
-    <div id={id} className={`scroll-mt-40 ${first ? '' : 'border-t border-border pt-8 mt-8'}`}>
-      {label && <h3 className="text-sm font-bold text-text-primary tracking-tight mb-4">{label}</h3>}
+    <div id={id} className={`scroll-mt-40 ${spacing} ${card ? 'bg-white border border-border rounded-2xl shadow-sm p-6' : ''}`}>
+      {label && <h3 className={`text-base font-bold text-text-primary tracking-tight ${subtext ? 'mb-1.5' : 'mb-4'}`}>{label}</h3>}
+      {subtext && <p className="text-body text-text-tertiary mb-6">{subtext}</p>}
       {children}
     </div>
   )
@@ -125,6 +144,27 @@ const DISTINCTIONS: { key: 'is_icon' | 'homologation_special' | 'poster_car'; na
   },
 ]
 
+// "In the files" isn't a DB flag and isn't admin-editable — every car in
+// the catalog earns it unconditionally (being in a curated encyclopedia is
+// itself the distinction), so it's never part of the earned/not-earned
+// filter above. Always appended last, after any real earned flags — a car
+// with none of the other three still shows this alone, but one with any of
+// them shows it bringing up the rear, not first (the mockup had it first,
+// which was a mockup ordering mistake, not the intended design).
+const MADE_THE_CUT = {
+  name: 'In the files',
+  definition: 'Selected for its history, engineering, or cultural weight.',
+  icon: (
+    <>
+      <path d="m3 17 2 2 4-4" />
+      <path d="m3 7 2 2 4-4" />
+      <path d="M13 6h8" />
+      <path d="M13 12h8" />
+      <path d="M13 18h8" />
+    </>
+  ),
+}
+
 const VALUE_TRAJECTORY_DISPLAY: Record<string, string> = {
   appreciating: '↗ Appreciating',
   stable: '→ Stable',
@@ -148,19 +188,25 @@ const VALUE_TRAJECTORY_DEFINITIONS: Record<string, string> = {
   cooling: 'Values are softening. Patience buys better cars for less.',
 }
 
-// Parse newlines in text
+// Parse newlines in text. Both branches carry their own text-paragraph
+// (15px) sizing directly — this used to depend on the caller wrapping the
+// output in a ".prose" div (whose ".prose p"/"prose strong" rules did the
+// actual styling), but two of three call sites didn't, so their paragraphs
+// silently fell back to the browser's unstyled ~16px default instead of the
+// site's two intended body sizes (13px text-body / 15px text-paragraph).
+// Self-contained here means it renders correctly regardless of wrapper.
 function renderText(text: string) {
   return text.split('\n\n').map((para, i) => {
     if (para.startsWith('**')) {
       const [boldPart, ...rest] = para.split('**').filter(Boolean)
       return (
-        <p key={i} className="prose">
-          <strong>{boldPart.replace(/\*\*/g, '')}</strong>
+        <p key={i} className="text-paragraph text-text-secondary mb-5">
+          <strong className="text-text-primary font-semibold">{boldPart.replace(/\*\*/g, '')}</strong>
           {rest.join('')}
         </p>
       )
     }
-    return <p key={i} className="leading-relaxed text-text-secondary mb-5">{para}</p>
+    return <p key={i} className="text-paragraph text-text-secondary mb-5">{para}</p>
   })
 }
 
@@ -175,23 +221,19 @@ export const TABS = [
 ]
 
 export default function CarDetailTabs({ car }: { car: Car }) {
-  const hasCollectibility = !!(car.callout || car.claim_to_fame || car.why_collectible || car.buyers_flag)
-  // A position with no note counts the same as unset here too, not just in
-  // the row's own render check below — an unexplained Electronic Dependence
-  // shouldn't be the sole reason this section reports "has ratings."
-  const hasRatings = (car.electronic_dependence !== null && !!car.electronic_dependence_notes)
-    || !!(car.radar_scores && Object.keys(car.radar_scores).length > 0)
   const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
-  const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
-  const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
-  const earnedDistinctions = DISTINCTIONS.filter(d => car[d.key])
+  // In the files is always last — every car gets it unconditionally, so it
+  // never displaces an actually-earned flag from the front of the list.
+  const earnedDistinctions = [...DISTINCTIONS.filter(d => car[d.key]), MADE_THE_CUT]
   const relatedCars = car.relations?.filter(r => r.relation_type === 'related') ?? []
   const rivalCars = car.relations?.filter(r => r.relation_type === 'rival') ?? []
+  // Always all 3 tiers, regardless of which values are actually entered —
+  // a missing individual value shows NA, not a shrunken 1- or 2-cell grid.
   const marketTiers = [
-    car.market_data?.low != null && { label: 'Entry / Driver', value: car.market_data.low },
-    car.market_data?.mid != null && { label: 'Mid / Nice', value: car.market_data.mid },
-    car.market_data?.high != null && { label: 'Show / Concours', value: car.market_data.high },
-  ].filter(Boolean) as { label: string; value: number }[]
+    { label: 'Entry / Driver', value: car.market_data?.low ?? null },
+    { label: 'Mid / Nice', value: car.market_data?.mid ?? null },
+    { label: 'Show / Concours', value: car.market_data?.high ?? null },
+  ]
 
   return (
     <div>
@@ -202,263 +244,296 @@ export default function CarDetailTabs({ car }: { car: Car }) {
           </div>
         </FieldSection>
 
-        {/* Distinctions — an explicit exception to "sections always render":
-            a car with none of the three flags set omits this FieldSection
-            entirely rather than showing an empty/Unavailable state, since
-            "no distinctions" isn't missing data, it's just the normal case
-            for most cars in the catalog. */}
-        {earnedDistinctions.length > 0 && (
-          <FieldSection id="distinctions" label="Distinctions">
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
-              {earnedDistinctions.map(d => (
-                <div key={d.key} className="flex items-start gap-3">
-                  <span className="w-10 h-10 rounded-full bg-accent flex items-center justify-center shrink-0">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      {d.icon}
-                    </svg>
-                  </span>
-                  <div>
-                    <div className="text-body font-semibold text-text-primary mb-0.5">{d.name}</div>
-                    <div className="text-body text-text-secondary leading-relaxed">{d.definition}</div>
-                  </div>
+        {/* Distinctions — always renders now: In the files is unconditional,
+            so every car has at least one earned distinction. Legend/
+            Homologation Special/Poster Car (if any) come first, in their
+            fixed order; In the files is always appended last. */}
+        <FieldSection id="distinctions" label="Distinctions" card subtext="What sets this car apart, from being selected for the Octane Files to becoming a legend.">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+            {earnedDistinctions.map(d => (
+              <div key={d.name} className="flex items-start gap-3">
+                <span className="w-10 h-10 mt-0.5 rounded-full bg-accent flex items-center justify-center shrink-0">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    {d.icon}
+                  </svg>
+                </span>
+                <div>
+                  <div className="text-body font-semibold text-text-primary mb-0.5">{d.name}</div>
+                  <div className="text-body text-text-secondary leading-relaxed">{d.definition}</div>
                 </div>
-              ))}
-            </div>
-          </FieldSection>
-        )}
+              </div>
+            ))}
+          </div>
+        </FieldSection>
 
         {/* The scorecard — 7 radar axes as bars, then Electronic Dependence
-            as a position-on-a-spectrum control below a divider. All 7 axes
-            always render (label + track); one with no score just stays an
-            empty grey track with a — value, never a fabricated zero. */}
-        <FieldSection id="ratings" label="The scorecard">
-          {hasRatings ? (
-            <div className="flex flex-col gap-8">
-              <div>
-                <p className="text-body text-text-tertiary mb-4">Rated 1 to 10 on the traits that matter for owning, driving, and holding on to a car like this.</p>
-                <div className="flex flex-col gap-4">
-                  {RADAR_AXES.map(axis => {
-                    const score = car.radar_scores?.[axis.key] ?? null
-                    return (
-                      <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
-                        <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
-                        <div className="flex-1 flex items-center gap-4">
-                          <div className="flex-1 h-2 rounded-full bg-track overflow-hidden">
-                            {score !== null && (
-                              <div className="h-full rounded-full bg-accent-light" style={{ width: `${score * 10}%` }} />
-                            )}
-                          </div>
-                          <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
-                            {score !== null ? `${score}/10` : NA}
-                          </div>
+            as a position-on-a-spectrum control below a divider. Both always
+            render, scored or not — a car with zero scores still shows all
+            7 empty tracks, subtext copy unchanged either way. A score-less
+            axis shows "-/-", never a fabricated zero. */}
+        <FieldSection
+          id="ratings"
+          label="The scorecard"
+          card
+          subtext="Rated 1 to 10 on the traits that matter for owning, driving, and holding on to a car like this."
+        >
+          <div className="flex flex-col gap-8">
+            <div>
+              <div className="flex flex-col gap-4">
+                {RADAR_AXES.map(axis => {
+                  const score = car.radar_scores?.[axis.key] ?? null
+                  return (
+                    <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
+                      <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
+                      <div className="flex-1 flex items-center gap-4">
+                        <div className="flex-1 h-2 rounded-full bg-track overflow-hidden">
+                          {score !== null && (
+                            <div className="h-full rounded-full bg-accent-light" style={{ width: `${score * 10}%` }} />
+                          )}
+                        </div>
+                        <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
+                          {score !== null ? `${score}/10` : '-/-'}
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Electronic dependence — a position on a spectrum, not a
-                  rated amount, so the track is 5 equal grey segments (no
-                  fill/progress implied) with a single marker dot, not a
-                  progress bar. Track matches the scorecard bars above
-                  exactly (h-2 rounded-full bg-track); white divider
-                  lines split it into 5 segments and the marker centers
-                  in whichever segment matches the score. A position with
-                  no note renders as unscored, same as fully null — an
-                  unexplained position is exactly the failure mode this
-                  design exists to avoid (the admin form nudges toward
-                  always pairing the two). */}
-              <div className="pt-8 border-t border-border">
-                <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
-                  <div className="w-45 shrink-0 text-body text-text-secondary">Electronic dependence</div>
-                  {car.electronic_dependence !== null && car.electronic_dependence_notes ? (
-                    <div className="flex-1">
-                      <div className="relative mt-3 mb-2">
-                        <div className="relative h-2 rounded-full bg-track overflow-hidden">
-                          {[1, 2, 3, 4].map(divider => (
-                            <span
-                              key={divider}
-                              className="absolute inset-y-0 w-0.5 bg-white"
-                              style={{ left: `${(divider / 5) * 100}%` }}
-                            />
-                          ))}
-                        </div>
-                        <span
-                          className="absolute top-1/2 w-4.5 h-4.5 rounded-full bg-accent-light -translate-x-1/2 -translate-y-1/2 border-2 border-white shadow-sm"
-                          style={{ left: `${electronicDependencePosition(car.electronic_dependence)}%` }}
-                        />
-                      </div>
-                      <div className="flex justify-between text-label text-text-tertiary">
-                        <span>Fully analog</span>
-                        <span>Heavily electronic</span>
-                      </div>
-                      <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">{car.electronic_dependence_notes}</p>
                     </div>
-                  ) : (
-                    <div className="flex-1 text-body text-text-tertiary">{NA}</div>
-                  )}
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Electronic dependence — the bar, track segments, and
+                Fully analog/Heavily electronic labels always render,
+                even with no score entered (an empty bar, no indicator
+                dot). Only the marker dot and the notes paragraph are
+                conditional on actually having a score/note. Track
+                matches the scorecard bars above exactly (h-2
+                rounded-full bg-track); white divider lines split it
+                into 5 segments and the marker centers in whichever
+                segment matches the score. */}
+            <div className="pt-8 border-t border-border">
+              <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
+                <div className="w-45 shrink-0 text-body text-text-secondary">Electronic dependence</div>
+                <div className="flex-1">
+                  <div className="relative mt-3 mb-2">
+                    <div className="relative h-2 rounded-full bg-track overflow-hidden">
+                      {[1, 2, 3, 4].map(divider => (
+                        <span
+                          key={divider}
+                          className="absolute inset-y-0 w-0.5 bg-white"
+                          style={{ left: `${(divider / 5) * 100}%` }}
+                        />
+                      ))}
+                    </div>
+                    {car.electronic_dependence !== null && (
+                      <span
+                        className="absolute top-1/2 w-4.5 h-4.5 rounded-full bg-accent-light -translate-x-1/2 -translate-y-1/2 border-2 border-white shadow-sm"
+                        style={{ left: `${electronicDependencePosition(car.electronic_dependence)}%` }}
+                      />
+                    )}
+                  </div>
+                  <div className="flex justify-between text-body text-text-tertiary">
+                    <span>Fully analog</span>
+                    <span>Heavily electronic</span>
+                  </div>
+                  <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">
+                    {car.electronic_dependence_notes || 'Data unavailable'}
+                  </p>
                 </div>
               </div>
             </div>
-          ) : <Unavailable />}
+          </div>
         </FieldSection>
 
         {/* Market Data */}
-        <FieldSection id="market-data" label="Market Data">
-          {hasMarketSection ? (
-            <>
-              {car.desirability_tier && (
-                <div className="mb-5">
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Desirability Tier</div>
-                  <div className="flex gap-2 flex-wrap">
-                    {DESIRABILITY_TIERS.map(tier => (
-                      <span key={tier} className={`cursor-default ${tier === car.desirability_tier ? 'pill pill-active gap-1.5' : 'pill'}`}>
-                        {tier === car.desirability_tier && <SelectedCheck />}
-                        {tier}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">
-                    {DESIRABILITY_TIER_DEFINITIONS[car.desirability_tier]}
-                  </p>
-                </div>
-              )}
-              {car.value_trajectory && (
-                <div className="mb-5">
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Value Trajectory</div>
-                  <div className="flex gap-2 flex-wrap">
-                    {VALUE_TRAJECTORIES.map(t => (
-                      <span key={t.value} className={`cursor-default ${t.value === car.value_trajectory ? 'pill pill-active gap-1.5' : 'pill'}`}>
-                        {t.value === car.value_trajectory && <SelectedCheck />}
-                        {VALUE_TRAJECTORY_DISPLAY[t.value]}
-                      </span>
-                    ))}
-                  </div>
-                  <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">
-                    {VALUE_TRAJECTORY_DEFINITIONS[car.value_trajectory]}
-                  </p>
-                </div>
-              )}
-              {marketTiers.length > 0 && (
-                <div className="stat-grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] max-w-120 mb-5">
-                  {marketTiers.map(tier => (
-                    <div key={tier.label} className="stat-cell">
-                      <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1.5">
-                        {tier.label}
-                      </div>
-                      <div className="text-xl font-semibold text-accent-secondary tracking-heading">
-                        {formatMoney(tier.value)}
-                      </div>
+        <FieldSection id="market-data" label="Market Data" card subtext="Demand tier, price trend, and typical values by condition, based on recent sales data.">
+            <div className="mb-5">
+              <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Desirability Tier</div>
+              <div className="flex gap-2 flex-wrap">
+                {DESIRABILITY_TIERS.map(tier => {
+                  const isSelected = tier === car.desirability_tier
+                  const pillClass = isSelected ? 'pill pill-active gap-1.5' : car.desirability_tier ? 'pill' : 'pill text-text-tertiary'
+                  return (
+                    <span key={tier} className={`cursor-default text-body ${pillClass}`}>
+                      {isSelected && <SelectedCheck />}
+                      {tier}
+                    </span>
+                  )
+                })}
+              </div>
+              <p className="text-body text-text-secondary leading-relaxed mt-1.5 m-0">
+                {car.desirability_tier ? DESIRABILITY_TIER_DEFINITIONS[car.desirability_tier] : 'Data unavailable'}
+              </p>
+            </div>
+            <div className="mb-5 pt-8 border-t border-border">
+              <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Value Trajectory</div>
+              <div className="flex gap-2 flex-wrap">
+                {VALUE_TRAJECTORIES.map(t => {
+                  const isSelected = t.value === car.value_trajectory
+                  const pillClass = isSelected ? 'pill pill-active gap-1.5' : car.value_trajectory ? 'pill' : 'pill text-text-tertiary'
+                  return (
+                    <span key={t.value} className={`cursor-default text-body ${pillClass}`}>
+                      {isSelected && <SelectedCheck />}
+                      {VALUE_TRAJECTORY_DISPLAY[t.value]}
+                    </span>
+                  )
+                })}
+              </div>
+              <p className="text-body text-text-secondary leading-relaxed mt-1.5 m-0">
+                {car.value_trajectory ? VALUE_TRAJECTORY_DEFINITIONS[car.value_trajectory] : 'Data unavailable'}
+              </p>
+            </div>
+            <div className="pt-8 border-t border-border">
+              <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Price by condition</div>
+              {/* Plain divide-x, not .stat-grid's bg-border/gap-px card
+                  trick — that trick leaves the parent's own background
+                  color exposed wherever a cell doesn't fully cover it,
+                  which is exactly the stray padding/color bleed seen once
+                  this grid's own border/rounding got overridden to sit
+                  inside the Market Data card. divide-x draws a line only
+                  between cells, no parent fill involved. self-start
+                  keeps each cell sized to its own content instead of
+                  stretching to the row's full height, so the divider
+                  lines don't run taller than the label+value text. */}
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] max-w-120 mb-5 divide-x divide-border">
+                {marketTiers.map(tier => (
+                  <div key={tier.label} className="self-start px-4 first:pl-0">
+                    <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1.5">
+                      {tier.label}
                     </div>
-                  ))}
-                </div>
-              )}
-              {car.market_data?.notes && (
-                <p className="text-body text-text-secondary leading-relaxed max-w-150">
-                  {car.market_data.notes}
-                </p>
-              )}
-              {car.market_data?.as_of && (
-                <p className="text-label text-text-tertiary mt-2">
-                  Values as of {new Date(car.market_data.as_of).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}.
-                </p>
-              )}
-            </>
-          ) : <Unavailable />}
+                    <div className="text-xl font-semibold text-accent-secondary tracking-heading">
+                      {tier.value != null ? formatMoney(tier.value) : NA}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {car.market_data?.notes && (
+              <p className="text-body text-text-secondary leading-relaxed max-w-150">
+                {car.market_data.notes}
+              </p>
+            )}
+            {car.market_data?.as_of && (
+              <p className="text-label text-text-tertiary mt-2">
+                Values as of {new Date(car.market_data.as_of).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}.
+              </p>
+            )}
+        </FieldSection>
+
+        {/* Buyer's guide — Why it's worth it (was Claim to Fame), Callout,
+            and What to watch for (was Buyer's Guide), promoted here from
+            "Why collectors want it" in Owning One, which now holds only
+            the why_collectible prose. No eyebrows — same icon-circle +
+            name + description treatment as the Distinctions badges above.
+            Icon and name always render; only the description is
+            conditional (real content or "Data unavailable"). */}
+        <FieldSection id="buyers-guide" label="Buyer's guide" card subtext="What anyone seriously considering this car should know first.">
+          <div className="flex flex-col gap-6">
+            <div className="flex items-start gap-3">
+              <span className="w-10 h-10 mt-0.5 rounded-full bg-accent flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M16 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1 3 3 0 0 1-3 3 1 1 0 0 0 0 2 5 5 0 0 0 5-5V5a2 2 0 0 0-2-2z" />
+                  <path d="M5 3a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2 1 1 0 0 1 1 1 3 3 0 0 1-3 3 1 1 0 0 0 0 2 5 5 0 0 0 5-5V5a2 2 0 0 0-2-2z" />
+                </svg>
+              </span>
+              <div>
+                <div className="text-body font-semibold text-text-primary mb-0.5">Why it&apos;s worth it</div>
+                <div className="text-body text-text-secondary leading-relaxed">{car.claim_to_fame || 'Data unavailable'}</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="w-10 h-10 mt-0.5 rounded-full bg-accent flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1.3.5 2.6 1.5 3.5.8.8 1.3 1.5 1.5 2.5" />
+                  <path d="M9 18h6" />
+                  <path d="M10 22h4" />
+                </svg>
+              </span>
+              <div>
+                <div className="text-body font-semibold text-text-primary mb-0.5">Callout</div>
+                <div className="text-body text-text-secondary leading-relaxed">{car.callout || 'Data unavailable'}</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="w-10 h-10 mt-0.5 rounded-full bg-accent flex items-center justify-center shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0" />
+                  <circle cx="12" cy="12" r="3" />
+                </svg>
+              </span>
+              <div>
+                <div className="text-body font-semibold text-text-primary mb-0.5">What to watch for</div>
+                <div className="text-body text-text-secondary leading-relaxed">{car.buyers_flag || 'Data unavailable'}</div>
+              </div>
+            </div>
+          </div>
         </FieldSection>
       </TabSection>
 
       <TabSection id="the-story" label="The Story">
-        {/* What it's like — Character */}
-        <FieldSection id="character" label="What it's like" first>
-          {hasCharacter ? (
-            <div className="grid gap-8 grid-cols-[repeat(auto-fit,minmax(280px,1fr))]">
-              {car.driving_character && (
-                <div>
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Driving Character</div>
-                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.driving_character}</p>
-                </div>
-              )}
-              {car.design_notes && (
-                <div>
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Design</div>
-                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.design_notes}</p>
-                </div>
-              )}
-              {car.motorsport_pedigree && (
-                <div>
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Motorsport Pedigree</div>
-                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.motorsport_pedigree}</p>
-                </div>
-              )}
-              {car.cultural_notes && (
-                <div>
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">In Culture</div>
-                  <p className="text-body text-text-secondary leading-relaxed m-0">{car.cultural_notes}</p>
-                </div>
-              )}
-            </div>
+        {/* Driving Character, Design, Motorsport Pedigree, In Culture — 4
+            independent sections now, normalized to the same plain single-
+            column text-section treatment as every other field (Why
+            collectors want it, etc.), each with its own title and its own
+            independent "Data unavailable" fallback. Previously grouped
+            under one shared "What it's like" heading in a 2-column grid;
+            "What it's like" itself is gone from the view page. This is a
+            view-layer-only change — the edit page and CSV still group
+            these 4 fields under one "What it's like" section, so there's
+            now a deliberate view/edit divergence here (unlike the rest of
+            this page, which keeps view and edit labels 1:1). */}
+        <FieldSection id="driving-character" label="Driving Character" first>
+          {car.driving_character ? (
+            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.driving_character}</p>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        <FieldSection id="design" label="Design" divider={false}>
+          {car.design_notes ? (
+            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.design_notes}</p>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        <FieldSection id="motorsport-pedigree" label="Motorsport Pedigree" divider={false}>
+          {car.motorsport_pedigree ? (
+            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.motorsport_pedigree}</p>
+          ) : <Unavailable />}
+        </FieldSection>
+
+        <FieldSection id="in-culture" label="In Culture" divider={false}>
+          {car.cultural_notes ? (
+            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.cultural_notes}</p>
           ) : <Unavailable />}
         </FieldSection>
 
         {/* Where it comes from — Lineage */}
-        <FieldSection id="lineage" label="Where it comes from">
+        <FieldSection id="lineage" label="Where it comes from" divider={false} subtext="Related cars from the same manufacturer family, like platform siblings or shared-era relatives.">
           {relatedCars.length > 0 ? <RelationCards entries={relatedCars} /> : <Unavailable />}
         </FieldSection>
 
-        {/* Rivals */}
-        <FieldSection id="rivals" label="Rivals">
+        {/* Rivals — no rule line between this and Where it comes from above */}
+        <FieldSection id="rivals" label="Rivals" divider={false} subtext="Cars from other manufacturers that competed for the same buyers when new.">
           {rivalCars.length > 0 ? <RelationCards entries={rivalCars} /> : <Unavailable />}
         </FieldSection>
       </TabSection>
 
-      <TabSection id="owning-one" label="Owning One">
-        {/* Why collectors want it */}
+      <TabSection id="owning-one" label="Owning One" divider>
+        {/* Why collectors want it — just the why_collectible prose now;
+            Callout/Claim to Fame/Buyer's Guide moved to the new Highlights
+            section in Overview, right after Market Data. */}
         <FieldSection id="collectibility" label="Why collectors want it" first>
-          {hasCollectibility ? (
-            <>
-              {(car.callout || car.claim_to_fame) && (
-                <div className="flex gap-8 flex-wrap mb-5">
-                  {car.callout && (
-                    <div>
-                      <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Callout</div>
-                      <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
-                        {car.callout}
-                      </span>
-                    </div>
-                  )}
-                  {car.claim_to_fame && (
-                    <div>
-                      <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Claim to Fame</div>
-                      <span className="text-label font-semibold uppercase tracking-wide text-accent bg-accent-subtle px-3 py-1.5 rounded-full border border-accent-border">
-                        {car.claim_to_fame}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              )}
-              {car.why_collectible && (
-                <div className="max-w-170">
-                  {renderText(car.why_collectible)}
-                </div>
-              )}
-              {car.buyers_flag && (
-                <div className="mt-6 max-w-170 p-4 rounded-lg border border-accent-secondary-border bg-accent-secondary-subtle">
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Buyer&apos;s Guide</div>
-                  <p className="text-body text-text-secondary m-0">{car.buyers_flag}</p>
-                </div>
-              )}
-            </>
+          {car.why_collectible ? (
+            <div className="max-w-170">
+              {renderText(car.why_collectible)}
+            </div>
           ) : <Unavailable />}
         </FieldSection>
 
         {/* Which one to look for — variants + trims */}
-        <FieldSection id="variants-trims" label="Which one to look for">
+        <FieldSection id="variants-trims" label="Which one to look for" divider={false}>
           {hasVariantsTrims ? (
             <>
               {car.variants_to_know && (
-                <p className="text-body text-text-secondary leading-relaxed max-w-170 mb-6">
+                <p className="text-paragraph text-text-secondary leading-relaxed max-w-170 mb-6">
                   {car.variants_to_know}
                 </p>
               )}
@@ -479,25 +554,25 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         </FieldSection>
 
         {/* What owning one is like — Known Issues */}
-        <FieldSection id="known-issues" label="What owning one is like">
+        <FieldSection id="known-issues" label="What owning one is like" divider={false}>
           {car.known_issues ? (
-            <p className="text-body text-text-secondary leading-relaxed max-w-170 m-0">{car.known_issues}</p>
+            <p className="text-paragraph text-text-secondary leading-relaxed max-w-170 m-0">{car.known_issues}</p>
           ) : <Unavailable />}
         </FieldSection>
 
         {/* Upkeep & Parts — Maintenance */}
-        <FieldSection id="upkeep-parts" label="Upkeep & Parts">
+        <FieldSection id="upkeep-parts" label="Upkeep & Parts" divider={false}>
           {car.maintenance ? (
-            <div className="max-w-170 prose">
+            <div className="max-w-170">
               {renderText(car.maintenance)}
             </div>
           ) : <Unavailable />}
         </FieldSection>
 
         {/* Resources */}
-        <FieldSection id="resources" label="Resources">
+        <FieldSection id="resources" label="Resources" divider={false}>
           {car.resources?.length > 0 ? (
-            <div className="flex flex-col gap-2 max-w-120">
+            <div className="flex flex-col gap-2">
               {car.resources.map(r => (
                 <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer" className="flex items-center justify-between px-4 py-3 bg-white border border-border rounded-lg no-underline transition-colors gap-3">
                   <div>

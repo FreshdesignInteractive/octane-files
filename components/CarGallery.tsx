@@ -90,7 +90,7 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
                 onClick={() => setSelected(i)}
                 aria-label={`Show photo ${i + 1}`}
                 aria-current={i === selected}
-                className={`relative flex-1 min-h-0 rounded-2xl overflow-hidden p-0 cursor-pointer transition-colors border-[1.5px] ${
+                className={`relative flex-1 min-h-0 rounded-2xl overflow-hidden p-0 cursor-pointer transition-colors border-active ${
                   i === selected ? 'border-accent' : 'border-transparent'
                 }`}
               >

@@ -61,7 +61,7 @@ const SOCIAL_LINKS = [
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-border bg-bg-elevated px-6 pt-8 pb-7">
+    <footer className="border-t border-border-subtle bg-bg-elevated px-6 pt-8 pb-7">
       <div className="site-container flex flex-col items-center gap-5">
 
         {/* Nav links */}
@@ -90,7 +90,7 @@ export default function SiteFooter() {
         </div>
 
         {/* Copyright */}
-        <p className="text-sm text-text-tertiary m-0">
+        <p className="text-label text-text-tertiary m-0">
           &copy; {new Date().getFullYear()} All Rights Reserved, Freshdesign Interactive, Inc.
         </p>
       </div>

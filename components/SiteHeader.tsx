@@ -188,7 +188,7 @@ function AvatarMenu({ profile, isAdmin, onSignOut }: { profile: NonNullable<Prof
       </button>
 
       {open && (
-        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] right-0 bg-white rounded-xl shadow-dropdown min-w-[200px] z-[var(--z-overlay)] overflow-hidden">
+        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] right-0 bg-white rounded-xl shadow-dropdown min-w-50 z-[var(--z-overlay)] overflow-hidden">
           <div className="p-4 text-sm font-semibold text-text-primary">
             {profile.display_name ?? profile.username}
           </div>
@@ -285,7 +285,7 @@ export default function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-50 border-b border-border bg-white">
+      <header className="sticky top-0 z-50 border-b border-border-subtle bg-white">
         <div className="w-full px-10 h-14 flex items-center gap-4">
           {/* Logo — always icon mark */}
           <Link href="/" className="flex items-center no-underline flex-shrink-0">

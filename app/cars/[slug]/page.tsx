@@ -148,7 +148,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               height instead of stretching to match the main column (grid's
               default stretch), which would leave it no room to actually
               stick. */}
-          <div className="flex flex-col gap-4 mt-6 order-first lg:order-none lg:sticky lg:top-[152px] lg:self-start">
+          <div className="flex flex-col gap-4 mt-6 order-first lg:order-none lg:sticky lg:top-38 lg:self-start">
             {/* Cards keep their own gap-8 (32px) between each other; the
                 outer gap-4 (16px) only applies below, between this group
                 and the report-a-mistake text. */}
@@ -198,7 +198,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 {([
                   {
                     label: 'Nickname',
-                    value: car.nickname || NA,
+                    value: car.nickname || 'Data unavailable',
                     icon: (
                       <>
                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
@@ -208,7 +208,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   },
                   {
                     label: 'Body',
-                    value: car.body_styles?.length ? car.body_styles.join(', ') : NA,
+                    value: car.body_styles?.length ? car.body_styles.join(', ') : 'Data unavailable',
                     icon: (
                       <>
                         <path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8" />
@@ -226,7 +226,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                     // car is laid out" question, and drivetrain is
                     // meaningless without knowing where the engine sits.
                     label: 'Layout',
-                    value: [car.engine_layout, car.drivetrain].filter(Boolean).join(', ') || NA,
+                    value: [car.engine_layout, car.drivetrain].filter(Boolean).join(', ') || 'Data unavailable',
                     icon: (
                       <>
                         <rect x="2" y="2" width="3" height="6" rx="1" />
@@ -244,7 +244,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   },
                   {
                     label: 'Engine',
-                    value: car.engine_signature || NA,
+                    value: car.engine_signature || 'Data unavailable',
                     icon: (
                       <>
                         <path d="M6 10 L8 7 L17 7 L19 10 L19 12 L22 12 L22 16 L19 16 L19 18 L17 21 L8 21 L6 18 Z" />
@@ -258,7 +258,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   },
                   {
                     label: 'Transmission',
-                    value: car.transmission || NA,
+                    value: car.transmission || 'Data unavailable',
                     icon: (
                       <>
                         <path d="M3 6 L16 6 L16 9 L19 9 L19 11 L22 11 L22 13 L19 13 L19 15 L16 15 L16 18 L9 18 L9 20 L5 20 L5 18 L3 18 Z" />
@@ -267,7 +267,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   },
                   {
                     label: 'Designer',
-                    value: car.designer || NA,
+                    value: car.designer || 'Data unavailable',
                     icon: (
                       <>
                         <circle cx="12" cy="12" r="10" />

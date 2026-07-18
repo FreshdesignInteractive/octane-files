@@ -52,7 +52,7 @@ export default function SignInDialog({ onClose }: { onClose: () => void }) {
     >
       <div
         onClick={e => e.stopPropagation()}
-        className="bg-white rounded-2xl pt-9 px-8 pb-8 w-full max-w-[400px] relative shadow-modal"
+        className="bg-white rounded-2xl pt-9 px-8 pb-8 w-full max-w-100 relative shadow-modal"
       >
         {/* Close */}
         <button

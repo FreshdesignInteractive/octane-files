@@ -110,7 +110,7 @@ export default function CarGrid() {
         </div>
       )}
 
-      <p className="text-center mt-5 text-xs text-text-tertiary">
+      <p className="text-center mt-5 text-label text-text-tertiary">
         Showing {cars.length} of {total}
       </p>
     </div>

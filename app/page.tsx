@@ -12,7 +12,7 @@ export default function HomePage() {
     <>
       <SiteHeader />
       <main className="flex-1">
-        <section className="border-b border-border bg-bg-elevated py-5">
+        <section className="border-b border-border-subtle bg-bg-subtle py-5">
           <div className="site-container">
             <Suspense>
               <FilterBar />

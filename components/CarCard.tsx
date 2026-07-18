@@ -24,8 +24,8 @@ export default function CarCard({ car }: { car: CarCardEntry }) {
           />
         </div>
         <div className="p-4">
-          <h3 className="text-base font-bold text-text-primary leading-tight mb-1.5 truncate">{car.title}</h3>
-          <div className="text-xs text-text-tertiary">Data unavailable</div>
+          <h3 className="text-paragraph font-bold text-text-primary leading-tight mb-1.5 truncate">{car.title}</h3>
+          <div className="text-body text-text-tertiary">Data unavailable</div>
         </div>
       </article>
     )
@@ -54,13 +54,13 @@ export default function CarCard({ car }: { car: CarCardEntry }) {
 
         {/* Info */}
         <div className="p-4">
-          <h3 className="text-base font-bold text-text-primary leading-tight mb-1.5 truncate">
+          <h3 className="text-paragraph font-bold text-text-primary leading-tight mb-1.5 truncate">
             {car.make} {car.model}
             {car.generation && car.generation.toLowerCase() !== car.model.toLowerCase() && (
-              <span className="text-text-secondary font-normal text-sm"> {car.generation}</span>
+              <span className="text-text-secondary font-normal text-paragraph"> {car.generation}</span>
             )}
           </h3>
-          <div className="text-xs text-text-tertiary flex gap-2 flex-wrap">
+          <div className="text-body text-text-tertiary flex gap-2 flex-wrap">
             <span>{car.country}</span>
             {car.class && (
               <>
