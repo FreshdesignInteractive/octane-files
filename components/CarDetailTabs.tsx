@@ -8,6 +8,16 @@ function formatMoney(n: number) {
   return n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`
 }
 
+// Electronic dependence marker position (% from left) — the two endpoints
+// (Fully analog / Heavily electronic) sit flush against the bar's edges,
+// not centered in their segment like the 3 middle ranks, since those are
+// the actual ends of the spectrum rather than a band along it.
+function electronicDependencePosition(v: number): number {
+  if (v === 1) return 0
+  if (v === 5) return 100
+  return ((v - 0.5) / 5) * 100
+}
+
 // Every section/stat always renders now — never conditionally hidden — so
 // this is the one, single fallback used wherever a given car just doesn't
 // have that data yet, instead of each section inventing its own wording.
@@ -233,9 +243,9 @@ export default function CarDetailTabs({ car }: { car: Car }) {
                       <div key={axis.key} className="flex flex-col sm:flex-row sm:items-center gap-1.5 sm:gap-4">
                         <div className="w-45 shrink-0 text-body text-text-secondary">{axis.label}</div>
                         <div className="flex-1 flex items-center gap-4">
-                          <div className="flex-1 h-2 rounded-full bg-border-mid overflow-hidden">
+                          <div className="flex-1 h-2 rounded-full bg-track overflow-hidden">
                             {score !== null && (
-                              <div className="h-full rounded-full bg-accent-secondary" style={{ width: `${score * 10}%` }} />
+                              <div className="h-full rounded-full bg-accent-light" style={{ width: `${score * 10}%` }} />
                             )}
                           </div>
                           <div className="w-12 shrink-0 text-right text-body text-text-tertiary">
@@ -249,28 +259,34 @@ export default function CarDetailTabs({ car }: { car: Car }) {
               </div>
 
               {/* Electronic dependence — a position on a spectrum, not a
-                  rated amount, so the track is a plain line (no fill) with
-                  tick marks and a single dot, not a progress bar. A
-                  position with no note renders as unscored, same as fully
-                  null — an unexplained position is exactly the failure
-                  mode this design exists to avoid (the admin form nudges
-                  toward always pairing the two). */}
+                  rated amount, so the track is 5 equal grey segments (no
+                  fill/progress implied) with a single marker dot, not a
+                  progress bar. Track matches the scorecard bars above
+                  exactly (h-2 rounded-full bg-track); white divider
+                  lines split it into 5 segments and the marker centers
+                  in whichever segment matches the score. A position with
+                  no note renders as unscored, same as fully null — an
+                  unexplained position is exactly the failure mode this
+                  design exists to avoid (the admin form nudges toward
+                  always pairing the two). */}
               <div className="pt-8 border-t border-border">
                 <div className="flex flex-col sm:flex-row sm:items-start gap-1.5 sm:gap-4">
                   <div className="w-45 shrink-0 text-body text-text-secondary">Electronic dependence</div>
                   {car.electronic_dependence !== null && car.electronic_dependence_notes ? (
                     <div className="flex-1">
-                      <div className="relative h-px bg-border-mid mt-3 mb-2">
-                        {[1, 2, 3, 4, 5].map(pos => (
-                          <span
-                            key={pos}
-                            className="absolute top-1/2 w-1.5 h-1.5 rounded-full bg-border-mid -translate-x-1/2 -translate-y-1/2"
-                            style={{ left: `${((pos - 1) / 4) * 100}%` }}
-                          />
-                        ))}
+                      <div className="relative mt-3 mb-2">
+                        <div className="relative h-2 rounded-full bg-track overflow-hidden">
+                          {[1, 2, 3, 4].map(divider => (
+                            <span
+                              key={divider}
+                              className="absolute inset-y-0 w-0.5 bg-white"
+                              style={{ left: `${(divider / 5) * 100}%` }}
+                            />
+                          ))}
+                        </div>
                         <span
-                          className="absolute top-1/2 w-3 h-3 rounded-full bg-accent-secondary -translate-x-1/2 -translate-y-1/2"
-                          style={{ left: `${((car.electronic_dependence - 1) / 4) * 100}%` }}
+                          className="absolute top-1/2 w-4.5 h-4.5 rounded-full bg-accent-light -translate-x-1/2 -translate-y-1/2 border-2 border-white shadow-sm"
+                          style={{ left: `${electronicDependencePosition(car.electronic_dependence)}%` }}
                         />
                       </div>
                       <div className="flex justify-between text-label text-text-tertiary">
@@ -297,7 +313,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
                   <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Desirability Tier</div>
                   <div className="flex gap-2 flex-wrap">
                     {DESIRABILITY_TIERS.map(tier => (
-                      <span key={tier} className={tier === car.desirability_tier ? 'pill pill-active gap-1.5' : 'pill'}>
+                      <span key={tier} className={`cursor-default ${tier === car.desirability_tier ? 'pill pill-active gap-1.5' : 'pill'}`}>
                         {tier === car.desirability_tier && <SelectedCheck />}
                         {tier}
                       </span>
@@ -313,7 +329,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
                   <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Value Trajectory</div>
                   <div className="flex gap-2 flex-wrap">
                     {VALUE_TRAJECTORIES.map(t => (
-                      <span key={t.value} className={t.value === car.value_trajectory ? 'pill pill-active gap-1.5' : 'pill'}>
+                      <span key={t.value} className={`cursor-default ${t.value === car.value_trajectory ? 'pill pill-active gap-1.5' : 'pill'}`}>
                         {t.value === car.value_trajectory && <SelectedCheck />}
                         {VALUE_TRAJECTORY_DISPLAY[t.value]}
                       </span>

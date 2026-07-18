@@ -16,7 +16,9 @@
   --color-text-tertiary:  #555555;
   --color-border:         #dee2e6; /* metallic divider/card border, was #e8e8e8 */
   --color-border-mid:     #d0d0d0;
+  --color-track:          #b3b3b3; /* score/progress bar backgrounds (radar bars, electronic dependence) — a step darker than border-mid */
   --color-accent:                    #1b4332; /* British Racing Green — primary action color */
+  --color-accent-light:              #2f6f52; /* lighter solid green for bar/dot fills — accent itself reads near-black at thin widths */
   --color-accent-dim:                #143225; /* hover */
   --color-accent-pressed:            #081c15; /* active/pressed */
   --color-accent-subtle:             rgb(27 67 50 / 0.1);

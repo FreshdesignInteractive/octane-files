@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import ScrollReveal from '@/components/ScrollReveal'
@@ -11,12 +12,32 @@ export const metadata = {
   description: 'A curated encyclopedia of collector cars. Why each one matters, which to look for, and what owning one is really like. Every number verified.',
 }
 
-const HERO_LINES = [
-  'The car on your bedroom wall.',
-  'The one your father kept under a cover.',
-  'The one you sold when life got practical, then spent twenty years tracking down.',
-  'You never got over it.',
-  'You were never supposed to.',
+const HERO_LINES: { line: string; image?: string; alt?: string }[] = [
+  {
+    line: 'The car on your bedroom wall.',
+    image: '/about-pic-1.webp',
+    alt: 'A poster of a classic car on a bedroom wall, the kind every collector remembers staring at.',
+  },
+  {
+    line: 'The one your father kept under a cover.',
+    image: '/about-pic-2.webp',
+    alt: 'A car under a cover in a home garage, the cover half pulled back.',
+  },
+  {
+    line: 'The one you sold when life got practical, then spent twenty years tracking down.',
+    image: '/about-pic-3.webp',
+    alt: 'A faded snapshot-style photo of a classic car in a driveway.',
+  },
+  {
+    line: 'You never got over it.',
+    image: '/about-pic-4.webp',
+    alt: 'A close-up detail shot, hands on the wheel of a classic car.',
+  },
+  {
+    line: 'You were never supposed to.',
+    image: '/about-pic-5.webp',
+    alt: 'The same classic car, uncovered and out on the road.',
+  },
 ]
 
 const VALUE_CARDS = [
@@ -92,17 +113,22 @@ export default async function AboutPage() {
 
         {/* ── Section 1 — Hero ──────────────────────────────────────────
             One 16:9 card per line, same detail-container/1120px content
-            width as every other section on this page. No photo assets
-            yet — bg-text-primary (an existing token, not a new one) is
-            the placeholder fill so the card boundary is visible; swap
-            each one for a real <Image> (next/image, object-cover) plus
-            alt text once photos are sourced. */}
+            width as every other section on this page. Cards without a
+            photo yet keep bg-text-primary (an existing token) as a
+            placeholder fill so the boundary is visible; swap each one for
+            a real photo + alt text as they're sourced. */}
         <section className="detail-container py-16 sm:py-20">
           <div className="flex flex-col gap-12">
-            {HERO_LINES.map(line => (
+            {HERO_LINES.map(({ line, image, alt }) => (
               <ScrollReveal key={line}>
                 <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-text-primary flex items-center justify-center p-6 sm:p-10">
-                  <p className="text-hero font-bold text-white text-center max-w-160 m-0">
+                  {image && (
+                    <>
+                      <Image src={image} alt={alt ?? ''} fill className="object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-overlay to-transparent" />
+                    </>
+                  )}
+                  <p className="relative text-hero font-bold text-white text-center m-0">
                     {line}
                   </p>
                 </div>
