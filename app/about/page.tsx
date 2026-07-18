@@ -1,47 +1,237 @@
 import Link from 'next/link'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
+import ScrollReveal from '@/components/ScrollReveal'
+import { getLiveCarCount } from '@/lib/supabase'
+
+export const revalidate = 3600
 
 export const metadata = { title: 'About Us — Octane Files' }
 
-export default function AboutPage() {
+const HERO_LINES = [
+  'The car on your bedroom wall.',
+  'The one your father kept under a cover.',
+  'The one you sold when life got practical, then spent twenty years tracking down.',
+  'You never got over it.',
+  'You were never supposed to.',
+]
+
+const VALUE_CARDS = [
+  {
+    title: 'Why it matters',
+    line: 'The case for the car. The story, not a restated spec sheet.',
+    icon: (
+      <>
+        <path d="M12 7v14" />
+        <path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z" />
+      </>
+    ),
+  },
+  {
+    title: 'Which one to look for',
+    line: 'The variants and trims that matter, ranked.',
+    icon: (
+      <>
+        <path d="m12.83 2.18 8.58 3.9a1 1 0 0 1 0 1.83l-8.58 3.91a2 2 0 0 1-1.66 0L2.6 8.09a1 1 0 0 1 0-1.83l8.58-3.9a2 2 0 0 1 1.66 0z" />
+        <path d="m6.08 9.5-3.5 1.6a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.6" />
+        <path d="m6.08 14.5-3.5 1.6a1 1 0 0 0 0 1.83l8.58 3.9a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83l-3.5-1.6" />
+      </>
+    ),
+  },
+  {
+    title: 'What owning one is like',
+    line: 'What breaks, what it costs, what to expect. Stated plainly.',
+    icon: (
+      <>
+        <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z" />
+      </>
+    ),
+  },
+  {
+    title: 'How it scores',
+    line: 'Eight scores per car. Honest, not flattering.',
+    icon: (
+      <>
+        <line x1="18" x2="18" y1="20" y2="10" />
+        <line x1="12" x2="12" y1="20" y2="4" />
+        <line x1="6" x2="6" y1="20" y2="14" />
+      </>
+    ),
+  },
+]
+
+const PROCESS_STEPS = [
+  {
+    step: '1. Research',
+    line: 'Marque authorities first: NCRS for Corvettes, Marti Reports for Fords, Galen Govier for Mopars. Not the first search result.',
+  },
+  {
+    step: '2. Verify',
+    line: 'Every production figure, date, and price checked this session or written around. When sources disagree, we say so on the page.',
+  },
+  {
+    step: '3. Write',
+    line: 'Original prose, written to be read. The Ford fracture, not "hand crank quirks."',
+  },
+  {
+    step: '4. Review',
+    line: 'AI helps research and draft. A human reads every page before it ships.',
+  },
+]
+
+export default async function AboutPage() {
+  const carCount = await getLiveCarCount()
+
   return (
     <>
       <SiteHeader />
-      <main className="detail-container pt-15 pb-20 flex-1">
-        <div className="max-w-180">
-          <h1 className="text-heading font-bold mb-2">
-            Every Car Has a Story. We&apos;re Just Here to Help You Keep It.
-          </h1>
+      <main className="flex-1">
 
-          <div className="prose mt-8">
-            <p>
-              You know the feeling — spotting a numbers-matching engine bay from across a parking
-              lot, or losing a Saturday chasing a date-coded part down a forum thread from 2014.
-              Collector cars carry history you can touch: the Charger that sat under a carport for
-              twenty years before it came home, the title with a name on it you had to track down
-              through three states. Every car has a story. Anyone who&apos;s brought one back wants
-              to get that story right.
+        {/* ── Section 1 — Hero ──────────────────────────────────────────
+            Full-bleed. No photo asset yet — this needs a real, rights-
+            cleared photo (owned/licensed/owner-submitted) per the brief;
+            nothing scraped or stock. Placeholder background stands in
+            until that file exists; the scrim below is already sized for
+            a photo, not just a flat color, so dropping the image in later
+            is a one-line change. */}
+        <section className="relative w-full bg-bg-elevated">
+          {/* TODO: replace with a real <Image> (next/image) once the hero
+              photo is supplied — a warm, personal shot, e.g. a car under a
+              cover in a home garage with the cover half pulled back, or a
+              faded snapshot-style photo in a 1970s driveway. Add a
+              bg-gradient-to-t from-black/60 scrim over it for text
+              legibility once it's a photo rather than a flat color. */}
+          {HERO_LINES.map((line, i) => (
+            <div key={i} className="min-h-[70vh] flex items-center justify-center px-6">
+              <ScrollReveal>
+                <p className="text-hero font-bold text-text-primary text-center max-w-220 m-0">
+                  {line}
+                </p>
+              </ScrollReveal>
+            </div>
+          ))}
+        </section>
+
+        {/* ── Section 2 — The reveal ────────────────────────────────── */}
+        <section className="detail-container py-20">
+          <ScrollReveal className="max-w-180 mx-auto text-center">
+            <h2 className="text-hero font-bold text-text-primary mb-6">
+              Every car here earned its page.
+            </h2>
+            <p className="text-paragraph text-text-secondary leading-relaxed">
+              Octane Files is a curated encyclopedia of collector cars. Not every car
+              ever made, but the ones people never got over, and everything actually
+              worth knowing about them. Written to be read, not skimmed. Built for the
+              evening you sit down to look one thing up and lose track of time.
             </p>
-            <p>
-              That&apos;s what Octane Files is for — a place to keep your car&apos;s history
-              straight. Build details, provenance, parts, photos, the paper trail behind what you
-              already know in your gut. Not a spec sheet. A record worth handing down.
+          </ScrollReveal>
+        </section>
+
+        {/* ── Section 3 — What you'll find ──────────────────────────── */}
+        <section className="detail-container py-20">
+          <ScrollReveal>
+            <p className="text-paragraph text-text-secondary text-center max-w-160 mx-auto mb-12">
+              The spec sheets are everywhere. The judgment isn&apos;t. Every page gives you:
             </p>
-            <p>
-              We use a bit of AI in the background to take the busywork out of putting it
-              together. The story&apos;s still yours — we just help you get it down faster.
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {VALUE_CARDS.map(card => (
+                <div
+                  key={card.title}
+                  id={card.title === 'How it scores' ? 'how-it-scores' : undefined}
+                  className="bg-white border border-border rounded-2xl p-6"
+                >
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-accent mb-4">
+                    {card.icon}
+                  </svg>
+                  <div className="text-body font-semibold text-text-primary mb-1.5">{card.title}</div>
+                  <p className="text-body text-text-secondary leading-relaxed m-0">{card.line}</p>
+                </div>
+              ))}
+            </div>
+          </ScrollReveal>
+        </section>
+
+        {/* ── Section 4 — How a page gets made ──────────────────────── */}
+        <section className="detail-container py-20">
+          <ScrollReveal>
+            <h2 className="text-hero font-bold text-text-primary text-center max-w-180 mx-auto mb-12">
+              If we state a number, we verified it.
+            </h2>
+            <div className="bg-bg-elevated border border-border rounded-2xl p-8 sm:p-10">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+                {PROCESS_STEPS.map((s, i) => (
+                  <div key={s.step} className={i > 0 ? 'sm:border-l sm:border-border sm:pl-8' : ''}>
+                    <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-2">{s.step}</div>
+                    <p className="text-body text-text-secondary leading-relaxed m-0">{s.line}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <p className="text-body text-text-secondary text-center mt-8">
+              Spot something wrong? <Link href="/contact" className="text-accent">Tell us.</Link> We&apos;d rather fix it than defend it.
             </p>
-            <p>
-              Based in San Jose, California. Building this one car, one owner, at a time.
-            </p>
-            <p>
-              <strong>
-                Got a car worth documenting? <Link href="/contact">Get in touch.</Link>
-              </strong>
-            </p>
+          </ScrollReveal>
+        </section>
+
+        {/* ── Section 5 — Stats band ────────────────────────────────── */}
+        <section className="w-full bg-bg-elevated border-t border-b border-border">
+          <div className="detail-container py-16">
+            <ScrollReveal>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-10 text-center">
+                <div>
+                  <div className="text-hero font-bold text-accent-secondary tracking-heading">{carCount}<sup className="text-label align-super">1</sup></div>
+                  <p className="text-body text-text-secondary mt-2 mb-0">Cars in the encyclopedia, each chosen on purpose</p>
+                </div>
+                <div>
+                  <div className="text-hero font-bold text-accent-secondary tracking-heading">8<sup className="text-label align-super">2</sup></div>
+                  <p className="text-body text-text-secondary mt-2 mb-0">Dimensions scored on every car, rarity to driving thrill</p>
+                </div>
+                <div>
+                  <div className="text-hero font-bold text-accent-secondary tracking-heading">1<sup className="text-label align-super">3</sup></div>
+                  <p className="text-body text-text-secondary mt-2 mb-0">Rule: if we state a number, we verified it</p>
+                </div>
+              </div>
+              <div className="flex flex-col items-center gap-1 mt-8 text-label text-text-tertiary">
+                <p className="m-0">1. Live catalog count.</p>
+                <p className="m-0"><a href="#how-it-scores" className="text-text-tertiary">2. See how we score.</a></p>
+                <p className="m-0">3. No exceptions.</p>
+              </div>
+            </ScrollReveal>
           </div>
-        </div>
+        </section>
+
+        {/* ── Section 6 — Where we're going ─────────────────────────── */}
+        <section className="detail-container py-20">
+          <ScrollReveal className="max-w-160 mx-auto text-center">
+            <h2 className="text-body font-bold text-text-primary uppercase tracking-widest mb-3">
+              The encyclopedia is where we start.
+            </h2>
+            <p className="text-body text-text-secondary leading-relaxed">
+              We&apos;re building Octane Files into the place collector car enthusiasts go
+              first. For knowledge now, and for more down the road.
+            </p>
+          </ScrollReveal>
+        </section>
+
+        {/* ── Section 7 — Closing CTA ───────────────────────────────── */}
+        <section className="w-full bg-bg-elevated border-t border-border">
+          <div className="detail-container py-16 flex flex-col items-center gap-6 text-center">
+            <ScrollReveal className="flex flex-col items-center gap-6">
+              <p className="text-hero font-bold text-text-primary m-0">
+                Start with the car you never got over.
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-4">
+                <Link href="/" className="btn-primary h-11 px-6">Explore the encyclopedia</Link>
+                <Link href="/contact" className="btn-secondary h-11 px-6">Report a mistake</Link>
+              </div>
+            </ScrollReveal>
+          </div>
+        </section>
+
+        {/* ── Section 8 — Footer line ───────────────────────────────── */}
+        <p className="text-label text-text-tertiary text-center py-6 m-0">
+          Based in San Jose, California.
+        </p>
       </main>
       <SiteFooter />
     </>

@@ -105,7 +105,7 @@ export default function GenerationFieldsEditor({
         <div className="flex gap-6 mt-4">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={value.is_icon} onChange={e => onChange({ is_icon: e.target.checked })} />
-            <span className="text-body text-text-secondary">Icon</span>
+            <span className="text-body text-text-secondary">Legend</span>
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={value.homologation_special} onChange={e => onChange({ homologation_special: e.target.checked })} />

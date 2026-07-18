@@ -233,6 +233,17 @@ export async function getModelSlugs(): Promise<string[]> {
   return (data ?? []).map((r) => r.slug)
 }
 
+// Live catalog count for the About page's stats band — never hardcode that
+// figure, it drifts every time a car is added or archived.
+export async function getLiveCarCount(): Promise<number> {
+  const db = buildClient()
+  const { count } = await db
+    .from('generations')
+    .select('id', { count: 'exact', head: true })
+    .is('archived_at', null)
+  return count ?? 0
+}
+
 export async function createModel(model: Omit<Model, 'id' | 'created_at' | 'updated_at'>): Promise<Model> {
   const db = await createClient()
   const { data, error } = await db

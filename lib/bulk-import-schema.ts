@@ -130,7 +130,7 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'class', header: 'Class', type: 'enum', allowedValues: CAR_CLASSES.map(c => c.value) },
   { key: 'units_produced', header: 'UnitsProduced', type: 'integer' },
   { key: 'units_produced_estimated', header: 'UnitsProducedEstimated', type: 'boolean' },
-  { key: 'is_icon', header: 'IsIcon', type: 'boolean' },
+  { key: 'is_icon', header: 'IsLegend', type: 'boolean', legacyHeaders: ['IsIcon'] },
   { key: 'homologation_special', header: 'HomologationSpecial', type: 'boolean' },
   { key: 'poster_car', header: 'PosterCar', type: 'boolean' },
   { key: 'body_styles', header: 'BodyStyles', type: 'enum_array', allowedValues: BODY_STYLES },

@@ -198,14 +198,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 {([
                   {
                     label: 'Nickname',
-                    value: (
-                      <span className="inline-flex items-center gap-2 flex-wrap">
-                        <span>{car.nickname || NA}</span>
-                        {car.is_icon && <span className="pill pill-active">★ Icon</span>}
-                        {car.homologation_special && <span className="pill pill-active">Homologation Special</span>}
-                        {car.poster_car && <span className="pill pill-active">Poster Car</span>}
-                      </span>
-                    ),
+                    value: car.nickname || NA,
                     icon: (
                       <>
                         <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />

@@ -1,5 +1,5 @@
 import CarCard from '@/components/CarCard'
-import { RADAR_AXES } from '@/lib/car-schema'
+import { RADAR_AXES, DESIRABILITY_TIERS, VALUE_TRAJECTORIES } from '@/lib/car-schema'
 import type { Car, CarRelation } from '@/lib/types'
 
 const NA = '—'
@@ -32,18 +32,35 @@ function Unavailable() {
 function TabSection({ id, label, first, children }: { id: string; label: string; first?: boolean; children: React.ReactNode }) {
   return (
     <section id={id} className={`scroll-mt-40 ${first ? 'mt-6' : 'border-t border-border pt-10 mt-10'}`}>
-      <h2 className="text-lg font-bold text-text-primary tracking-tight mb-6">{label}</h2>
+      <h2 className="text-lg font-bold text-text-primary tracking-tight mb-5">{label}</h2>
       {children}
     </section>
   )
 }
 
-function FieldSection({ id, label, first, children }: { id: string; label: string; first?: boolean; children: React.ReactNode }) {
+// label is optional — Introduction omits it deliberately (its text sits
+// directly under the "Overview" tab heading with no sub-heading of its
+// own), everything else still passes one. The field itself keeps its
+// label in the database, edit page, and CSV — this only hides it here.
+function FieldSection({ id, label, first, children }: { id: string; label?: string; first?: boolean; children: React.ReactNode }) {
   return (
     <div id={id} className={`scroll-mt-40 ${first ? '' : 'border-t border-border pt-8 mt-8'}`}>
-      <h3 className="text-sm font-bold text-text-primary tracking-tight mb-4">{label}</h3>
+      {label && <h3 className="text-sm font-bold text-text-primary tracking-tight mb-4">{label}</h3>}
       {children}
     </div>
+  )
+}
+
+// Marks the selected step in the Desirability Tier / Value Trajectory rows
+// below — shown alongside the trajectory arrow (↗/→/↘) rather than
+// replacing it, since the arrow encodes real direction info distinct from
+// "this is the car's actual value," not just a selection indicator.
+function SelectedCheck() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 24 24">
+      <circle cx="12" cy="12" r="10" fill="currentColor" className="text-white" />
+      <path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent" />
+    </svg>
   )
 }
 
@@ -61,27 +78,64 @@ function RelationCards({ entries }: { entries: CarRelation[] }) {
   )
 }
 
+// Fixed site copy, not per-car data — same definition for every car that
+// earns a given distinction, so this lives in code rather than as
+// per-row DB text (mirrors DESIRABILITY_TIER_DEFINITIONS below). Icons are
+// stroked white to sit inside a filled accent circle (see the Distinctions
+// FieldSection) rather than the plain currentColor-stroke style the
+// sidebar's fact-row icons use.
+const DISTINCTIONS: { key: 'is_icon' | 'homologation_special' | 'poster_car'; name: string; definition: string; icon: React.ReactNode }[] = [
+  {
+    key: 'is_icon',
+    name: 'Legend',
+    definition: 'A car that transcended the hobby, known far beyond the people who drive them.',
+    icon: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />,
+  },
+  {
+    key: 'homologation_special',
+    name: 'Homologation Special',
+    definition: 'Built for the road only because racing rules demanded it.',
+    icon: (
+      <>
+        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
+        <line x1="4" y1="22" x2="4" y2="15" />
+      </>
+    ),
+  },
+  {
+    key: 'poster_car',
+    name: 'Poster Car',
+    definition: 'The car on the bedroom wall, the one people dreamed about before they could drive.',
+    icon: (
+      <>
+        <path d="M12 17v5" />
+        <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
+      </>
+    ),
+  },
+]
+
 const VALUE_TRAJECTORY_DISPLAY: Record<string, string> = {
   appreciating: '↗ Appreciating',
   stable: '→ Stable',
   cooling: '↘ Cooling',
 }
 
-// Fixed UI copy, not per-car data — same one-liner for every car with a
-// given tier/trajectory, so this lives in code (shown as a title tooltip
-// on the badge) rather than as a DB column that would just repeat itself
-// across ~217 rows.
-const DESIRABILITY_TIER_EXPLAINER: Record<string, string> = {
-  'Blue-chip': 'Established at the top of the market. Values are set by rarity and provenance, not condition alone.',
-  'High': 'Strongly desirable and well-established, below the very top tier.',
-  'Solid': 'Genuinely collectible with a real following; accessible entry to the hobby.',
-  'Entry': 'The affordable way in. Values driven by condition more than scarcity.',
+// Fixed site copy, not per-car data — same definition for every car with a
+// given tier/trajectory, rendered visibly next to the pill (not a hover
+// tooltip) in the Collector Status block below, same pattern as
+// DISTINCTIONS above.
+const DESIRABILITY_TIER_DEFINITIONS: Record<string, string> = {
+  'Blue-chip': 'The proven elite. Values are established, liquid, and defended at every auction.',
+  'High': 'Strong, sustained collector demand. Good examples never wait long for a buyer.',
+  'Solid': 'A dependable market. Well-kept cars hold their value and find ready buyers.',
+  'Entry': 'The accessible way in. Prices still forgive mistakes, and the upside is real.',
 }
 
-const VALUE_TRAJECTORY_EXPLAINER: Record<string, string> = {
-  appreciating: 'Values are rising.',
-  stable: 'Values have plateaued and are holding.',
-  cooling: 'Values are softening from a recent high.',
+const VALUE_TRAJECTORY_DEFINITIONS: Record<string, string> = {
+  appreciating: 'Values are climbing. The market wants more of these than exist.',
+  stable: 'Values are holding steady. What you pay today is what it\'s worth tomorrow.',
+  cooling: 'Values are softening. Patience buys better cars for less.',
 }
 
 // Parse newlines in text
@@ -120,6 +174,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
   const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
   const hasCharacter = !!(car.driving_character || car.design_notes || car.motorsport_pedigree || car.cultural_notes)
   const hasMarketSection = !!(car.market_data || car.desirability_tier || car.value_trajectory)
+  const earnedDistinctions = DISTINCTIONS.filter(d => car[d.key])
   const relatedCars = car.relations?.filter(r => r.relation_type === 'related') ?? []
   const rivalCars = car.relations?.filter(r => r.relation_type === 'rival') ?? []
   const marketTiers = [
@@ -131,11 +186,36 @@ export default function CarDetailTabs({ car }: { car: Car }) {
   return (
     <div>
       <TabSection id="overview" label="Overview" first>
-        <FieldSection id="introduction" label="Introduction" first>
+        <FieldSection id="introduction" first>
           <div className="max-w-170">
             {car.introduction ? renderText(car.introduction) : <Unavailable />}
           </div>
         </FieldSection>
+
+        {/* Distinctions — an explicit exception to "sections always render":
+            a car with none of the three flags set omits this FieldSection
+            entirely rather than showing an empty/Unavailable state, since
+            "no distinctions" isn't missing data, it's just the normal case
+            for most cars in the catalog. */}
+        {earnedDistinctions.length > 0 && (
+          <FieldSection id="distinctions" label="Distinctions">
+            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+              {earnedDistinctions.map(d => (
+                <div key={d.key} className="flex items-start gap-3">
+                  <span className="w-10 h-10 rounded-full bg-accent flex items-center justify-center shrink-0">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      {d.icon}
+                    </svg>
+                  </span>
+                  <div>
+                    <div className="text-body font-semibold text-text-primary mb-0.5">{d.name}</div>
+                    <div className="text-body text-text-secondary leading-relaxed">{d.definition}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </FieldSection>
+        )}
 
         {/* The scorecard — 7 radar axes as bars, then Electronic Dependence
             as a position-on-a-spectrum control below a divider. All 7 axes
@@ -212,21 +292,36 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         <FieldSection id="market-data" label="Market Data">
           {hasMarketSection ? (
             <>
-              {(car.desirability_tier || car.value_trajectory) && (
+              {car.desirability_tier && (
                 <div className="mb-5">
-                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Collector Status</div>
-                  <div className="flex gap-3">
-                    {car.desirability_tier && (
-                      <span className="pill pill-active" title={DESIRABILITY_TIER_EXPLAINER[car.desirability_tier]}>
-                        {car.desirability_tier}
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Desirability Tier</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {DESIRABILITY_TIERS.map(tier => (
+                      <span key={tier} className={tier === car.desirability_tier ? 'pill pill-active gap-1.5' : 'pill'}>
+                        {tier === car.desirability_tier && <SelectedCheck />}
+                        {tier}
                       </span>
-                    )}
-                    {car.value_trajectory && (
-                      <span className="pill" title={VALUE_TRAJECTORY_EXPLAINER[car.value_trajectory]}>
-                        {VALUE_TRAJECTORY_DISPLAY[car.value_trajectory]}
-                      </span>
-                    )}
+                    ))}
                   </div>
+                  <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">
+                    {DESIRABILITY_TIER_DEFINITIONS[car.desirability_tier]}
+                  </p>
+                </div>
+              )}
+              {car.value_trajectory && (
+                <div className="mb-5">
+                  <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Value Trajectory</div>
+                  <div className="flex gap-2 flex-wrap">
+                    {VALUE_TRAJECTORIES.map(t => (
+                      <span key={t.value} className={t.value === car.value_trajectory ? 'pill pill-active gap-1.5' : 'pill'}>
+                        {t.value === car.value_trajectory && <SelectedCheck />}
+                        {VALUE_TRAJECTORY_DISPLAY[t.value]}
+                      </span>
+                    ))}
+                  </div>
+                  <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">
+                    {VALUE_TRAJECTORY_DEFINITIONS[car.value_trajectory]}
+                  </p>
                 </div>
               )}
               {marketTiers.length > 0 && (
