@@ -166,7 +166,7 @@ export default async function AboutPage() {
               </div>
             </div>
             <p className="text-body text-text-secondary text-center mt-8">
-              Spot something wrong? <Link href="/report" className="text-accent">Tell us.</Link>{' '}We&apos;d rather fix it than defend it.
+              Spot something wrong? <Link href="/report" className="text-accent underline">Tell us.</Link>{' '}We&apos;d rather fix it than defend it.
             </p>
           </ScrollReveal>
         </section>
