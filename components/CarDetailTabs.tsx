@@ -1,4 +1,5 @@
 import CarCard from '@/components/CarCard'
+import CollapsibleText from '@/components/CollapsibleText'
 import { RADAR_AXES, DESIRABILITY_TIERS, VALUE_TRAJECTORIES } from '@/lib/car-schema'
 import type { Car, CarRelation } from '@/lib/types'
 
@@ -240,7 +241,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
       <TabSection id="overview" label="Overview" first>
         <FieldSection id="introduction" first>
           <div className="max-w-170">
-            {car.introduction ? renderText(car.introduction) : <Unavailable />}
+            {car.introduction ? <CollapsibleText>{renderText(car.introduction)}</CollapsibleText> : <Unavailable />}
           </div>
         </FieldSection>
 
@@ -335,9 +336,11 @@ export default function CarDetailTabs({ car }: { car: Car }) {
                     <span>Fully analog</span>
                     <span>Heavily electronic</span>
                   </div>
-                  <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">
-                    {car.electronic_dependence_notes || 'Data unavailable'}
-                  </p>
+                  <CollapsibleText>
+                    <p className="text-body text-text-secondary leading-relaxed mt-3 m-0">
+                      {car.electronic_dependence_notes || 'Data unavailable'}
+                    </p>
+                  </CollapsibleText>
                 </div>
               </div>
             </div>
@@ -408,9 +411,11 @@ export default function CarDetailTabs({ car }: { car: Car }) {
               </div>
             </div>
             {car.market_data?.notes && (
-              <p className="text-body text-text-secondary leading-relaxed max-w-150">
-                {car.market_data.notes}
-              </p>
+              <CollapsibleText>
+                <p className="text-body text-text-secondary leading-relaxed max-w-150">
+                  {car.market_data.notes}
+                </p>
+              </CollapsibleText>
             )}
             {car.market_data?.as_of && (
               <p className="text-label text-text-tertiary mt-2">
@@ -437,7 +442,9 @@ export default function CarDetailTabs({ car }: { car: Car }) {
               </span>
               <div>
                 <div className="text-body font-semibold text-text-primary mb-0.5">Why it&apos;s worth it</div>
-                <div className="text-body text-text-secondary leading-relaxed">{car.claim_to_fame || 'Data unavailable'}</div>
+                <CollapsibleText>
+                  <div className="text-body text-text-secondary leading-relaxed">{car.claim_to_fame || 'Data unavailable'}</div>
+                </CollapsibleText>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -450,7 +457,9 @@ export default function CarDetailTabs({ car }: { car: Car }) {
               </span>
               <div>
                 <div className="text-body font-semibold text-text-primary mb-0.5">Callout</div>
-                <div className="text-body text-text-secondary leading-relaxed">{car.callout || 'Data unavailable'}</div>
+                <CollapsibleText>
+                  <div className="text-body text-text-secondary leading-relaxed">{car.callout || 'Data unavailable'}</div>
+                </CollapsibleText>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -462,7 +471,9 @@ export default function CarDetailTabs({ car }: { car: Car }) {
               </span>
               <div>
                 <div className="text-body font-semibold text-text-primary mb-0.5">What to watch for</div>
-                <div className="text-body text-text-secondary leading-relaxed">{car.buyers_flag || 'Data unavailable'}</div>
+                <CollapsibleText>
+                  <div className="text-body text-text-secondary leading-relaxed">{car.buyers_flag || 'Data unavailable'}</div>
+                </CollapsibleText>
               </div>
             </div>
           </div>
@@ -483,25 +494,33 @@ export default function CarDetailTabs({ car }: { car: Car }) {
             this page, which keeps view and edit labels 1:1). */}
         <FieldSection id="driving-character" label="Driving Character" first>
           {car.driving_character ? (
-            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.driving_character}</p>
+            <CollapsibleText>
+              <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.driving_character}</p>
+            </CollapsibleText>
           ) : <Unavailable />}
         </FieldSection>
 
         <FieldSection id="design" label="Design" divider={false}>
           {car.design_notes ? (
-            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.design_notes}</p>
+            <CollapsibleText>
+              <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.design_notes}</p>
+            </CollapsibleText>
           ) : <Unavailable />}
         </FieldSection>
 
         <FieldSection id="motorsport-pedigree" label="Motorsport Pedigree" divider={false}>
           {car.motorsport_pedigree ? (
-            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.motorsport_pedigree}</p>
+            <CollapsibleText>
+              <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.motorsport_pedigree}</p>
+            </CollapsibleText>
           ) : <Unavailable />}
         </FieldSection>
 
         <FieldSection id="in-culture" label="In Culture" divider={false}>
           {car.cultural_notes ? (
-            <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.cultural_notes}</p>
+            <CollapsibleText>
+              <p className="text-paragraph text-text-secondary leading-relaxed m-0">{car.cultural_notes}</p>
+            </CollapsibleText>
           ) : <Unavailable />}
         </FieldSection>
 
@@ -523,7 +542,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         <FieldSection id="collectibility" label="Why collectors want it" first>
           {car.why_collectible ? (
             <div className="max-w-170">
-              {renderText(car.why_collectible)}
+              <CollapsibleText>{renderText(car.why_collectible)}</CollapsibleText>
             </div>
           ) : <Unavailable />}
         </FieldSection>
@@ -533,9 +552,11 @@ export default function CarDetailTabs({ car }: { car: Car }) {
           {hasVariantsTrims ? (
             <>
               {car.variants_to_know && (
-                <p className="text-paragraph text-text-secondary leading-relaxed max-w-170 mb-6">
-                  {car.variants_to_know}
-                </p>
+                <CollapsibleText>
+                  <p className="text-paragraph text-text-secondary leading-relaxed max-w-170 mb-6">
+                    {car.variants_to_know}
+                  </p>
+                </CollapsibleText>
               )}
               {car.trims?.length > 0 && (
                 <div className="grid gap-4 grid-cols-[repeat(auto-fit,minmax(240px,1fr))]">
@@ -556,7 +577,9 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         {/* What owning one is like — Known Issues */}
         <FieldSection id="known-issues" label="What owning one is like" divider={false}>
           {car.known_issues ? (
-            <p className="text-paragraph text-text-secondary leading-relaxed max-w-170 m-0">{car.known_issues}</p>
+            <CollapsibleText>
+              <p className="text-paragraph text-text-secondary leading-relaxed max-w-170 m-0">{car.known_issues}</p>
+            </CollapsibleText>
           ) : <Unavailable />}
         </FieldSection>
 
@@ -564,7 +587,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         <FieldSection id="upkeep-parts" label="Upkeep & Parts" divider={false}>
           {car.maintenance ? (
             <div className="max-w-170">
-              {renderText(car.maintenance)}
+              <CollapsibleText>{renderText(car.maintenance)}</CollapsibleText>
             </div>
           ) : <Unavailable />}
         </FieldSection>
