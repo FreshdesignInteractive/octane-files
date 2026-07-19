@@ -84,6 +84,14 @@ export interface GenerationRecord {
   id: string
   model_id: string
   code: string
+  // Dead: the public page (app/cars/[slug]/page.tsx) and the admin list
+  // page both compute their own "1965–1974"/"1965–present" display live
+  // from year_start/year_end every time — neither ever reads this column.
+  // The only code that ever touched it was a one-time backfill at creation
+  // (removed), which made it a value nothing displays and nothing keeps in
+  // sync with year_start/year_end after that. Read-only reference, like
+  // desirability_tier_legacy below — never form-editable, not part of
+  // GenerationInput.
   production_years: string | null
   year_start: number
   year_end: number | null
@@ -163,11 +171,12 @@ export interface GenerationRecord {
 // text fields superseded by car_relations (see the comment on
 // rivals_alternatives above), plus analog_index_legacy (superseded by
 // electronic_dependence, same non-form-editable treatment as
-// desirability_tier_legacy).
+// desirability_tier_legacy), plus production_years (dead — see its comment
+// above).
 export type GenerationInput = Omit<
   GenerationRecord,
   'id' | 'model_id' | 'created_at' | 'updated_at' | 'archived_at' | 'desirability_tier_legacy' |
-  'rivals_alternatives' | 'related_cars' | 'analog_index_legacy'
+  'rivals_alternatives' | 'related_cars' | 'analog_index_legacy' | 'production_years'
 >
 
 export interface MakeRecord {
@@ -192,10 +201,6 @@ export function deriveGenerationSlug(makeName: string, modelName: string, code: 
   return slugify(`${makeName}-${modelName}-${code}`)
 }
 
-export function computeProductionYears(yearStart: number, yearEnd: number | null): string {
-  return `${yearStart}–${yearEnd ?? 'Present'}`
-}
-
 // Omits the generation/code segment when it's redundant with the model name
 // (e.g. a single-generation car whose code was set to match the model
 // instead of the catalog's usual "Single Generation" placeholder) — same
@@ -209,7 +214,6 @@ export function carDisplayName(make: string, model: string, generation: string |
 export function emptyGenerationInput(): GenerationInput {
   return {
     code: '',
-    production_years: null,
     year_start: new Date().getFullYear(),
     year_end: null,
     class: 'sports',

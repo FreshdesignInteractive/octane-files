@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase-server'
 import { checkIsAdmin } from '@/lib/is-admin'
-import { deriveGenerationSlug, slugify, computeProductionYears } from '@/lib/car-schema'
+import { deriveGenerationSlug, slugify } from '@/lib/car-schema'
 import type { GenerationInput } from '@/lib/car-schema'
 
 // The "+ New Car" cascading create flow: find-or-create make, find-or-create
@@ -80,11 +80,10 @@ export async function POST(req: NextRequest) {
   }
 
   const slug = gen.slug?.trim() || deriveGenerationSlug(makeName, modelName, gen.code)
-  const production_years = gen.production_years?.trim() || computeProductionYears(gen.year_start, gen.year_end)
 
   const { data: created, error: createError } = await supabase
     .from('generations')
-    .insert({ ...gen, model_id: modelId, slug, production_years })
+    .insert({ ...gen, model_id: modelId, slug })
     .select('slug')
     .single()
 

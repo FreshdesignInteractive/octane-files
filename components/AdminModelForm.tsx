@@ -21,7 +21,8 @@ function toInput(g: GenerationRecord): GenerationInput {
   const {
     id: _id, model_id: _model_id, created_at: _created_at, updated_at: _updated_at,
     archived_at: _archived_at, desirability_tier_legacy: _legacy,
-    rivals_alternatives: _rivals, related_cars: _related, ...rest
+    rivals_alternatives: _rivals, related_cars: _related, production_years: _production_years,
+    ...rest
   } = g
   return rest
 }

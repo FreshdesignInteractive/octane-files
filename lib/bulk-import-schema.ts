@@ -11,9 +11,10 @@
 // Covers GenerationInput's flat, CSV-shaped fields only. Deliberately
 // excludes: hero_image/gallery_images (image upload flow), specs/market_data
 // low-mid-high (structured/nested, not flat CSV columns), resources, trims
-// (separate CSV type), and year_start/year_end/production_years/code
-// (identity fields — changing these redefines the car and belongs in the
-// form, not a bulk import).
+// (separate CSV type), and year_start/year_end/code (identity fields —
+// changing these redefines the car and belongs in the form, not a bulk
+// import). production_years isn't part of GenerationInput at all anymore —
+// it's a dead column (see the comment on it in car-schema.ts).
 //
 // The 7 radar axes, plus market_notes/rivals/lineage, are synthetic keys —
 // there is no literal generations.radar_desirability/market_notes column,
