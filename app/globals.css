@@ -69,6 +69,12 @@
      which carry different default values we're not touching. */
   --shadow-dropdown: 0 4px 24px rgb(0 0 0 / 0.12), 0 1px 4px rgb(0 0 0 / 0.06);
   --shadow-modal:    0 20px 60px rgb(0 0 0 / 0.2);
+  /* Floating tab-bar pill (OverflowNav) — a small y-offset so the soft
+     blur peeks out a touch above the bar too, not just below it (Tailwind's
+     shadow-lg pushes everything downward, leaving the top edge with zero
+     definition against a plain white page); blur pulled in a few px from
+     shadow-lg's 15px so it reads as a soft edge, not a diffuse cloud. */
+  --shadow-nav: 0 2px 12px rgb(0 0 0 / 0.1);
 
   /* Page container — extends Tailwind's max-w-* scale past its 7xl (1280px) top */
   --container-page: 90rem; /* 1440px */
