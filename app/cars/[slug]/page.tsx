@@ -26,9 +26,29 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const car = await getModel(slug)
   if (!car) return { title: 'Not Found' }
   const name = carDisplayName(car.make, car.model, car.generation)
+  const description = car.introduction?.slice(0, 160)
+  // Without an explicit openGraph block (and specifically an og:image),
+  // Facebook/LinkedIn's own link-preview crawler has nothing reliable to
+  // scrape when a car page gets shared — the plain title/description
+  // above aren't enough on their own, and this is the likely cause of
+  // Facebook's share composer hanging on "Posting..." for these URLs.
   return {
     title: name,
-    description: car.introduction?.slice(0, 160),
+    description,
+    openGraph: {
+      title: name,
+      description,
+      images: car.hero_image ? [car.hero_image] : undefined,
+      type: 'website',
+    },
+    // X (Twitter) reads its own twitter:* tags, doesn't reliably fall
+    // back to Open Graph's — same hero image, same reasoning as above.
+    twitter: {
+      card: 'summary_large_image',
+      title: name,
+      description,
+      images: car.hero_image ? [car.hero_image] : undefined,
+    },
   }
 }
 

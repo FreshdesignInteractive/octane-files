@@ -12,6 +12,12 @@ export const metadata: Metadata = {
     siteName: 'Octane Files',
     type: 'website',
   },
+  // X reads its own separate twitter:* meta tags, not just Open Graph's —
+  // without this, link previews on X have nothing reliable to render even
+  // when a page's own openGraph.images is set correctly.
+  twitter: {
+    card: 'summary_large_image',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
