@@ -1,6 +1,7 @@
 'use client'
 
 import { useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import GenerationFieldsEditor from '@/components/GenerationFieldsEditor'
 import {
   CAR_CLASSES, deriveGenerationSlug,
@@ -44,11 +45,11 @@ export default function AdminModelForm({
   trims: TrimRecord[]
   relations: CarRelationRecord[]
 }) {
+  const router = useRouter()
   const [form, setForm] = useState<GenerationInput>(toInput(generation))
   const [trims, setTrims] = useState<TrimInput[]>(initialTrims.map(toTrimInput))
   const [relations, setRelations] = useState<CarRelationInput[]>(initialRelations.map(toRelationInput))
   const [archivedAt, setArchivedAt] = useState(generation.archived_at)
-  const [slugEditing, setSlugEditing] = useState(false)
   const [saving, setSaving] = useState(false)
   const [filling, setFilling] = useState(false)
   const [archiving, setArchiving] = useState(false)
@@ -89,17 +90,48 @@ export default function AdminModelForm({
     const finalHero = form.hero_image || null
     const finalGallery = form.gallery_images.filter(Boolean)
     const finalUrls = new Set([finalHero, ...finalGallery].filter((u): u is string => !!u))
-    const body = { ...form, hero_image: finalHero, gallery_images: finalGallery }
+    // Slug is always derived, never hand-edited — if the Generation Code
+    // changed, this is a rename (suggestedSlug is computed below in render
+    // from the same make/modelName/form.code inputs). Trims/relations below
+    // are looked up by slug server-side, so they run first, against
+    // generation.slug (still the row's actual slug until the rename PATCH
+    // lands) — doing the rename first would make those lookups 404 against
+    // a slug that no longer matches any row.
+    const body = { ...form, hero_image: finalHero, gallery_images: finalGallery, slug: suggestedSlug }
+
+    const trimsRes = await fetch(`/api/admin/models/${generation.slug}/trims`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ trims }),
+    })
+    if (!trimsRes.ok) {
+      setSaving(false)
+      const err = await trimsRes.json().catch(() => ({}))
+      setMsg(`Trims failed to save (${err.error ?? 'unknown error'}) — press Save again`)
+      return
+    }
+
+    const relationsRes = await fetch(`/api/admin/models/${generation.slug}/relations`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ relations }),
+    })
+    if (!relationsRes.ok) {
+      setSaving(false)
+      const err = await relationsRes.json().catch(() => ({}))
+      setMsg(`Trims saved, but related cars/rivals failed to save (${err.error ?? 'unknown error'}) — press Save again`)
+      return
+    }
 
     const genRes = await fetch(`/api/admin/models/${generation.slug}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
+    setSaving(false)
     if (!genRes.ok) {
-      setSaving(false)
       const err = await genRes.json().catch(() => ({}))
-      setMsg(err.error ?? 'Error saving')
+      setMsg(`Trims and related cars/rivals saved, but main fields failed to save (${err.error ?? 'unknown error'}) — press Save again`)
       return
     }
 
@@ -112,34 +144,20 @@ export default function AdminModelForm({
       if (!finalUrls.has(url)) deleteCarImageIfOwned(url)
     }
     liveImageUrlsRef.current = finalUrls
-    setForm(f => ({ ...f, hero_image: finalHero, gallery_images: finalGallery }))
-
-    const trimsRes = await fetch(`/api/admin/models/${generation.slug}/trims`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ trims }),
-    })
-    if (!trimsRes.ok) {
-      setSaving(false)
-      const err = await trimsRes.json().catch(() => ({}))
-      setMsg(`Main fields saved, but trims failed to save (${err.error ?? 'unknown error'}) — press Save again`)
-      return
-    }
-
-    const relationsRes = await fetch(`/api/admin/models/${generation.slug}/relations`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ relations }),
-    })
-    setSaving(false)
-    if (!relationsRes.ok) {
-      const err = await relationsRes.json().catch(() => ({}))
-      setMsg(`Main fields and trims saved, but related cars/rivals failed to save (${err.error ?? 'unknown error'}) — press Save again`)
-      return
-    }
+    setForm(f => ({ ...f, hero_image: finalHero, gallery_images: finalGallery, slug: suggestedSlug }))
 
     setMsg('Saved ✓')
     setTimeout(() => setMsg(''), 3000)
+
+    // The URL this page is on is keyed by the old slug — once it's actually
+    // renamed in the DB, every subsequent action (another Save, Archive,
+    // Attach Images) needs to hit /api/admin/models/<new slug>, not the one
+    // this page loaded with. Re-navigating re-fetches the server component
+    // fresh at the new address rather than trying to patch generation.slug
+    // in place (it's a prop, not state).
+    if (suggestedSlug !== generation.slug) {
+      router.replace(`/admin/models/${suggestedSlug}`)
+    }
   }
 
   async function toggleArchive() {
@@ -404,24 +422,10 @@ export default function AdminModelForm({
 
       <div className="mb-7">
         <label className="field-label">Slug (public URL)</label>
-        {slugEditing ? (
-          <div className="flex gap-2 items-center">
-            <input className="input flex-1" value={form.slug} onChange={e => update({ slug: e.target.value })} />
-            <button type="button" onClick={() => setSlugEditing(false)} className="btn-secondary px-3">Done</button>
-          </div>
-        ) : (
-          <div className="flex gap-3 items-center">
-            <code className="text-body text-text-secondary bg-bg-elevated px-2.5 py-1.5 rounded-md">/cars/{form.slug}</code>
-            <button type="button" onClick={() => setSlugEditing(true)} className="text-xs text-text-tertiary underline">
-              Advanced: edit manually
-            </button>
-          </div>
-        )}
-        {slugEditing && form.slug !== suggestedSlug && (
-          <p className="text-label text-text-tertiary mt-1.5">
-            Changing this moves the public URL — anything linking to the old slug will 404. Auto-derived value would be <code>{suggestedSlug}</code>.
-          </p>
-        )}
+        <code className="text-body text-text-secondary bg-bg-elevated px-2.5 py-1.5 rounded-md">/cars/{suggestedSlug}</code>
+        <p className="text-label text-text-tertiary mt-1.5">
+          Always derived from Make / Model / Generation Code — not directly editable. Changing Generation Code above renames the public URL on Save; any bookmarked link to the previous address will 404.
+        </p>
       </div>
 
       <GenerationFieldsEditor

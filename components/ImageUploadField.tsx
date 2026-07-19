@@ -1,5 +1,7 @@
 'use client'
 
+import { useRef } from 'react'
+
 // View/remove/manual-link only — no file upload here. The "Attach images"
 // Quick Import flow (AdminModelForm.tsx) is the one true upload path now:
 // it runs every image through the 900x506 WebP resize before it ever
@@ -11,41 +13,41 @@
 // there's no reason for two upload paths to exist. The URL-paste field
 // stays: pointing at an externally-hosted image is a genuinely different
 // case (no file to optimize, nothing to upload).
+//
+// The thumbnail/button/input row keeps its exact shape whether a slot is
+// filled or empty — an empty slot shows /placeholder.png (same "no image"
+// asset the public page's gallery falls back to) instead of the thumbnail
+// disappearing, and the button becomes "Add image" (focuses the URL input
+// below it) instead of "Remove image". Removing an image never touches
+// Supabase directly either way — it's a pure in-memory edit, same as any
+// other field on this form. The actual file is only ever deleted after
+// Save succeeds, via the session-wide diff in AdminModelForm's save().
 export default function ImageUploadField({
-  value, onChange, showRemoveButton = true,
+  value, onChange,
 }: {
   value: string | null
   onChange: (url: string | null) => void
-  // Hero and Gallery both use this same button now — clearing a slot is
-  // purely an in-memory edit, same as any other field on this form. It
-  // never touches Supabase storage directly: the actual file is only ever
-  // deleted after Save succeeds, via the session-wide diff in
-  // AdminModelForm's save(). That's what makes Remove safe to click and
-  // reconsider — nothing is destroyed until the DB write it's cleaning up
-  // after is confirmed.
-  showRemoveButton?: boolean
 }) {
-  function handleRemove() {
-    onChange(null)
-  }
+  const inputRef = useRef<HTMLInputElement>(null)
 
   return (
     <div className="flex flex-col gap-2">
       <div className="flex gap-3 items-start">
-        {value && (
+        {value ? (
           <img src={value} alt="preview" className="w-20 h-20 object-cover rounded-md border border-border flex-shrink-0" />
+        ) : (
+          <img src="/placeholder.png" alt="" className="w-20 h-20 object-contain opacity-40 rounded-md border border-border bg-bg-elevated flex-shrink-0" />
         )}
         <div className="flex-1 flex flex-col gap-2">
-          {value && showRemoveButton && (
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="btn-secondary h-9 px-4 self-start"
-            >
-              Remove image
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => value ? onChange(null) : inputRef.current?.focus()}
+            className="btn-secondary h-9 px-4 self-start"
+          >
+            {value ? 'Remove image' : 'Add image'}
+          </button>
           <input
+            ref={inputRef}
             className="input text-xs"
             value={value ?? ''}
             onChange={e => onChange(e.target.value || null)}
