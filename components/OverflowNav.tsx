@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react'
 export type OverflowNavItem = { id: string; label: string }
 
 const MORE_BUTTON_WIDTH = 44
-const ITEM_GAP = 32 // matches gap-8 below
 
 // Standard pattern for "tabs that might not all fit": render the real,
 // visible items plus an identical off-screen copy of every item used only
@@ -37,10 +36,14 @@ export default function OverflowNav({ items, activeId: controlledActiveId }: { i
       if (!track || widths.some(w => w === 0)) return
 
       const available = track.offsetWidth
+      // Measured at runtime, not a hardcoded constant — the gap itself is
+      // responsive (gap-2 on mobile, gap-8 from sm: up), so a fixed JS value
+      // would be wrong at whichever breakpoint it didn't match.
+      const itemGap = parseFloat(getComputedStyle(track).columnGap) || 0
       let total = 0
       let count = 0
       for (let i = 0; i < widths.length; i++) {
-        const width = widths[i] + (i > 0 ? ITEM_GAP : 0)
+        const width = widths[i] + (i > 0 ? itemGap : 0)
         const allFitWithoutMore = i === widths.length - 1 && total + width <= available
         const budget = allFitWithoutMore ? available : available - MORE_BUTTON_WIDTH
         if (total + width > budget) break
@@ -103,7 +106,7 @@ export default function OverflowNav({ items, activeId: controlledActiveId }: { i
     // kicks in) the row's own content isn't wide enough to reach the full
     // available width on its own, so the pill would otherwise shrink to
     // fit instead of spanning the content column like this nav always has.
-    <div className="relative w-full bg-white rounded-full shadow-lg h-16 px-8 flex items-center">
+    <div className="relative w-full bg-white rounded-full shadow-lg h-16 px-4 sm:px-8 flex items-center">
       {/* Off-screen measuring clones — identical classes to the real links,
           so offsetWidth reflects true rendered width at the current font.
           `invisible` alone only hides them visually; it doesn't stop them
@@ -113,12 +116,12 @@ export default function OverflowNav({ items, activeId: controlledActiveId }: { i
           them — offsetWidth on the children is unaffected by an ancestor
           clipping them. */}
       <div className="absolute top-0 left-0 w-0 h-0 overflow-hidden pointer-events-none" aria-hidden="true">
-        <div className="flex gap-8">
+        <div className="flex gap-2 sm:gap-8">
           {items.map((item, i) => (
             <span
               key={item.id}
               ref={el => { measureRefs.current[i] = el }}
-              className="text-sm font-medium whitespace-nowrap px-4 py-2"
+              className="text-sm font-medium whitespace-nowrap px-2 sm:px-4 py-2"
             >
               {item.label}
             </span>
@@ -126,12 +129,12 @@ export default function OverflowNav({ items, activeId: controlledActiveId }: { i
         </div>
       </div>
 
-      <div ref={trackRef} className="flex-1 min-w-0 flex items-center gap-8 overflow-hidden">
+      <div ref={trackRef} className="flex-1 min-w-0 flex items-center gap-2 sm:gap-8 overflow-hidden">
         {visible.map(item => (
           <a
             key={item.id}
             href={`#${item.id}`}
-            className={`text-sm font-medium no-underline whitespace-nowrap px-4 py-2 rounded-full transition-colors ${
+            className={`text-sm font-medium no-underline whitespace-nowrap px-2 sm:px-4 py-2 rounded-full transition-colors ${
               item.id === activeId ? 'bg-accent-subtle text-accent' : 'text-text-primary hover:bg-bg-elevated'
             }`}
           >

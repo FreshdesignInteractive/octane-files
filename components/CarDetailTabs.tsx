@@ -231,9 +231,9 @@ export default function CarDetailTabs({ car }: { car: Car }) {
   // Always all 3 tiers, regardless of which values are actually entered —
   // a missing individual value shows NA, not a shrunken 1- or 2-cell grid.
   const marketTiers = [
-    { label: 'Entry / Driver', value: car.market_data?.low ?? null },
-    { label: 'Mid / Nice', value: car.market_data?.mid ?? null },
-    { label: 'Show / Concours', value: car.market_data?.high ?? null },
+    { label: 'Driver', value: car.market_data?.low ?? null },
+    { label: 'Excellent', value: car.market_data?.mid ?? null },
+    { label: 'Concours', value: car.market_data?.high ?? null },
   ]
 
   return (
