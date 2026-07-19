@@ -4,7 +4,7 @@ import { checkIsAdmin } from '@/lib/is-admin'
 
 // Only full_name/intro_text are editable here — name/slug/country stay
 // fixed (renaming a make would move its /marques/[slug] URL and the
-// Manufacturer link on every one of its cars, same class of problem the
+// Marque link on every one of its cars, same class of problem the
 // generation slug auto-derivation already solves for individual cars; not
 // tackled here since it wasn't asked for). Writes go through the signed-in
 // admin's own session — RLS's existing "Admin write" ON makes policy

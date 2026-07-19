@@ -56,7 +56,7 @@ type GenerationJoinRow = {
   hero_image: string | null
   units_produced: number | null
   // full_name/slug are only requested by CAR_SELECT (the single-car detail
-  // page's Manufacturer row) — optional here since this same type is reused
+  // page's Marque row) — optional here since this same type is reused
   // for the relations sub-query in getModel(), whose own select string
   // doesn't ask for them.
   models: { name: string; makes: { name: string; country: string; full_name?: string | null; slug?: string } }
@@ -237,6 +237,22 @@ export async function getModelSlugs(): Promise<string[]> {
   const db = buildClient()
   const { data } = await db.from('generations').select('slug').is('archived_at', null)
   return (data ?? []).map((r) => r.slug)
+}
+
+// For sitemap.ts — richer than getModelSlugs (which only ever needed the
+// slug for generateStaticParams), since a sitemap wants a real lastmod per
+// entry. archived_at IS NULL, same live-only filter as everywhere else.
+export async function getSitemapCars(): Promise<{ slug: string; updated_at: string }[]> {
+  const db = buildClient()
+  const { data } = await db.from('generations').select('slug, updated_at').is('archived_at', null)
+  return (data as { slug: string; updated_at: string }[] | null) ?? []
+}
+
+// Every make gets a page — no live/archived distinction on makes.
+export async function getSitemapMakes(): Promise<{ slug: string; updated_at: string }[]> {
+  const db = buildClient()
+  const { data } = await db.from('makes').select('slug, updated_at')
+  return (data as { slug: string; updated_at: string }[] | null) ?? []
 }
 
 // Live catalog count for the About page's stats band — never hardcode that

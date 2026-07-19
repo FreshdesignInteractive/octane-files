@@ -21,7 +21,7 @@ export default async function AdminMakesPage() {
           <a href="/admin" className="text-xs text-text-tertiary no-underline">&larr; All models</a>
           <h1 className="mt-2 text-2xl font-bold text-text-primary">Makes</h1>
           <p className="mt-1 text-xs text-text-tertiary">
-            Full Company Name feeds the Manufacturer sidebar row on car pages; the intro feeds each make&apos;s /marques/[slug] page.
+            Full Company Name feeds the Marque sidebar row on car pages; the intro feeds each make&apos;s /marques/[slug] page.
           </p>
         </div>
         <AdminMakesTable makes={(makes as MakeRecord[]) ?? []} />

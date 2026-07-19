@@ -138,8 +138,12 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   // Writes to the linked make's full_name, not this generation — see
   // MakeFieldKey above. Several rows for the same marque (e.g. 10 Chevrolet
   // generations) should carry the same value; if they don't, last one
-  // processed in the batch wins.
-  { key: 'manufacturer_full_name', header: 'ManufacturerFullName', type: 'text' },
+  // processed in the batch wins. Renamed from ManufacturerFullName to
+  // MarqueFullName (sidebar label rename, "Manufacturer" -> "Marque") —
+  // the old header is kept as a legacy alias, same pattern as
+  // Engine/EngineSignature. The internal key stays manufacturer_full_name;
+  // only the CSV-facing header changed.
+  { key: 'manufacturer_full_name', header: 'MarqueFullName', type: 'text', legacyHeaders: ['ManufacturerFullName'] },
   { key: 'nickname', header: 'Nickname', type: 'text' },
   { key: 'designer', header: 'Designer', type: 'text' },
   { key: 'wikipedia_url', header: 'WikipediaURL', type: 'text' },

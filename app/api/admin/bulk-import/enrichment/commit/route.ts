@@ -11,7 +11,7 @@ import type { EnrichmentFieldKey } from '@/lib/bulk-import-schema'
 // Three separate RPC calls, not one transaction: flat generations fields
 // via bulk_update_generation_enrichment (unchanged), rivals/lineage via
 // bulk_add_car_relations (car_relations is a child table, not a generations
-// column, so it can't ride the same UPDATE), and ManufacturerFullName via
+// column, so it can't ride the same UPDATE), and MarqueFullName via
 // bulk_update_make_enrichment (writes to makes, not generations — same
 // reasoning). The same body.rows array is reused for both the generations
 // and make RPCs unmodified: each RPC's jsonb_to_recordset only pulls the
@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
 
   const { error: makeError } = await supabase.rpc('bulk_update_make_enrichment', { rows: body.rows })
   if (makeError) {
-    return NextResponse.json({ error: `Generation fields updated, but ManufacturerFullName failed: ${makeError.message}`, updated: data }, { status: 500 })
+    return NextResponse.json({ error: `Generation fields updated, but MarqueFullName failed: ${makeError.message}`, updated: data }, { status: 500 })
   }
 
   let relationsAdded = 0

@@ -117,6 +117,30 @@ export default function BulkImportEnrichment() {
   const errored = preview?.rows.filter(r => r.match.status === 'error') ?? []
   const includedCount = matched.filter(r => included[r.row_index]).length
 
+  // MarqueFullName has no before/after diff line (it writes to a different
+  // row's table entirely — see diffEnrichmentFields), so unlike every other
+  // field, two rows in the same batch proposing different values for the
+  // same marque would otherwise be invisible: each row's own card only ever
+  // shows its own value, never any other row's. The actual commit behavior
+  // stays last-write-wins either way (bulk_update_make_enrichment just
+  // applies rows in order) — this is purely a preview-time surfacing of a
+  // conflict the admin would otherwise have no way to notice before
+  // committing.
+  const marqueConflicts = (() => {
+    const byMake = new Map<string, { rowIndex: number; make: string; value: string }[]>()
+    for (const r of matched) {
+      if (!included[r.row_index]) continue
+      const m = r.match as Extract<RowMatch, { status: 'matched' }>
+      const value = m.fields.manufacturer_full_name as string | undefined
+      if (!value) continue
+      const key = r.make.trim().toLowerCase()
+      const list = byMake.get(key) ?? []
+      list.push({ rowIndex: r.row_index, make: r.make, value })
+      byMake.set(key, list)
+    }
+    return [...byMake.values()].filter(list => new Set(list.map(l => l.value)).size > 1)
+  })()
+
   return (
     <div className="flex flex-col gap-5">
       <div className="flex gap-4">
@@ -154,6 +178,19 @@ export default function BulkImportEnrichment() {
           {preview.unknownColumns.length > 0 && (
             <div className="p-3 rounded-lg border border-border-mid bg-bg-elevated text-body text-text-secondary">
               Unknown columns (ignored): {preview.unknownColumns.map(c => `"${c}"`).join(', ')}
+            </div>
+          )}
+
+          {marqueConflicts.length > 0 && (
+            <div className="p-3 rounded-lg border border-error text-body text-error flex flex-col gap-1">
+              <div className="font-medium">Conflicting MarqueFullName values for the same marque in this batch</div>
+              {marqueConflicts.map(list => (
+                <div key={list[0].make}>
+                  <span className="font-medium">{list[0].make}:</span>{' '}
+                  {list.map(l => `"${l.value}" (row ${l.rowIndex + 1})`).join(' vs. ')} — whichever row commits last wins.
+                  Uncheck all but one, or make every row for this marque agree, before committing.
+                </div>
+              ))}
             </div>
           )}
 
@@ -198,7 +235,7 @@ export default function BulkImportEnrichment() {
                             )}
                             {manufacturerFullName && (
                               <div className="text-label text-text-secondary">
-                                <span className="font-medium">ManufacturerFullName:</span> sets the make&apos;s full name to <span className="text-accent font-medium">{manufacturerFullName}</span> (no before/after shown — applies to the make, not this car, and may affect other generations from the same manufacturer)
+                                <span className="font-medium">MarqueFullName:</span> sets the make&apos;s full name to <span className="text-accent font-medium">{manufacturerFullName}</span> (no before/after shown — applies to the make, not this car, and may affect other generations from the same marque)
                               </div>
                             )}
                           </div>

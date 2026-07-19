@@ -223,7 +223,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
               <div className="flex flex-col gap-4">
                 {([
                   {
-                    label: 'Manufacturer',
+                    label: 'Marque',
                     // Full company name if set (falls back to the short
                     // marque name — never blank, both are always present).
                     // Links to the marque hub; if a make somehow has no
