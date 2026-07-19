@@ -57,6 +57,15 @@ export default function AdminModelForm({
   const [imagesUploading, setImagesUploading] = useState(false)
   const csvInputRef = useRef<HTMLInputElement>(null)
   const imagesInputRef = useRef<HTMLInputElement>(null)
+  // Every image URL that's been "live" at any point this editing session —
+  // the ones loaded from the DB at mount, plus every one uploaded via
+  // Attach Images since. Removing an image (Hero or Gallery) never touches
+  // Supabase directly; it only clears the field in memory. At Save time,
+  // whatever from this set is no longer referenced in the saved result gets
+  // deleted exactly once. This is what catches an upload-then-remove that
+  // never made it into the original OR the final state, not just a plain
+  // swap between the two.
+  const liveImageUrlsRef = useRef<Set<string>>(new Set([generation.hero_image, ...generation.gallery_images].filter((u): u is string => !!u)))
 
   function update(updates: Partial<GenerationInput>) {
     setForm(f => ({ ...f, ...updates }))
@@ -72,10 +81,20 @@ export default function AdminModelForm({
     setSaving(true)
     setMsg('')
 
+    // Cleared Hero/Gallery slots sit in `form` as null/'' until Save — never
+    // sent to the DB as-is. finalHero/finalGallery are what actually get
+    // persisted; the array is compacted here, not the moment a slot is
+    // cleared, since Remove itself is a pure in-memory edit that never
+    // touches storage or the array's length.
+    const finalHero = form.hero_image || null
+    const finalGallery = form.gallery_images.filter(Boolean)
+    const finalUrls = new Set([finalHero, ...finalGallery].filter((u): u is string => !!u))
+    const body = { ...form, hero_image: finalHero, gallery_images: finalGallery }
+
     const genRes = await fetch(`/api/admin/models/${generation.slug}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+      body: JSON.stringify(body),
     })
     if (!genRes.ok) {
       setSaving(false)
@@ -83,6 +102,17 @@ export default function AdminModelForm({
       setMsg(err.error ?? 'Error saving')
       return
     }
+
+    // Only now, after the DB write is confirmed, is it safe to actually
+    // delete anything — every URL that was ever live this session and
+    // didn't make it into the final saved result. Best-effort: each call
+    // swallows its own error (see deleteCarImageIfOwned), so a storage
+    // hiccup here never blocks the save the user actually asked for.
+    for (const url of liveImageUrlsRef.current) {
+      if (!finalUrls.has(url)) deleteCarImageIfOwned(url)
+    }
+    liveImageUrlsRef.current = finalUrls
+    setForm(f => ({ ...f, hero_image: finalHero, gallery_images: finalGallery }))
 
     const trimsRes = await fetch(`/api/admin/models/${generation.slug}/trims`, {
       method: 'PUT',
@@ -231,7 +261,6 @@ export default function AdminModelForm({
       return
     }
 
-    const oldHero = form.hero_image
     const baseGallery = form.gallery_images
 
     setImagesUploading(true)
@@ -277,17 +306,12 @@ export default function AdminModelForm({
         .map(u => ({ index: Number(GALLERY_SLOT_PATTERN.exec(u.slot)![1]) - 1, url: u.url }))
         .sort((a, b) => a.index - b.index)
 
-      const displacedGalleryUrls: string[] = []
       let nextGallery = baseGallery
       if (galleryUploads.length > 0) {
         nextGallery = [...baseGallery]
         for (const { index, url } of galleryUploads) {
-          if (index < nextGallery.length) {
-            displacedGalleryUrls.push(nextGallery[index])
-            nextGallery[index] = url
-          } else {
-            nextGallery.push(url)
-          }
+          if (index < nextGallery.length) nextGallery[index] = url
+          else nextGallery.push(url)
         }
       }
 
@@ -297,12 +321,11 @@ export default function AdminModelForm({
         ...(galleryUploads.length > 0 ? { gallery_images: nextGallery } : {}),
       }))
 
-      // Best-effort cleanup — only the images actually displaced/replaced,
-      // never anything left untouched. Safe to do client-side since
-      // deletes carry no binary body and aren't subject to the upload
-      // corruption above.
-      if (heroUpload && oldHero) deleteCarImageIfOwned(oldHero)
-      for (const old of displacedGalleryUrls) deleteCarImageIfOwned(old)
+      // No storage delete here — the newly uploaded file (and whatever it
+      // displaced) both just become "live this session"; the Save-time
+      // diff in save() is the one place that actually deletes anything,
+      // once, only after the DB write it's cleaning up after is confirmed.
+      for (const u of uploaded) liveImageUrlsRef.current.add(u.url)
     }
 
     if (failures.length > 0) setMsg(`Error: ${failures.join('; ')}`)

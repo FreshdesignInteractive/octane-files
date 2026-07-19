@@ -1,7 +1,5 @@
 'use client'
 
-import { deleteCarImageIfOwned } from '@/lib/storage-cleanup'
-
 // View/remove/manual-link only — no file upload here. The "Attach images"
 // Quick Import flow (AdminModelForm.tsx) is the one true upload path now:
 // it runs every image through the 900x506 WebP resize before it ever
@@ -18,16 +16,16 @@ export default function ImageUploadField({
 }: {
   value: string | null
   onChange: (url: string | null) => void
-  // Hero is a single slot — clearing it is meaningful (the public page
-  // falls back to a placeholder) and needs its own button. Gallery items
-  // don't need this: the per-row "Remove" button in GenerationFieldsEditor
-  // already drops that array entry entirely, and there's no other reason
-  // to null out a gallery slot in place (nothing refills it manually
-  // anymore — a replacement photo comes from the next Attach images run).
+  // Hero and Gallery both use this same button now — clearing a slot is
+  // purely an in-memory edit, same as any other field on this form. It
+  // never touches Supabase storage directly: the actual file is only ever
+  // deleted after Save succeeds, via the session-wide diff in
+  // AdminModelForm's save(). That's what makes Remove safe to click and
+  // reconsider — nothing is destroyed until the DB write it's cleaning up
+  // after is confirmed.
   showRemoveButton?: boolean
 }) {
   function handleRemove() {
-    deleteCarImageIfOwned(value)
     onChange(null)
   }
 

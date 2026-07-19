@@ -10,7 +10,6 @@ import DesignerAutocomplete from '@/components/DesignerAutocomplete'
 import ImageUploadField from '@/components/ImageUploadField'
 import TrimsEditor from '@/components/TrimsEditor'
 import CarRelationsEditor from '@/components/CarRelationsEditor'
-import { deleteCarImageIfOwned } from '@/lib/storage-cleanup'
 
 const field = (label: string, children: React.ReactNode) => (
   <div className="field">
@@ -21,30 +20,18 @@ const field = (label: string, children: React.ReactNode) => (
 
 const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking-widest mb-4 pb-2 border-b border-border'
 
-// Canonical section list — identical ids, order, and labels to
-// app/cars/[slug]/page.tsx / CarDetailTabs.tsx, so the sticky nav below and
-// every <section id="..."> exactly mirror the public page. Identity &
-// Classification and Images are edit-only (they feed the hero/quick-stats/
-// gallery on view rather than being their own named public section), so
-// they stay first, ahead of the public page's own Overview-tab order.
-const SECTIONS = [
-  { id: 'identity', label: 'Identity & Classification' },
-  { id: 'images', label: 'Images' },
-  { id: 'introduction', label: 'Introduction' },
-  { id: 'ratings', label: 'The scorecard' },
-  { id: 'market-data', label: 'Market Data' },
-  { id: 'buyers-guide', label: "Buyer's guide" },
-  { id: 'driving-character', label: 'Driving Character' },
-  { id: 'design', label: 'Design' },
-  { id: 'motorsport-pedigree', label: 'Motorsport Pedigree' },
-  { id: 'in-culture', label: 'In Culture' },
-  { id: 'lineage', label: 'Where it comes from' },
-  { id: 'rivals', label: 'Rivals' },
-  { id: 'collectibility', label: 'Why collectors want it' },
-  { id: 'variants-trims', label: 'Which one to look for' },
-  { id: 'known-issues', label: 'What owning one is like' },
-  { id: 'upkeep-parts', label: 'Upkeep & Parts' },
-  { id: 'resources', label: 'Resources' },
+// The individual sections below (their ids, order, and labels) mirror
+// app/cars/[slug]/page.tsx / CarDetailTabs.tsx exactly — but the sticky nav
+// only surfaces the public page's 3 top-level tabs, not all 17 individual
+// sections; a flat list at that granularity was too much to scan. Each nav
+// item jumps to the first section inside that tab's group. Identity &
+// Classification and Images are edit-only (no public equivalent — they
+// feed the hero/quick-stats/gallery rather than being their own named
+// section), so they're bundled into Overview, the first group.
+const TABS = [
+  { id: 'identity', label: 'Overview' },
+  { id: 'driving-character', label: 'The Story' },
+  { id: 'collectibility', label: 'Owning One' },
 ] as const
 
 // Shared by the existing-generation editor and the new-car create flow.
@@ -67,14 +54,14 @@ export default function GenerationFieldsEditor({
 
   return (
     <div className="flex flex-col gap-7">
-      {/* Sticky section nav — same list/order as the public page.
-          scrollbar-hide suppresses the native horizontal scrollbar track
-          (the global ::-webkit-scrollbar rule otherwise renders a thick
-          grey bar under this row); the row still scrolls via touch/trackpad
-          and the overflow-x-auto behavior itself is unchanged. */}
+      {/* Sticky nav — the public page's 3 tabs, not a flat list of every
+          section. scrollbar-hide suppresses the native horizontal scrollbar
+          track (the global ::-webkit-scrollbar rule otherwise renders a
+          grey bar under this row); the row still scrolls via touch/
+          trackpad, only the track's own rendering is hidden. */}
       <nav className="sticky top-14 z-40 bg-white/95 border-b border-border -mx-6 px-6 backdrop-blur-sm">
         <div className="flex gap-0 overflow-x-auto scrollbar-hide">
-          {SECTIONS.map(s => (
+          {TABS.map(s => (
             <a key={s.id} href={`#${s.id}`} className="text-xs font-medium text-text-secondary no-underline px-4 py-3 border-b-2 border-transparent whitespace-nowrap transition-colors hover:text-text-primary">
               {s.label}
             </a>
@@ -189,26 +176,20 @@ export default function GenerationFieldsEditor({
           />
         )}
         <div className="mt-5">
+          {/* Same ImageUploadField/Remove image button as Hero above — a
+              cleared slot stays in place (empty, no thumbnail) rather than
+              collapsing the row, exactly like Hero looks when cleared. The
+              array is only compacted (empty slots dropped) at Save time in
+              AdminModelForm's save(), which is also the only place any of
+              this ever reaches Supabase storage. */}
           {field('Gallery Images', (
             <div className="flex flex-col gap-3">
               {value.gallery_images.map((url, i) => (
-                <div key={i} className="flex gap-2 items-start">
-                  <div className="flex-1">
-                    <ImageUploadField
-                      value={url}
-                      onChange={v => onChange({ gallery_images: value.gallery_images.map((u, j) => j === i ? (v ?? '') : u) })}
-                      showRemoveButton={false}
-                    />
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      deleteCarImageIfOwned(url)
-                      onChange({ gallery_images: value.gallery_images.filter((_, j) => j !== i) })
-                    }}
-                    className="btn-secondary px-3"
-                  >Remove</button>
-                </div>
+                <ImageUploadField
+                  key={i}
+                  value={url || null}
+                  onChange={v => onChange({ gallery_images: value.gallery_images.map((u, j) => j === i ? (v ?? '') : u) })}
+                />
               ))}
               {value.gallery_images.length === 0 && (
                 <p className="text-label text-text-tertiary italic">
