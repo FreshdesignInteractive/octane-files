@@ -18,7 +18,7 @@
   --color-border-subtle:  #e9ebed; /* one step lighter than border, for hairline dividers on light bands */
   --color-border:         #dee2e6; /* metallic divider/card border, was #e8e8e8 */
   --color-border-mid:     #d0d0d0;
-  --color-track:          #b3b3b3; /* score/progress bar backgrounds (radar bars, electronic dependence) — a step darker than border-mid */
+  --color-track:          #dee2e6; /* score/progress bar backgrounds (radar bars, electronic dependence) — matches border, two steps lighter than the original #b3b3b3 */
   /* TEMP PREVIEW — "Option I: Emerald Racing Green" (Fable-generated
      alt scheme, 2026-07-18). Original British Racing Green values are
      saved in memory (project_octanefiles_accent_baseline) — restore

@@ -8,29 +8,34 @@
 // (GenerationFieldsEditor.tsx) and the public page (app/cars/[slug]/page.tsx)
 // wherever a field appears in both — see imports/CSV_TEMPLATE_GUIDE.md.
 //
-// Covers GenerationInput's flat, CSV-shaped fields only. Deliberately
-// excludes: hero_image/gallery_images (image upload flow), specs/market_data
-// low-mid-high (structured/nested, not flat CSV columns), resources, trims
+// Covers GenerationInput's flat, CSV-shaped fields, plus market_data's
+// low/mid/high/as_of/notes and the real `resources` array column (both
+// added 2026-07 to close the last coverage gaps — see the coverage audit
+// in the handoff doc). Deliberately still excludes: hero_image/gallery_images
+// (image upload flow), specs (dead column, not rendered anywhere), trims
 // (separate CSV type), and year_start/year_end/code (identity fields —
 // changing these redefines the car and belongs in the form, not a bulk
 // import). production_years isn't part of GenerationInput at all anymore —
 // it's a dead column (see the comment on it in car-schema.ts).
 //
-// The 7 radar axes, plus market_notes/rivals/lineage/manufacturer_full_name,
-// are synthetic keys — there is no literal generations.radar_desirability/
-// market_notes column, rivals/lineage don't land on generations at all
-// (they become plain-text car_relations rows, see bulk_add_car_relations in
-// imports/step21_bulk_relations_and_market_notes.sql), and
-// manufacturer_full_name writes to the linked make's full_name via
-// bulk_update_make_enrichment (imports/step39_make_full_name.sql) instead
-// of a generations column. The radar axes and market_notes merge into the
-// radar_scores/market_data JSONB columns via bulk_update_generation_
-// enrichment. lib/bulk-import.ts special-cases all of these keys when
-// building the SELECT list and when diffing against current values.
+// The 7 radar axes, plus market_notes/rivals/lineage/manufacturer_full_name/
+// the 4 price_* fields, are synthetic keys — there is no literal
+// generations.radar_desirability/market_notes/price_low column, rivals/
+// lineage don't land on generations at all (they become plain-text
+// car_relations rows, see bulk_add_car_relations in imports/step21_bulk_
+// relations_and_market_notes.sql), and manufacturer_full_name writes to the
+// linked make's full_name via bulk_update_make_enrichment (imports/step39_
+// make_full_name.sql) instead of a generations column. The radar axes,
+// market_notes, and the 4 price_* fields all merge into the radar_scores/
+// market_data JSONB columns via bulk_update_generation_enrichment.
+// lib/bulk-import.ts special-cases all of these keys when building the
+// SELECT list and when diffing against current values. `resources` is NOT
+// synthetic — it's a real generations.resources JSONB column, just with
+// its own resource_list FieldType for the Title|URL|type;... encoding.
 
 import {
   CAR_CLASSES, BODY_STYLES, DRIVETRAIN_TYPES, ENGINE_LAYOUTS,
-  DESIRABILITY_TIERS, VALUE_TRAJECTORIES, RADAR_AXES, type RadarAxisKey,
+  DESIRABILITY_TIERS, VALUE_TRAJECTORIES, RADAR_AXES, RESOURCE_TYPES, type RadarAxisKey,
 } from './car-schema'
 
 export type RadarFieldKey =
@@ -49,6 +54,15 @@ export type RelationFieldKey = 'rivals' | 'lineage'
 // going to car_relations rather than a generations column.
 export type MakeFieldKey = 'manufacturer_full_name'
 
+// Also synthetic — merge into the market_data JSONB column instead of a
+// literal generations column, same mechanism market_notes already uses
+// (see imports/step40_pricing_and_resources.sql). price_as_of is stored as
+// a full YYYY-MM-01 date string (first of month) even though the CSV only
+// asks for YYYY-MM — the public page already only ever renders the
+// year+month portion of market_data.as_of, so day-of-month is never shown
+// and never needs to be collected.
+export type MarketPriceFieldKey = 'price_low' | 'price_mid' | 'price_high' | 'price_as_of'
+
 export type EnrichmentFieldKey =
   | MakeFieldKey
   | 'nickname' | 'designer' | 'wikipedia_url' | 'engine_signature' | 'transmission' | 'class' | 'engine_layout'
@@ -59,10 +73,11 @@ export type EnrichmentFieldKey =
   | 'variants_to_know'
   | 'driving_character' | 'design_notes' | 'motorsport_pedigree' | 'cultural_notes'
   | RelationFieldKey
-  | 'desirability_tier' | 'value_trajectory' | 'market_notes'
+  | 'desirability_tier' | 'value_trajectory' | 'market_notes' | MarketPriceFieldKey
   | 'known_issues' | 'maintenance'
+  | 'resources'
 
-export type FieldType = 'text' | 'text_list' | 'enum' | 'enum_array' | 'boolean' | 'integer'
+export type FieldType = 'text' | 'text_list' | 'enum' | 'enum_array' | 'boolean' | 'integer' | 'month' | 'resource_list'
 
 export interface FieldSpec {
   key: EnrichmentFieldKey
@@ -108,6 +123,20 @@ export function isRelationField(key: EnrichmentFieldKey): key is RelationFieldKe
 
 export function isMakeField(key: EnrichmentFieldKey): key is MakeFieldKey {
   return key === 'manufacturer_full_name'
+}
+
+// Maps each synthetic price CSV field to the market_data sub-key it merges
+// into — shared with lib/bulk-import.ts's diffing and per-car merge logic,
+// same pattern as RADAR_FIELD_TO_AXIS above.
+export const PRICE_FIELD_TO_MARKET_KEY: Record<MarketPriceFieldKey, 'low' | 'mid' | 'high' | 'as_of'> = {
+  price_low: 'low',
+  price_mid: 'mid',
+  price_high: 'high',
+  price_as_of: 'as_of',
+}
+
+export function isMarketPriceField(key: EnrichmentFieldKey): key is MarketPriceFieldKey {
+  return key in PRICE_FIELD_TO_MARKET_KEY
 }
 
 // Headers are hand-written, not derived from RADAR_AXES' labels — a naive
@@ -192,9 +221,24 @@ export const ENRICHMENT_FIELDS: FieldSpec[] = [
   { key: 'desirability_tier', header: 'DesirabilityTier', type: 'enum', allowedValues: DESIRABILITY_TIERS },
   { key: 'value_trajectory', header: 'ValueTrajectory', type: 'enum', allowedValues: VALUE_TRAJECTORIES.map(v => v.value) },
   { key: 'market_notes', header: 'MarketNotes', type: 'text' },
+  // Integers, USD (market_data.currency stays whatever it already is —
+  // this doesn't touch it). Matches the public page's Driver/Excellent/
+  // Concours tiers exactly: low=Driver, mid=Excellent, high=Concours.
+  { key: 'price_low', header: 'PriceLow', type: 'integer' },
+  { key: 'price_mid', header: 'PriceMid', type: 'integer' },
+  { key: 'price_high', header: 'PriceHigh', type: 'integer' },
+  { key: 'price_as_of', header: 'PriceAsOf', type: 'month' },
 
   { key: 'known_issues', header: 'KnownIssues', type: 'text' },
   { key: 'maintenance', header: 'Maintenance', type: 'text' },
+
+  // A real generations.resources column (not synthetic, unlike everything
+  // else near the bottom of this list) — an array of {title, url, type}
+  // objects. Semicolon-separated entries, each entry itself pipe-separated
+  // (Title|URL|type) since a single entry needs 3 sub-fields, not 1 —
+  // same reasoning Rivals/Lineage's semicolon list uses for "several of
+  // these in one cell," just one level deeper.
+  { key: 'resources', header: 'Resources', type: 'resource_list', allowedValues: RESOURCE_TYPES },
 ]
 
 // The three key columns used to resolve a row to an existing generation —
@@ -238,6 +282,8 @@ function exampleValueFor(spec: FieldSpec): string {
   if (spec.type === 'text_list') return 'Example A;Example B'
   if (spec.type === 'boolean') return 'Yes'
   if (spec.type === 'integer') return spec.range ? String(spec.range[0]) : '1'
+  if (spec.type === 'month') return '2026-01'
+  if (spec.type === 'resource_list') return `Example Club|https://example.com|${spec.allowedValues![0]}`
   return ''
 }
 

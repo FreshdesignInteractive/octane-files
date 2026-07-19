@@ -12,19 +12,21 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  ENRICHMENT_FIELDS, isRadarField, isRelationField, isMakeField, RADAR_FIELD_TO_AXIS, RELATION_FIELD_TYPE,
+  ENRICHMENT_FIELDS, isRadarField, isRelationField, isMakeField, isMarketPriceField,
+  RADAR_FIELD_TO_AXIS, RELATION_FIELD_TYPE, PRICE_FIELD_TO_MARKET_KEY,
   type EnrichmentFieldKey,
 } from './bulk-import-schema'
-import type { RadarScores, GenerationInput } from './car-schema'
+import type { RadarScores, GenerationInput, ResourceLink } from './car-schema'
 
 // True for any EnrichmentFieldKey that isn't a literal generations column —
-// radar axes and market_notes merge into a JSONB column instead, and
-// rivals/lineage don't touch generations at all. resolveGeneration must
-// never name one of these in its SELECT list (see the units_produced_
-// estimated live-breakage lesson — an explicit SELECT of a nonexistent
-// column 42703s the whole query, not just that field).
+// radar axes, market_notes, and the 4 price_* fields merge into a JSONB
+// column instead, and rivals/lineage don't touch generations at all.
+// resolveGeneration must never name one of these in its SELECT list (see
+// the units_produced_estimated live-breakage lesson — an explicit SELECT
+// of a nonexistent column 42703s the whole query, not just that field).
+// `resources` is deliberately NOT included here — it's a real column.
 function isSyntheticField(key: EnrichmentFieldKey): boolean {
-  return isRadarField(key) || isRelationField(key) || isMakeField(key) || key === 'market_notes'
+  return isRadarField(key) || isRelationField(key) || isMakeField(key) || isMarketPriceField(key) || key === 'market_notes'
 }
 
 export interface ResolvedGeneration {
@@ -62,7 +64,7 @@ export async function resolveGeneration(
   return (gen as unknown as ResolvedGeneration) ?? null
 }
 
-export type EnrichmentValue = string | number | boolean | string[]
+export type EnrichmentValue = string | number | boolean | string[] | ResourceLink[]
 
 export interface FieldValidationError {
   field: EnrichmentFieldKey
@@ -133,6 +135,35 @@ export function parseEnrichmentFields(row: Record<string, string>): ParsedEnrich
       } else {
         values[spec.key] = n
       }
+    } else if (spec.type === 'month') {
+      // Stored as the first of the month — market_data.as_of has always
+      // been a full date string, and the public page only ever renders
+      // its year+month portion, so day-of-month carries no information
+      // either way.
+      const match = /^(\d{4})-(0[1-9]|1[0-2])$/.exec(raw)
+      if (!match) errors.push({ field: spec.key, header: spec.header, value: raw, reason: 'must be YYYY-MM, e.g. 2026-07' })
+      else values[spec.key] = `${raw}-01`
+    } else if (spec.type === 'resource_list') {
+      // Title|URL|type;Title2|URL2|type2 — one level deeper than
+      // Rivals/Lineage's plain semicolon list, since each entry here needs
+      // 3 sub-fields instead of 1.
+      const entries = raw.split(';').map(s => s.trim()).filter(Boolean)
+      const resolved: ResourceLink[] = []
+      for (const entry of entries) {
+        const parts = entry.split('|').map(s => s.trim())
+        if (parts.length !== 3 || !parts[0] || !parts[1]) {
+          errors.push({ field: spec.key, header: spec.header, value: entry, reason: 'must be Title|URL|type' })
+          continue
+        }
+        const [title, url, rawType] = parts
+        const type = spec.allowedValues!.find(v => v.toLowerCase() === rawType.toLowerCase())
+        if (!type) {
+          errors.push({ field: spec.key, header: spec.header, value: entry, reason: `type "${rawType}" is not one of ${spec.allowedValues!.join('/')}` })
+          continue
+        }
+        resolved.push({ title, url, type: type as ResourceLink['type'] })
+      }
+      if (resolved.length) values[spec.key] = resolved
     }
   }
 
@@ -162,7 +193,7 @@ export function diffEnrichmentFields(
 ): FieldDiff[] {
   const diffs: FieldDiff[] = []
   const radarScores = (current.radar_scores as RadarScores | null) ?? {}
-  const marketData = (current.market_data as { notes?: string | null } | null) ?? null
+  const marketData = (current.market_data as { notes?: string | null; low?: number | null; mid?: number | null; high?: number | null; as_of?: string | null } | null) ?? null
   for (const spec of ENRICHMENT_FIELDS) {
     if (!(spec.key in incoming)) continue
     // Neither has a single before/after value living on the resolved
@@ -174,9 +205,12 @@ export function diffEnrichmentFields(
     const to = incoming[spec.key]!
     const from = isRadarField(spec.key) ? radarScores[RADAR_FIELD_TO_AXIS[spec.key]] ?? null
       : spec.key === 'market_notes' ? (marketData?.notes ?? null)
+      : isMarketPriceField(spec.key) ? (marketData?.[PRICE_FIELD_TO_MARKET_KEY[spec.key]] ?? null)
       : current[spec.key]
     const changed = spec.type === 'enum_array'
       ? JSON.stringify([...(from as string[] ?? [])].sort()) !== JSON.stringify([...(to as string[])].sort())
+      : spec.type === 'resource_list'
+      ? JSON.stringify(from ?? []) !== JSON.stringify(to)
       : from !== to
     if (changed) diffs.push({ field: spec.key, header: spec.header, from, to })
   }
@@ -219,6 +253,8 @@ export function applyEnrichmentValues(
     if (isRadarField(spec.key)) radarScores[RADAR_FIELD_TO_AXIS[spec.key]] = v as number
     else if (spec.key === 'market_notes') {
       marketData = { currency: 'USD', as_of: null, low: null, mid: null, high: null, ...marketData, notes: v as string }
+    } else if (isMarketPriceField(spec.key)) {
+      marketData = { currency: 'USD', as_of: null, low: null, mid: null, high: null, notes: null, ...marketData, [PRICE_FIELD_TO_MARKET_KEY[spec.key]]: v }
     } else next[spec.key] = v
   }
 
