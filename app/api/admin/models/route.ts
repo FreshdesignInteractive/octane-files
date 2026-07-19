@@ -9,7 +9,7 @@ import type { GenerationInput } from '@/lib/car-schema'
 // explicit choice on the client (a distinct "add new" toggle, never inferred
 // from free text) — this route just resolves whichever the client picked.
 interface CreateCarPayload {
-  make: { id: string } | { name: string; country: string }
+  make: { id: string } | { name: string; country: string; full_name?: string }
   model: { id: string } | { name: string }
   generation: GenerationInput
 }
@@ -32,12 +32,15 @@ export async function POST(req: NextRequest) {
     makeId = existingMake.id
     makeName = existingMake.name
   } else {
-    const { name, country } = payload.make
+    const { name, country, full_name } = payload.make
     if (!name?.trim() || !country?.trim()) {
       return NextResponse.json({ error: 'New make needs both a name and a country' }, { status: 400 })
     }
+    // Defaults to the short name, same preseed step39's migration gave
+    // every existing make — refined later via /admin/makes, never left
+    // blank.
     const { data: newMake, error } = await supabase
-      .from('makes').insert({ name, slug: slugify(name), country }).select('id, name').single()
+      .from('makes').insert({ name, slug: slugify(name), country, full_name: full_name?.trim() || name }).select('id, name').single()
     if (error) return NextResponse.json({ error: `Could not create make: ${error.message}` }, { status: 500 })
     makeId = newMake.id
     makeName = newMake.name

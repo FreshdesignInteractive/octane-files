@@ -184,6 +184,14 @@ export interface MakeRecord {
   name: string
   slug: string
   country: string
+  // Full legal/marketing company name ("Ford Motor Company") vs. name's
+  // short marque name ("Ford") — preseeded to name for every existing row
+  // (step39 migration), refined to the real value per make over time.
+  full_name: string | null
+  // 2-3 sentences of static copy for the marque's /marques/[slug] page.
+  // Supplied manually per marque, not part of the per-car enrichment CSV —
+  // NULL until someone writes it.
+  intro_text: string | null
 }
 
 export interface ModelRecord {

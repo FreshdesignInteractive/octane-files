@@ -16,15 +16,17 @@
 // import). production_years isn't part of GenerationInput at all anymore —
 // it's a dead column (see the comment on it in car-schema.ts).
 //
-// The 7 radar axes, plus market_notes/rivals/lineage, are synthetic keys —
-// there is no literal generations.radar_desirability/market_notes column,
-// and rivals/lineage don't land on generations at all (they become plain-
-// text car_relations rows, see bulk_add_car_relations in
-// imports/step21_bulk_relations_and_market_notes.sql). The radar axes and
-// market_notes merge into the radar_scores/market_data JSONB columns via
-// bulk_update_generation_enrichment. lib/bulk-import.ts special-cases all
-// of these keys when building the SELECT list and when diffing against
-// current values.
+// The 7 radar axes, plus market_notes/rivals/lineage/manufacturer_full_name,
+// are synthetic keys — there is no literal generations.radar_desirability/
+// market_notes column, rivals/lineage don't land on generations at all
+// (they become plain-text car_relations rows, see bulk_add_car_relations in
+// imports/step21_bulk_relations_and_market_notes.sql), and
+// manufacturer_full_name writes to the linked make's full_name via
+// bulk_update_make_enrichment (imports/step39_make_full_name.sql) instead
+// of a generations column. The radar axes and market_notes merge into the
+// radar_scores/market_data JSONB columns via bulk_update_generation_
+// enrichment. lib/bulk-import.ts special-cases all of these keys when
+// building the SELECT list and when diffing against current values.
 
 import {
   CAR_CLASSES, BODY_STYLES, DRIVETRAIN_TYPES, ENGINE_LAYOUTS,
@@ -41,7 +43,14 @@ export type RadarFieldKey =
 // real linked car is still a picker-only action in the edit form.
 export type RelationFieldKey = 'rivals' | 'lineage'
 
+// Also not a literal generations column — writes to the linked make's
+// full_name instead, via the separate bulk_update_make_enrichment RPC (see
+// imports/step39_make_full_name.sql), same reasoning as rivals/lineage
+// going to car_relations rather than a generations column.
+export type MakeFieldKey = 'manufacturer_full_name'
+
 export type EnrichmentFieldKey =
+  | MakeFieldKey
   | 'nickname' | 'designer' | 'wikipedia_url' | 'engine_signature' | 'transmission' | 'class' | 'engine_layout'
   | 'units_produced' | 'units_produced_estimated' | 'is_icon' | 'homologation_special' | 'poster_car' | 'body_styles' | 'drivetrain'
   | 'introduction'
@@ -97,6 +106,10 @@ export function isRelationField(key: EnrichmentFieldKey): key is RelationFieldKe
   return key in RELATION_FIELD_TYPE
 }
 
+export function isMakeField(key: EnrichmentFieldKey): key is MakeFieldKey {
+  return key === 'manufacturer_full_name'
+}
+
 // Headers are hand-written, not derived from RADAR_AXES' labels — a naive
 // `Radar${label.replace(/\s+/g, '')}` derivation once silently produced
 // "RadarEaseofRestoration" (lowercase "of") instead of the intended
@@ -122,6 +135,11 @@ const radarFieldSpecs: FieldSpec[] = RADAR_AXES.map(axis => {
 // like -> Market Data -> What owning one is like, i.e. the same section
 // order as the edit and public pages, skipping structured-only sections.
 export const ENRICHMENT_FIELDS: FieldSpec[] = [
+  // Writes to the linked make's full_name, not this generation — see
+  // MakeFieldKey above. Several rows for the same marque (e.g. 10 Chevrolet
+  // generations) should carry the same value; if they don't, last one
+  // processed in the batch wins.
+  { key: 'manufacturer_full_name', header: 'ManufacturerFullName', type: 'text' },
   { key: 'nickname', header: 'Nickname', type: 'text' },
   { key: 'designer', header: 'Designer', type: 'text' },
   { key: 'wikipedia_url', header: 'WikipediaURL', type: 'text' },

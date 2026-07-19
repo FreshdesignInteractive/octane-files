@@ -71,11 +71,14 @@ function TabDivider() {
 // and The Story). Owning One passes divider={false} for its non-first
 // fields — no rule line, just a single mt-9 (36px, Tailwind's own scale)
 // gap instead of the border's pt-8+mt-8 double gap.
-// card wraps the section in the same white/border/shadow/radius card the
-// sidebar's fact card already uses (bg-white border border-border
-// rounded-2xl shadow-sm p-6) — the card's own boundary is the separator,
-// so it always implies no border-t rule line, just a plain mt-4 (16px) gap
-// above — matching the sidebar's own gap-8 between its stacked cards.
+// card wraps the section in the same white/border/radius the sidebar's
+// fact card uses (bg-white border border-border rounded-2xl p-6) — minus
+// the sidebar card's shadow-sm, deliberately: these main-column cards
+// (Distinctions, The scorecard, Market Data, Buyer's guide) read as flatter
+// than the sidebar on the right, which keeps its own shadow untouched. The
+// card's own boundary is still the separator, so it always implies no
+// border-t rule line, just a plain mt-4 (16px) gap above — matching the
+// sidebar's own gap-8 between its stacked cards.
 // subtext is the reusable "what this section is" pattern — a short line
 // explaining the section, sitting tight under the title (mb-1.5, closer
 // than the title's own default mb-4) so it reads as paired with the
@@ -83,7 +86,7 @@ function TabDivider() {
 function FieldSection({ id, label, first, divider = true, card = false, subtext, children }: { id: string; label?: string; first?: boolean; divider?: boolean; card?: boolean; subtext?: string; children: React.ReactNode }) {
   const spacing = first ? '' : card ? 'mt-8' : divider ? 'border-t border-border pt-8 mt-8' : 'mt-9'
   return (
-    <div id={id} className={`scroll-mt-40 ${spacing} ${card ? 'bg-white border border-border rounded-2xl shadow-sm p-6' : ''}`}>
+    <div id={id} className={`scroll-mt-40 ${spacing} ${card ? 'bg-white border border-border rounded-2xl p-6' : ''}`}>
       {label && <h3 className={`text-base font-bold text-text-primary tracking-tight ${subtext ? 'mb-1.5' : 'mb-4'}`}>{label}</h3>}
       {subtext && <p className="text-body text-text-tertiary mb-6">{subtext}</p>}
       {children}
@@ -98,9 +101,48 @@ function FieldSection({ id, label, first, divider = true, card = false, subtext,
 function SelectedCheck() {
   return (
     <svg width="14" height="14" viewBox="0 0 24 24">
-      <circle cx="12" cy="12" r="10" fill="currentColor" className="text-white" />
+      <circle cx="12" cy="12" r="12" fill="currentColor" className="text-white" />
       <path d="m9 12 2 2 4-4" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-accent" />
     </svg>
+  )
+}
+
+// Shared by Desirability Tier and Value Trajectory — one connected bar
+// instead of separate gapped pills. divide-x on the wrapper draws the
+// hairline between adjacent segments; the top/bottom border (plus the
+// outer left/right cap) lives on each segment individually rather than on
+// the wrapper, so a selected segment's border can go accent-green instead
+// of the plain grey border-border every unselected segment gets — a grey
+// line sitting right on top of the green fill was reading as if it capped/
+// shrank the selected segment. The first/last segment round their own
+// outer corners directly (rounded-l-full/rounded-r-full) instead of
+// relying on the wrapper's overflow-hidden to clip them into shape — with
+// the border now living on the segment itself, clipping a square-cornered
+// child's border via an ancestor's overflow/radius turned out unreliable;
+// rounding the actual corner is the more direct, robust way to get there.
+function TierBar({ options, selected }: { options: { value: string; label: string }[]; selected: string | null }) {
+  return (
+    <div className="inline-flex divide-x divide-border">
+      {options.map((opt, i) => {
+        const isSelected = opt.value === selected
+        const edgeColor = isSelected ? 'border-accent' : 'border-border'
+        const isFirst = i === 0
+        const isLast = i === options.length - 1
+        return (
+          <span
+            key={opt.value}
+            className={`flex items-center gap-1.5 px-5 py-2.5 text-body cursor-default whitespace-nowrap border-t border-b ${edgeColor} ${
+              isFirst ? `border-l rounded-l-full ${edgeColor}` : ''
+            } ${isLast ? `border-r rounded-r-full ${edgeColor}` : ''} ${
+              isSelected ? 'bg-accent text-white font-medium' : selected ? 'text-text-primary' : 'text-text-tertiary'
+            }`}
+          >
+            {isSelected && <SelectedCheck />}
+            {opt.label}
+          </span>
+        )
+      })}
+    </div>
   )
 }
 
@@ -177,9 +219,9 @@ const MADE_THE_CUT = {
 }
 
 const VALUE_TRAJECTORY_DISPLAY: Record<string, string> = {
-  appreciating: '↗ Appreciating',
-  stable: '→ Stable',
-  cooling: '↘ Cooling',
+  appreciating: 'Appreciating',
+  stable: 'Stable',
+  cooling: 'Cooling',
 }
 
 // Fixed site copy, not per-car data — same definition for every car with a
@@ -361,36 +403,20 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         <FieldSection id="market-data" label="Market Data" card subtext="Demand tier, price trend, and typical values by condition, based on recent sales data.">
             <div className="mb-5">
               <div className="text-sm font-bold text-text-primary tracking-tight mb-3">Desirability Tier</div>
-              <div className="flex gap-2 flex-wrap">
-                {DESIRABILITY_TIERS.map(tier => {
-                  const isSelected = tier === car.desirability_tier
-                  const pillClass = isSelected ? 'pill pill-active gap-1.5' : car.desirability_tier ? 'pill' : 'pill text-text-tertiary'
-                  return (
-                    <span key={tier} className={`cursor-default text-body ${pillClass}`}>
-                      {isSelected && <SelectedCheck />}
-                      {tier}
-                    </span>
-                  )
-                })}
-              </div>
+              <TierBar
+                options={DESIRABILITY_TIERS.map(tier => ({ value: tier, label: tier }))}
+                selected={car.desirability_tier}
+              />
               <p className="text-body text-text-secondary leading-relaxed mt-1.5 m-0">
                 {car.desirability_tier ? DESIRABILITY_TIER_DEFINITIONS[car.desirability_tier] : 'Data unavailable'}
               </p>
             </div>
             <div className="mb-5 pt-8 border-t border-border">
               <div className="text-sm font-bold text-text-primary tracking-tight mb-3">Value Trajectory</div>
-              <div className="flex gap-2 flex-wrap">
-                {VALUE_TRAJECTORIES.map(t => {
-                  const isSelected = t.value === car.value_trajectory
-                  const pillClass = isSelected ? 'pill pill-active gap-1.5' : car.value_trajectory ? 'pill' : 'pill text-text-tertiary'
-                  return (
-                    <span key={t.value} className={`cursor-default text-body ${pillClass}`}>
-                      {isSelected && <SelectedCheck />}
-                      {VALUE_TRAJECTORY_DISPLAY[t.value]}
-                    </span>
-                  )
-                })}
-              </div>
+              <TierBar
+                options={VALUE_TRAJECTORIES.map(t => ({ value: t.value, label: VALUE_TRAJECTORY_DISPLAY[t.value] }))}
+                selected={car.value_trajectory}
+              />
               <p className="text-body text-text-secondary leading-relaxed mt-1.5 m-0">
                 {car.value_trajectory ? VALUE_TRAJECTORY_DEFINITIONS[car.value_trajectory] : 'Data unavailable'}
               </p>

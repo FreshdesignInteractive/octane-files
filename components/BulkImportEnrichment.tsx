@@ -169,6 +169,7 @@ export default function BulkImportEnrichment() {
                 {matched.map(r => {
                   const m = r.match as Extract<RowMatch, { status: 'matched' }>
                   const relations = buildRelationInserts(m.generation_id, m.fields as Partial<Record<EnrichmentFieldKey, EnrichmentValue>>)
+                  const manufacturerFullName = m.fields.manufacturer_full_name as string | undefined
                   return (
                     <div key={r.row_index} className="p-3 rounded-lg border border-border flex gap-3">
                       <input
@@ -181,7 +182,7 @@ export default function BulkImportEnrichment() {
                           {r.make} {r.model} {r.generation}
                           {m.archived && <span className="pill ml-2">Archived</span>}
                         </div>
-                        {m.diffs.length === 0 && relations.length === 0 ? (
+                        {m.diffs.length === 0 && relations.length === 0 && !manufacturerFullName ? (
                           <p className="text-label text-text-tertiary mt-1">No changes (values match what&apos;s already saved)</p>
                         ) : (
                           <div className="mt-2 flex flex-col gap-1">
@@ -193,6 +194,11 @@ export default function BulkImportEnrichment() {
                             {relations.length > 0 && (
                               <div className="text-label text-text-secondary">
                                 <span className="font-medium">Rivals/Lineage:</span> +{relations.length} entr{relations.length === 1 ? 'y' : 'ies'} <span className="text-accent font-medium">{relations.map(rel => rel.label_text).join(', ')}</span> (already-existing entries are skipped automatically)
+                              </div>
+                            )}
+                            {manufacturerFullName && (
+                              <div className="text-label text-text-secondary">
+                                <span className="font-medium">ManufacturerFullName:</span> sets the make&apos;s full name to <span className="text-accent font-medium">{manufacturerFullName}</span> (no before/after shown — applies to the make, not this car, and may affect other generations from the same manufacturer)
                               </div>
                             )}
                           </div>

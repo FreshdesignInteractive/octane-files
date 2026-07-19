@@ -43,7 +43,7 @@ const CAR_SELECT = `
   homologation_special, poster_car, value_trajectory,
   callout, driving_character, design_notes, cultural_notes,
   motorsport_pedigree,
-  models!inner(name, makes!inner(name, country))
+  models!inner(name, makes!inner(name, country, full_name, slug))
 `
 
 type GenerationJoinRow = {
@@ -55,7 +55,11 @@ type GenerationJoinRow = {
   class: string
   hero_image: string | null
   units_produced: number | null
-  models: { name: string; makes: { name: string; country: string } }
+  // full_name/slug are only requested by CAR_SELECT (the single-car detail
+  // page's Manufacturer row) — optional here since this same type is reused
+  // for the relations sub-query in getModel(), whose own select string
+  // doesn't ask for them.
+  models: { name: string; makes: { name: string; country: string; full_name?: string | null; slug?: string } }
 }
 
 function mapCarSummary(row: GenerationJoinRow): CarSummary {
@@ -79,6 +83,8 @@ function mapCarSummary(row: GenerationJoinRow): CarSummary {
 function mapCar(row: GenerationJoinRow & Record<string, unknown>): Omit<Car, 'trims' | 'relations'> {
   return {
     ...mapCarSummary(row),
+    make_full_name: row.models.makes.full_name ?? null,
+    make_slug: row.models.makes.slug ?? '',
     units_produced_estimated: (row.units_produced_estimated as boolean) ?? false,
     transmission: (row.transmission as string | null) ?? null,
     body_styles: (row.body_styles as string[]) ?? [],

@@ -213,9 +213,51 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 its own icon + label + value row instead of a stat-cell.
                 Single column — this card is narrower than the main
                 content column, no room for two. */}
-            <div className="bg-white border border-border rounded-2xl shadow-sm p-6">
+            {/* pb-4, not the general p-6's 24px — this card always ends
+                with the Wikipedia row, and 24px there read as giving it
+                more visual weight than a small secondary exit link needs.
+                The Wikipedia row's own pt-4 below matches this 16px, so
+                its gap above (to the border line) and below (to the
+                card's edge) stay equal, just smaller. */}
+            <div className="bg-white border border-border rounded-2xl shadow-sm p-6 pb-4">
               <div className="flex flex-col gap-4">
                 {([
+                  {
+                    label: 'Manufacturer',
+                    // Full company name if set (falls back to the short
+                    // marque name — never blank, both are always present).
+                    // Links to the marque hub; if a make somehow has no
+                    // slug, this degrades to plain text rather than a dead
+                    // link — never /browse?make=, per the standing rule
+                    // that the sidebar only ever points at the real hub.
+                    value: car.make_slug ? (
+                      <Link href={`/marques/${car.make_slug}`} className="text-accent no-underline">
+                        {car.make_full_name || car.make}
+                      </Link>
+                    ) : (car.make_full_name || car.make || 'Data unavailable'),
+                    icon: (
+                      <>
+                        <path d="M12 16h.01" />
+                        <path d="M16 16h.01" />
+                        <path d="M3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V8.5a.5.5 0 0 0-.769-.422l-4.462 2.844A.5.5 0 0 1 15 10.5v-2a.5.5 0 0 0-.769-.422L9.77 10.922A.5.5 0 0 1 9 10.5V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2z" />
+                        <path d="M8 16h.01" />
+                      </>
+                    ),
+                  },
+                  {
+                    label: 'Model',
+                    // Marketing model name only ("Corvette") — never the
+                    // generation label ("Corvette C2"), and deliberately no
+                    // separate Generation row; the generation code already
+                    // shows in the page title/breadcrumb above.
+                    value: car.model || 'Data unavailable',
+                    // Badge/emblem icon, not a second car silhouette — a
+                    // literal car-front icon here reads as a near-duplicate
+                    // of Body's icon just below at this render size.
+                    icon: (
+                      <path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z" />
+                    ),
+                  },
                   {
                     label: 'Nickname',
                     value: car.nickname || 'Data unavailable',
@@ -324,12 +366,15 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                   back to a Wikipedia search (not the homepage) when no
                   wikipedia_url is entered, so the link still keeps its
                   promise. Centered, unlike the left-aligned facts above. */}
+              {/* pt-4 (16px) matches the card's own pb-4 below this row (see
+                  that div's comment) — gap above the icon (border line to
+                  icon) and below (icon to card's edge) stay equal. */}
               <div className="flex items-center justify-center gap-3 mt-4 pt-4 border-t border-border">
                 <span
-                  className="w-5 h-5 flex items-center justify-center rounded-sm border border-border text-text-primary text-xs font-serif font-bold shrink-0"
+                  className="w-6 h-6 flex items-center justify-center rounded-full border border-border bg-white overflow-hidden shrink-0"
                   aria-hidden="true"
                 >
-                  W
+                  <img src="/Wikipedia's_W.svg" alt="" className="w-4 h-4" />
                 </span>
                 <a href={wikipediaHref} target="_blank" rel="noopener noreferrer" className="text-body text-accent no-underline">
                   Read more about this car on Wikipedia

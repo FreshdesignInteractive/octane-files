@@ -8,15 +8,22 @@ import type { EnrichmentFieldKey } from '@/lib/bulk-import-schema'
 // resolved generation_ids and already-validated field values, no raw CSV
 // strings, no re-parsing.
 //
-// Two separate RPC calls, not one transaction: flat generations fields via
-// bulk_update_generation_enrichment (unchanged), and rivals/lineage via
-// bulk_add_car_relations (new — car_relations is a child table, not a
-// generations column, so it can't ride the same UPDATE). Each call is its
-// own atomic transaction; a failure in one doesn't roll back the other.
-// That's an acceptable trade-off here specifically because relation
-// inserts are purely additive and idempotent (a duplicate label_text is a
-// silent DB-level no-op via the partial unique index) — re-running this
-// commit after a partial failure is always safe, never double-writes.
+// Three separate RPC calls, not one transaction: flat generations fields
+// via bulk_update_generation_enrichment (unchanged), rivals/lineage via
+// bulk_add_car_relations (car_relations is a child table, not a generations
+// column, so it can't ride the same UPDATE), and ManufacturerFullName via
+// bulk_update_make_enrichment (writes to makes, not generations — same
+// reasoning). The same body.rows array is reused for both the generations
+// and make RPCs unmodified: each RPC's jsonb_to_recordset only pulls the
+// columns it explicitly declares, so a row carrying manufacturer_full_name
+// is silently ignored by bulk_update_generation_enrichment, and a row with
+// no manufacturer_full_name is silently a no-op inside bulk_update_make_
+// enrichment (see its WHERE ... IS NOT NULL). Each call is its own atomic
+// transaction; a failure in one doesn't roll back the others. That's an
+// acceptable trade-off here specifically because relation inserts are
+// purely additive/idempotent and make-enrichment writes are simple last-
+// value-wins overwrites — re-running this commit after a partial failure
+// is always safe, never double-writes or corrupts state.
 export async function POST(req: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -35,6 +42,11 @@ export async function POST(req: NextRequest) {
 
   const { data, error } = await supabase.rpc('bulk_update_generation_enrichment', { rows: body.rows })
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  const { error: makeError } = await supabase.rpc('bulk_update_make_enrichment', { rows: body.rows })
+  if (makeError) {
+    return NextResponse.json({ error: `Generation fields updated, but ManufacturerFullName failed: ${makeError.message}`, updated: data }, { status: 500 })
+  }
 
   let relationsAdded = 0
   if (body.relations?.length) {

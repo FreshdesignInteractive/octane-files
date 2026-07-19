@@ -12,7 +12,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js'
 import {
-  ENRICHMENT_FIELDS, isRadarField, isRelationField, RADAR_FIELD_TO_AXIS, RELATION_FIELD_TYPE,
+  ENRICHMENT_FIELDS, isRadarField, isRelationField, isMakeField, RADAR_FIELD_TO_AXIS, RELATION_FIELD_TYPE,
   type EnrichmentFieldKey,
 } from './bulk-import-schema'
 import type { RadarScores, GenerationInput } from './car-schema'
@@ -24,7 +24,7 @@ import type { RadarScores, GenerationInput } from './car-schema'
 // estimated live-breakage lesson — an explicit SELECT of a nonexistent
 // column 42703s the whole query, not just that field).
 function isSyntheticField(key: EnrichmentFieldKey): boolean {
-  return isRadarField(key) || isRelationField(key) || key === 'market_notes'
+  return isRadarField(key) || isRelationField(key) || isMakeField(key) || key === 'market_notes'
 }
 
 export interface ResolvedGeneration {
@@ -165,7 +165,12 @@ export function diffEnrichmentFields(
   const marketData = (current.market_data as { notes?: string | null } | null) ?? null
   for (const spec of ENRICHMENT_FIELDS) {
     if (!(spec.key in incoming)) continue
-    if (isRelationField(spec.key)) continue
+    // Neither has a single before/after value living on the resolved
+    // generation row — relations are additive child rows, and
+    // manufacturer_full_name lives on a different table (the linked
+    // make) that resolveGeneration doesn't select. Same "no diff line for
+    // this one" treatment as rivals/lineage.
+    if (isRelationField(spec.key) || isMakeField(spec.key)) continue
     const to = incoming[spec.key]!
     const from = isRadarField(spec.key) ? radarScores[RADAR_FIELD_TO_AXIS[spec.key]] ?? null
       : spec.key === 'market_notes' ? (marketData?.notes ?? null)
@@ -203,7 +208,13 @@ export function applyEnrichmentValues(
 
   for (const spec of ENRICHMENT_FIELDS) {
     if (!(spec.key in values)) continue
-    if (isRelationField(spec.key)) continue
+    // Neither applies to a single GenerationInput this way — relations are
+    // separate child rows the bulk /commit route creates directly, and
+    // manufacturer_full_name has no GenerationInput field at all (it's
+    // make-level, not per-generation); it only ever reaches the DB via
+    // bulk_update_make_enrichment in the bulk importer's commit route, not
+    // this per-car quick-import merge.
+    if (isRelationField(spec.key) || isMakeField(spec.key)) continue
     const v = values[spec.key]!
     if (isRadarField(spec.key)) radarScores[RADAR_FIELD_TO_AXIS[spec.key]] = v as number
     else if (spec.key === 'market_notes') {

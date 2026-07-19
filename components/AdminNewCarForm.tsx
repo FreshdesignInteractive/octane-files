@@ -15,6 +15,7 @@ export default function AdminNewCarForm() {
   const [addingMake, setAddingMake] = useState(false)
   const [newMakeName, setNewMakeName] = useState('')
   const [newMakeCountry, setNewMakeCountry] = useState('USA')
+  const [newMakeFullName, setNewMakeFullName] = useState('')
 
   const [modelId, setModelId] = useState<string>('')
   const [addingModel, setAddingModel] = useState(false)
@@ -58,7 +59,7 @@ export default function AdminNewCarForm() {
     setSaving(true)
     setMsg('')
     const payload = {
-      make: addingMake ? { name: newMakeName, country: newMakeCountry } : { id: makeId },
+      make: addingMake ? { name: newMakeName, country: newMakeCountry, full_name: newMakeFullName || undefined } : { id: makeId },
       model: addingModel ? { name: newModelName } : { id: modelId },
       generation,
     }
@@ -101,7 +102,13 @@ export default function AdminNewCarForm() {
               <select className="select" value={newMakeCountry} onChange={e => setNewMakeCountry(e.target.value)}>
                 {COUNTRIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
-              <button type="button" onClick={() => { setAddingMake(false); setNewMakeName(''); setAddingModel(false) }} className="text-xs text-text-tertiary underline self-start">
+              <input
+                className="input"
+                placeholder="Full company name (optional — defaults to make name, editable later in Makes)"
+                value={newMakeFullName}
+                onChange={e => setNewMakeFullName(e.target.value)}
+              />
+              <button type="button" onClick={() => { setAddingMake(false); setNewMakeName(''); setNewMakeFullName(''); setAddingModel(false) }} className="text-xs text-text-tertiary underline self-start">
                 Use an existing make instead
               </button>
             </div>

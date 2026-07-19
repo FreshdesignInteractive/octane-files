@@ -112,6 +112,11 @@ export interface Car extends CarSummary {
   // that shared type rather than forcing every CarSummary producer (the
   // search_generations RPC included) to also supply it.
   units_produced_estimated: boolean
+  // Manufacturer sidebar row: full company name (falls back to `make`,
+  // CarSummary's short marque name, when not yet set) and the make's own
+  // slug, so the row can link to /marques/[slug].
+  make_full_name: string | null
+  make_slug: string
   body_styles: string[]
   drivetrain: string | null
   engine_layout: string | null
