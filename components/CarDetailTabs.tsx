@@ -347,7 +347,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         {/* Market Data */}
         <FieldSection id="market-data" label="Market Data" card subtext="Demand tier, price trend, and typical values by condition, based on recent sales data.">
             <div className="mb-5">
-              <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Desirability Tier</div>
+              <div className="text-sm font-bold text-text-primary tracking-tight mb-3">Desirability Tier</div>
               <div className="flex gap-2 flex-wrap">
                 {DESIRABILITY_TIERS.map(tier => {
                   const isSelected = tier === car.desirability_tier
@@ -365,7 +365,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
               </p>
             </div>
             <div className="mb-5 pt-8 border-t border-border">
-              <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-3">Value Trajectory</div>
+              <div className="text-sm font-bold text-text-primary tracking-tight mb-3">Value Trajectory</div>
               <div className="flex gap-2 flex-wrap">
                 {VALUE_TRAJECTORIES.map(t => {
                   const isSelected = t.value === car.value_trajectory
@@ -383,7 +383,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
               </p>
             </div>
             <div className="pt-8 border-t border-border">
-              <div className="text-label font-bold tracking-widest text-accent-secondary uppercase mb-1.5">Price by condition</div>
+              <div className="text-sm font-bold text-text-primary tracking-tight mb-1.5">Price by condition</div>
               {/* Plain divide-x, not .stat-grid's bg-border/gap-px card
                   trick — that trick leaves the parent's own background
                   color exposed wherever a cell doesn't fully cover it,
@@ -400,7 +400,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
                     <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1.5">
                       {tier.label}
                     </div>
-                    <div className="text-xl font-semibold text-accent-secondary tracking-heading">
+                    <div className="text-xl font-semibold text-accent tracking-heading">
                       {tier.value != null ? formatMoney(tier.value) : NA}
                     </div>
                   </div>

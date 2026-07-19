@@ -19,15 +19,19 @@
   --color-border:         #dee2e6; /* metallic divider/card border, was #e8e8e8 */
   --color-border-mid:     #d0d0d0;
   --color-track:          #b3b3b3; /* score/progress bar backgrounds (radar bars, electronic dependence) — a step darker than border-mid */
-  --color-accent:                    #1b4332; /* British Racing Green — primary action color */
-  --color-accent-light:              #2f6f52; /* lighter solid green for bar/dot fills — accent itself reads near-black at thin widths */
-  --color-accent-dim:                #143225; /* hover */
-  --color-accent-pressed:            #081c15; /* active/pressed */
-  --color-accent-subtle:             rgb(27 67 50 / 0.1);
-  --color-accent-border:             rgb(27 67 50 / 0.35);
-  --color-accent-secondary:          #c9a84c; /* demoted gold */
-  --color-accent-secondary-subtle:   rgb(201 168 76 / 0.1);
-  --color-accent-secondary-border:   rgb(201 168 76 / 0.35);
+  /* TEMP PREVIEW — "Option I: Emerald Racing Green" (Fable-generated
+     alt scheme, 2026-07-18). Original British Racing Green values are
+     saved in memory (project_octanefiles_accent_baseline) — restore
+     those exact hex/rgb values here to revert. */
+  --color-accent:                    #1a7a4e;
+  --color-accent-light:              #2f9d68;
+  --color-accent-dim:                #14603d;
+  --color-accent-pressed:            #0e4a2f;
+  --color-accent-subtle:             rgb(26 122 78 / 0.1);
+  --color-accent-border:             rgb(26 122 78 / 0.35);
+  --color-accent-secondary:          #d9a514;
+  --color-accent-secondary-subtle:   rgb(217 165 20 / 0.1);
+  --color-accent-secondary-border:   rgb(217 165 20 / 0.35);
   --color-success:        #22c55e;
   --color-error:          #ef4444;
   --color-overlay:        rgb(0 0 0 / 0.45);
