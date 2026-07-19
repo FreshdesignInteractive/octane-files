@@ -351,7 +351,7 @@ export default function AdminModelForm({
             type="button"
             onClick={() => csvInputRef.current?.click()}
             disabled={csvImporting}
-            className="btn-secondary h-9 px-4 disabled:opacity-60"
+            className="btn-secondary h-9 px-4 shrink-0 whitespace-nowrap disabled:opacity-60"
           >
             {csvImporting ? 'Importing...' : 'Import CSV'}
           </button>
@@ -364,7 +364,7 @@ export default function AdminModelForm({
             type="button"
             onClick={() => imagesInputRef.current?.click()}
             disabled={imagesUploading}
-            className="btn-secondary h-9 px-4 disabled:opacity-60"
+            className="btn-secondary h-9 px-4 shrink-0 whitespace-nowrap disabled:opacity-60"
           >
             {imagesUploading ? 'Uploading...' : 'Attach images'}
           </button>

@@ -124,6 +124,17 @@ body {
 ::-webkit-scrollbar-track { background: var(--color-bg-elevated); }
 ::-webkit-scrollbar-thumb { background: var(--color-border-mid); border-radius: 3px; }
 
+/* For a horizontally-scrolling row (the admin edit page's sticky section
+   nav) where even the thin styled scrollbar above still reads as visual
+   noise under a tab row — scrolling itself (touch/trackpad/arrow keys)
+   stays fully functional, only the track's own rendering is suppressed. */
+.scrollbar-hide {
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
 /* ---- Heading typography system ----
    font-brand (Plus Jakarta Sans) on every heading tag, font-ui (Inter)
    everywhere else. Weight steps down Bold -> Semibold -> Medium as the

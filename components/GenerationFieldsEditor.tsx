@@ -21,25 +21,27 @@ const field = (label: string, children: React.ReactNode) => (
 
 const sectionHeading = 'text-body font-bold text-text-primary uppercase tracking-widest mb-4 pb-2 border-b border-border'
 
-// Canonical section list — identical ids and order to app/cars/[slug]/page.tsx,
-// so the sticky nav below and every <section id="..."> exactly mirror the
-// public page. Identity & Classification and Images are edit-only (they
-// feed the hero/quick-stats/gallery on view rather than being their own
-// named public section).
+// Canonical section list — identical ids, order, and labels to
+// app/cars/[slug]/page.tsx / CarDetailTabs.tsx, so the sticky nav below and
+// every <section id="..."> exactly mirror the public page. Identity &
+// Classification and Images are edit-only (they feed the hero/quick-stats/
+// gallery on view rather than being their own named public section), so
+// they stay first, ahead of the public page's own Overview-tab order.
 const SECTIONS = [
   { id: 'identity', label: 'Identity & Classification' },
   { id: 'images', label: 'Images' },
   { id: 'introduction', label: 'Introduction' },
-  { id: 'collectibility', label: 'Why collectors want it' },
-  { id: 'ratings', label: 'How it scores' },
-  { id: 'variants-trims', label: 'Which one to look for' },
+  { id: 'ratings', label: 'The scorecard' },
+  { id: 'market-data', label: 'Market Data' },
+  { id: 'buyers-guide', label: "Buyer's guide" },
   { id: 'driving-character', label: 'Driving Character' },
   { id: 'design', label: 'Design' },
   { id: 'motorsport-pedigree', label: 'Motorsport Pedigree' },
   { id: 'in-culture', label: 'In Culture' },
   { id: 'lineage', label: 'Where it comes from' },
   { id: 'rivals', label: 'Rivals' },
-  { id: 'market-data', label: 'Market Data' },
+  { id: 'collectibility', label: 'Why collectors want it' },
+  { id: 'variants-trims', label: 'Which one to look for' },
   { id: 'known-issues', label: 'What owning one is like' },
   { id: 'upkeep-parts', label: 'Upkeep & Parts' },
   { id: 'resources', label: 'Resources' },
@@ -65,9 +67,13 @@ export default function GenerationFieldsEditor({
 
   return (
     <div className="flex flex-col gap-7">
-      {/* Sticky section nav — same list/order as the public page */}
+      {/* Sticky section nav — same list/order as the public page.
+          scrollbar-hide suppresses the native horizontal scrollbar track
+          (the global ::-webkit-scrollbar rule otherwise renders a thick
+          grey bar under this row); the row still scrolls via touch/trackpad
+          and the overflow-x-auto behavior itself is unchanged. */}
       <nav className="sticky top-14 z-40 bg-white/95 border-b border-border -mx-6 px-6 backdrop-blur-sm">
-        <div className="flex gap-0 overflow-x-auto">
+        <div className="flex gap-0 overflow-x-auto scrollbar-hide">
           {SECTIONS.map(s => (
             <a key={s.id} href={`#${s.id}`} className="text-xs font-medium text-text-secondary no-underline px-4 py-3 border-b-2 border-transparent whitespace-nowrap transition-colors hover:text-text-primary">
               {s.label}
@@ -94,7 +100,7 @@ export default function GenerationFieldsEditor({
               {CAR_CLASSES.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
           )}
-          {field('Units Produced', (
+          {field('Units Built', (
             <div className="flex items-center gap-3">
               <input className="input" type="number" value={value.units_produced ?? ''} onChange={e => onChange({ units_produced: e.target.value ? parseInt(e.target.value) : null })} />
               <label className="flex items-center gap-1.5 whitespace-nowrap">
@@ -105,6 +111,8 @@ export default function GenerationFieldsEditor({
           ))}
         </div>
 
+        {/* Labels match the Distinctions badge names on the public page
+            exactly (Legend / Homologation Special / Poster Car). */}
         <div className="flex gap-6 mt-4">
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={value.is_icon} onChange={e => onChange({ is_icon: e.target.checked })} />
@@ -112,11 +120,11 @@ export default function GenerationFieldsEditor({
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={value.homologation_special} onChange={e => onChange({ homologation_special: e.target.checked })} />
-            <span className="text-body text-text-secondary">Homologation special</span>
+            <span className="text-body text-text-secondary">Homologation Special</span>
           </label>
           <label className="flex items-center gap-2">
             <input type="checkbox" checked={value.poster_car} onChange={e => onChange({ poster_car: e.target.checked })} />
-            <span className="text-body text-text-secondary">Poster car</span>
+            <span className="text-body text-text-secondary">Poster Car</span>
           </label>
         </div>
 
@@ -218,17 +226,6 @@ export default function GenerationFieldsEditor({
         {field('', <textarea className="textarea min-h-40" value={value.introduction ?? ''} onChange={e => onChange({ introduction: e.target.value || null })} placeholder="History, significance, key highlights..." />)}
       </section>
 
-      {/* Why collectors want it */}
-      <section id="collectibility">
-        <h2 className={sectionHeading}>Why collectors want it</h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          {field('Callout', <input className="input" value={value.callout ?? ''} onChange={e => onChange({ callout: e.target.value || null })} placeholder='One arresting fact, e.g. "Last front-engine Corvette"' />)}
-          {field('Claim to Fame', <input className="input" value={value.claim_to_fame ?? ''} onChange={e => onChange({ claim_to_fame: e.target.value || null })} />)}
-        </div>
-        {field('Why Collectible', <textarea className="textarea min-h-30" value={value.why_collectible ?? ''} onChange={e => onChange({ why_collectible: e.target.value || null })} />)}
-        <div className="mt-4">{field("Buyer's Guide", <textarea className="textarea min-h-20" value={value.buyers_flag ?? ''} onChange={e => onChange({ buyers_flag: e.target.value || null })} />)}</div>
-      </section>
-
       {/* The scorecard */}
       <section id="ratings">
         <h2 className={sectionHeading}>
@@ -282,13 +279,48 @@ export default function GenerationFieldsEditor({
         )}
       </section>
 
-      {/* Which one to look for — Variants & Trims */}
-      <section id="variants-trims">
-        <h2 className={sectionHeading}>Which one to look for</h2>
-        {field('Variants to Know', <textarea className="textarea min-h-30" value={value.variants_to_know ?? ''} onChange={e => onChange({ variants_to_know: e.target.value || null })} />)}
-        <div className="mt-5">
-          {field('Trim Records', <TrimsEditor generationId={generationId} trims={trims} onChange={onTrimsChange} />)}
+      {/* Market Data */}
+      <section id="market-data">
+        <h2 className={sectionHeading}>Market Data</h2>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {field('Desirability Tier',
+            <select className="select" value={value.desirability_tier ?? ''} onChange={e => onChange({ desirability_tier: (e.target.value || null) as GenerationInput['desirability_tier'] })}>
+              <option value="">—</option>
+              {DESIRABILITY_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
+            </select>
+          )}
+          {field('Value Trajectory',
+            <select className="select" value={value.value_trajectory ?? ''} onChange={e => onChange({ value_trajectory: (e.target.value || null) as GenerationInput['value_trajectory'] })}>
+              <option value="">—</option>
+              {VALUE_TRAJECTORIES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+            </select>
+          )}
         </div>
+        {/* Driver / Excellent / Concours — same labels as the public
+            page's Price by condition pills, even though the underlying
+            columns stay low/mid/high. */}
+        <div className="grid grid-cols-4 gap-4">
+          {field('Driver', <input className="input" type="number" value={value.market_data?.low ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, mid: null, high: null }), low: e.target.value ? parseInt(e.target.value) : null } })} />)}
+          {field('Excellent', <input className="input" type="number" value={value.market_data?.mid ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, low: null, high: null }), mid: e.target.value ? parseInt(e.target.value) : null } })} />)}
+          {field('Concours', <input className="input" type="number" value={value.market_data?.high ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, low: null, mid: null }), high: e.target.value ? parseInt(e.target.value) : null } })} />)}
+          {field('Values as of', <input className="input" type="date" value={value.market_data?.as_of ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', notes: null, low: null, mid: null, high: null }), as_of: e.target.value || null } })} />)}
+        </div>
+        <div className="mt-4">
+          {field('Notes', <textarea className="textarea min-h-15" value={value.market_data?.notes ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, low: null, mid: null, high: null }), notes: e.target.value || null } })} />)}
+        </div>
+      </section>
+
+      {/* Buyer's guide — Why it's worth it (claim_to_fame), Callout, What
+          to watch for (buyers_flag). Moved out of "Why collectors want
+          it" to mirror the public page: these three are now their own
+          Buyer's guide section in Overview, right after Market Data. */}
+      <section id="buyers-guide">
+        <h2 className={sectionHeading}>Buyer&apos;s guide</h2>
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          {field("Why it's worth it", <input className="input" value={value.claim_to_fame ?? ''} onChange={e => onChange({ claim_to_fame: e.target.value || null })} />)}
+          {field('Callout', <input className="input" value={value.callout ?? ''} onChange={e => onChange({ callout: e.target.value || null })} placeholder='One arresting fact, e.g. "Last front-engine Corvette"' />)}
+        </div>
+        {field('What to watch for', <textarea className="textarea min-h-20" value={value.buyers_flag ?? ''} onChange={e => onChange({ buyers_flag: e.target.value || null })} />)}
       </section>
 
       {/* Driving Character, Design, Motorsport Pedigree, In Culture — 4
@@ -326,31 +358,20 @@ export default function GenerationFieldsEditor({
         <CarRelationsEditor generationId={generationId} type="rival" relations={relations} onChange={onRelationsChange} />
       </section>
 
-      {/* Market Data */}
-      <section id="market-data">
-        <h2 className={sectionHeading}>Market Data</h2>
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          {field('Desirability Tier',
-            <select className="select" value={value.desirability_tier ?? ''} onChange={e => onChange({ desirability_tier: (e.target.value || null) as GenerationInput['desirability_tier'] })}>
-              <option value="">—</option>
-              {DESIRABILITY_TIERS.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-          )}
-          {field('Value Trajectory',
-            <select className="select" value={value.value_trajectory ?? ''} onChange={e => onChange({ value_trajectory: (e.target.value || null) as GenerationInput['value_trajectory'] })}>
-              <option value="">—</option>
-              {VALUE_TRAJECTORIES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
-            </select>
-          )}
-        </div>
-        <div className="grid grid-cols-4 gap-4">
-          {field('Low', <input className="input" type="number" value={value.market_data?.low ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, mid: null, high: null }), low: e.target.value ? parseInt(e.target.value) : null } })} />)}
-          {field('Mid', <input className="input" type="number" value={value.market_data?.mid ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, low: null, high: null }), mid: e.target.value ? parseInt(e.target.value) : null } })} />)}
-          {field('High', <input className="input" type="number" value={value.market_data?.high ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, notes: null, low: null, mid: null }), high: e.target.value ? parseInt(e.target.value) : null } })} />)}
-          {field('Values as of', <input className="input" type="date" value={value.market_data?.as_of ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', notes: null, low: null, mid: null, high: null }), as_of: e.target.value || null } })} />)}
-        </div>
-        <div className="mt-4">
-          {field('Notes', <textarea className="textarea min-h-15" value={value.market_data?.notes ?? ''} onChange={e => onChange({ market_data: { ...(value.market_data ?? { currency: 'USD', as_of: null, low: null, mid: null, high: null }), notes: e.target.value || null } })} />)}
+      {/* Why collectors want it — trimmed to just Why Collectible now that
+          Callout/Claim to Fame/Buyer's Guide live in their own Buyer's
+          guide section above, mirroring the public page's Owning One tab. */}
+      <section id="collectibility">
+        <h2 className={sectionHeading}>Why collectors want it</h2>
+        {field('Why Collectible', <textarea className="textarea min-h-30" value={value.why_collectible ?? ''} onChange={e => onChange({ why_collectible: e.target.value || null })} />)}
+      </section>
+
+      {/* Which one to look for — Variants & Trims */}
+      <section id="variants-trims">
+        <h2 className={sectionHeading}>Which one to look for</h2>
+        {field('Variants to Know', <textarea className="textarea min-h-30" value={value.variants_to_know ?? ''} onChange={e => onChange({ variants_to_know: e.target.value || null })} />)}
+        <div className="mt-5">
+          {field('Trim Records', <TrimsEditor generationId={generationId} trims={trims} onChange={onTrimsChange} />)}
         </div>
       </section>
 

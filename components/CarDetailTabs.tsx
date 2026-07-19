@@ -40,17 +40,27 @@ function Unavailable() {
 // always in the DOM, one continuous scroll — clicking a tab in the nav
 // just scrolls to it, the same plain-anchor behavior every section on this
 // page has always had.
-// divider is an explicit opt-in exception — tabs default to no rule line
-// between them (Overview→The Story is a plain gap), but Owning One passes
-// divider so there's still one clear separator marking where The Story's
-// now-line-free run of sections ends and Owning One begins.
-function TabSection({ id, label, first, divider = false, children }: { id: string; label: string; first?: boolean; divider?: boolean; children: React.ReactNode }) {
+function TabSection({ id, label, first, children }: { id: string; label: string; first?: boolean; children: React.ReactNode }) {
   return (
-    <section id={id} className={`scroll-mt-40 ${first ? 'mt-6' : divider ? 'border-t border-border pt-10 mt-10' : 'mt-10'}`}>
+    <section id={id} className={`scroll-mt-40 ${first ? 'mt-6' : 'mt-10'}`}>
       <h2 className="text-lg font-bold text-text-primary tracking-tight mb-5">{label}</h2>
       {children}
     </section>
   )
+}
+
+// The rule line marking where The Story ends and Owning One begins lives
+// here, as a sibling *before* the Owning One section, not as that section's
+// own top border. If it were Owning One's own border-t, clicking the
+// "Owning One" tab (a plain anchor jump to its scroll-mt-40 target) would
+// land the line at the very top of the viewport with nothing above it —
+// looking like an orphaned rule floating above the heading. Placed here
+// instead, it's part of The Story's trailing flow: scrolling through
+// normally, it still reads as the separator between the two tabs, but an
+// anchor jump straight to #owning-one scrolls past it, since it sits above
+// that section's own scroll-margin-aligned top.
+function TabDivider() {
+  return <div className="border-t border-border mt-10" aria-hidden="true" />
 }
 
 // label is optional — Introduction omits it deliberately (its text sits
@@ -544,7 +554,9 @@ export default function CarDetailTabs({ car }: { car: Car }) {
         </FieldSection>
       </TabSection>
 
-      <TabSection id="owning-one" label="Owning One" divider>
+      <TabDivider />
+
+      <TabSection id="owning-one" label="Owning One">
         {/* Why collectors want it — just the why_collectible prose now;
             Callout/Claim to Fame/Buyer's Guide moved to the new Highlights
             section in Overview, right after Market Data. */}
