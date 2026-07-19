@@ -396,8 +396,17 @@ export default function CarDetailTabs({ car }: { car: Car }) {
                   between cells, no parent fill involved. self-start
                   keeps each cell sized to its own content instead of
                   stretching to the row's full height, so the divider
-                  lines don't run taller than the label+value text. */}
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] max-w-120 mb-5 divide-x divide-border">
+                  lines don't run taller than the label+value text.
+                  Fixed grid-cols-3 (not auto-fit/minmax) — always exactly
+                  3 columns, narrower on mobile rather than wrapping. With
+                  only 3 items, auto-fit's wrapping caused two bugs at once
+                  on narrow screens: the wrapped item's own first:pl-0
+                  didn't apply (it's the 3rd DOM child, not the true first
+                  child, so it kept its left padding and read as indented),
+                  and divide-x's border-left still rendered before it too
+                  (same "not actually first" mismatch). Fixing the wrap
+                  case removes both rather than patching either. */}
+              <div className="grid grid-cols-3 max-w-120 mb-5 divide-x divide-border">
                 {marketTiers.map(tier => (
                   <div key={tier.label} className="self-start px-4 first:pl-0">
                     <div className="text-micro font-semibold tracking-widest text-text-tertiary uppercase mb-1.5">
