@@ -3,11 +3,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import Image from 'next/image'
 
-// Matches the typical real photo count (hero + 3 gallery) so the rail takes
-// up the same visual weight whether a car has photos or not — the layout
-// shouldn't shift depending on data.
-const EMPTY_THUMBNAIL_COUNT = 4
-
 // images[0] is always the hero image; clicking a thumbnail swaps the large
 // display, it doesn't reorder the rail. Clicking the large image opens a
 // lightbox that reuses the same selection state, so arrow keys / the arrow
@@ -32,7 +27,6 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
   }, [lightboxOpen, close, prev, next])
 
   const activeSrc = images[selected]
-  const isPlaceholder = activeSrc === '/placeholder.png'
 
   return (
     <>
@@ -48,7 +42,7 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
               src={activeSrc}
               alt={alt}
               fill
-              className={isPlaceholder ? 'object-contain' : 'object-cover'}
+              className="object-cover"
               priority
             />
           </button>
@@ -81,9 +75,9 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
           )}
         </div>
 
-        <div className="hidden md:flex flex-col gap-2.5 w-52 shrink-0 min-h-0">
-          {images.length > 1 ? (
-            images.map((src, i) => (
+        {images.length > 1 && (
+          <div className="hidden md:flex flex-col gap-2.5 w-52 shrink-0 min-h-0">
+            {images.map((src, i) => (
               <button
                 key={src + i}
                 type="button"
@@ -96,15 +90,9 @@ export default function CarGallery({ images, alt }: { images: string[]; alt: str
               >
                 <Image src={src} alt={`${alt} — photo ${i + 1}`} fill className="object-cover" />
               </button>
-            ))
-          ) : (
-            Array.from({ length: EMPTY_THUMBNAIL_COUNT }).map((_, i) => (
-              <div key={i} className="relative flex-1 min-h-0 rounded-2xl overflow-hidden bg-bg-elevated">
-                <Image src="/placeholder.png" alt="" fill className="object-contain opacity-40" />
-              </div>
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       {lightboxOpen && (

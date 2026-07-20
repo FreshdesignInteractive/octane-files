@@ -13,6 +13,7 @@ import CarDetailTabs, { TABS } from '@/components/CarDetailTabs'
 import { getModel, getModelSlugs } from '@/lib/supabase'
 import type { Car } from '@/lib/types'
 import { carDisplayName } from '@/lib/car-schema'
+import { PLACEHOLDER_HERO_IMAGE, PLACEHOLDER_ALL_IMAGES } from '@/lib/placeholder-images'
 
 export const revalidate = 3600
 
@@ -38,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     openGraph: {
       title: name,
       description,
-      images: car.hero_image ? [car.hero_image] : undefined,
+      images: [car.hero_image || PLACEHOLDER_HERO_IMAGE],
       type: 'website',
     },
     // X (Twitter) reads its own twitter:* tags, doesn't reliably fall
@@ -47,7 +48,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
       card: 'summary_large_image',
       title: name,
       description,
-      images: car.hero_image ? [car.hero_image] : undefined,
+      images: [car.hero_image || PLACEHOLDER_HERO_IMAGE],
     },
   }
 }
@@ -83,7 +84,14 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
   const wikipediaHref = car.wikipedia_url || `https://en.wikipedia.org/w/index.php?${new URLSearchParams({ search: name })}`
 
   const galleryImages = car.gallery_images?.filter(Boolean) ?? []
-  const allImages = [car.hero_image || '/placeholder.png', ...galleryImages]
+  // No real photos at all -> show the full 4-image coming-soon set, which
+  // behaves exactly like a real hero + 3 gallery photos. A real hero with
+  // no gallery photos yet is left alone (just the one real image, no
+  // filler) rather than padding it with coming-soon shots that would read
+  // as if they were extra photos of this specific car.
+  const allImages = car.hero_image || galleryImages.length > 0
+    ? [car.hero_image, ...galleryImages].filter((src): src is string => Boolean(src))
+    : PLACEHOLDER_ALL_IMAGES
 
   return (
     <>
@@ -109,7 +117,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
                 car={{
                   name,
                   infoLine: `${car.country} · ${car.class} · ${years}`,
-                  image: car.hero_image || '/placeholder.png',
+                  image: car.hero_image || PLACEHOLDER_HERO_IMAGE,
                 }}
               />
               <span className="w-px h-2.5 bg-border-mid" />

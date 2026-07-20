@@ -6,6 +6,7 @@ import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import ReportForm from '@/components/ReportForm'
 import { getModel } from '@/lib/supabase'
+import { PLACEHOLDER_HERO_IMAGE } from '@/lib/placeholder-images'
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -42,10 +43,10 @@ export default async function ReportPage({ params }: { params: Promise<{ slug: s
           <div className="flex items-center gap-3 mb-8 p-3 border border-border rounded-lg bg-white">
             <div className="relative w-14 h-14 rounded overflow-hidden flex-shrink-0 bg-bg-elevated">
               <Image
-                src={car.hero_image || '/placeholder.png'}
+                src={car.hero_image || PLACEHOLDER_HERO_IMAGE}
                 alt=""
                 fill
-                className={car.hero_image ? 'object-cover' : 'object-contain'}
+                className="object-cover"
               />
             </div>
             <div className="text-body font-semibold text-text-primary">{name}</div>

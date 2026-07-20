@@ -7,11 +7,16 @@ import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 
 type Status = 'idle' | 'sending' | 'sent' | 'error'
 
-export default function RequestCarForm() {
+// initialMessage pre-fills the field — e.g. a "We haven't profiled this car
+// yet" card links here with the car's own free-text title already in hand,
+// so the visitor isn't retyping what they just read. Carried through the
+// sign-in round trip for free, since SignInDialog already preserves the
+// full pathname+search as its OAuth `next` param.
+export default function RequestCarForm({ initialMessage }: { initialMessage?: string }) {
   // undefined = auth state not yet resolved — avoids a signed-out flash on load
   const [session, setSession] = useState<Session | null | undefined>(undefined)
   const [signInDismissed, setSignInDismissed] = useState(false)
-  const [message, setMessage] = useState('')
+  const [message, setMessage] = useState(initialMessage ?? '')
   const [status, setStatus] = useState<Status>('idle')
   const [error, setError] = useState<string | null>(null)
 

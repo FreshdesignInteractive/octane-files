@@ -8,6 +8,7 @@ import { checkIsAdmin } from '@/lib/is-admin'
 import SignInDialog from '@/components/SignInDialog'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import type { Profile, CarSummary } from '@/lib/types'
+import { PLACEHOLDER_HERO_IMAGE } from '@/lib/placeholder-images'
 
 function HeaderSearch() {
   const router = useRouter()
@@ -146,7 +147,7 @@ function HeaderSearch() {
             >
               <div className="w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-elevated flex items-center justify-center">
                 {/* eslint-disable-next-line @next/next/no-img-element -- hero_image can be any manually-pasted external URL, not just Supabase/Wikimedia; next/image throws on unlisted hostnames, a plain img never does */}
-                <img src={car.hero_image || '/placeholder.png'} alt="" className="w-full h-full object-cover" />
+                <img src={car.hero_image || PLACEHOLDER_HERO_IMAGE} alt="" className="w-full h-full object-cover" />
               </div>
               <span className="text-body text-text-primary">
                 {car.make} {car.model} {car.generation}

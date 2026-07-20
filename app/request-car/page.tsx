@@ -5,7 +5,8 @@ import RequestCarForm from '@/components/RequestCarForm'
 
 export const metadata: Metadata = { title: 'Request a Car — Octane Files' }
 
-export default function RequestCarPage() {
+export default async function RequestCarPage({ searchParams }: { searchParams: Promise<{ car?: string }> }) {
+  const { car } = await searchParams
   return (
     <>
       <SiteHeader />
@@ -28,7 +29,7 @@ export default function RequestCarPage() {
           </p>
 
           <div className="text-left">
-            <RequestCarForm />
+            <RequestCarForm initialMessage={car} />
           </div>
         </div>
       </main>
