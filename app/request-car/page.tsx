@@ -3,7 +3,7 @@ import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
 import RequestCarForm from '@/components/RequestCarForm'
 
-export const metadata: Metadata = { title: 'Request a Car — Octane Files' }
+export const metadata: Metadata = { title: 'Request to Add a Car — Octane Files' }
 
 export default async function RequestCarPage({ searchParams }: { searchParams: Promise<{ car?: string }> }) {
   const { car } = await searchParams
@@ -23,7 +23,7 @@ export default async function RequestCarPage({ searchParams }: { searchParams: P
             <circle cx="17" cy="17" r="2" />
           </svg>
 
-          <h1 className="text-heading font-bold mb-2">Request a Car</h1>
+          <h1 className="text-heading font-bold mb-2">Request to Add a Car</h1>
           <p className="text-paragraph text-text-secondary mb-8">
             Let us know what car is missing and we&apos;ll take a look.
           </p>

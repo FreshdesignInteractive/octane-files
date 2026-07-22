@@ -15,28 +15,33 @@ type CarCardEntry = CarSummary | { title: string }
 
 export default function CarCard({ car }: { car: CarCardEntry }) {
   if (!('slug' in car)) {
-    // No underlying car row to link to — instead this sends the visitor
-    // straight to Request a Car, with the free text an admin already wrote
-    // here (title) carried over as the starting point, so they're not
-    // retyping what they just read. Signed-out visitors get the sign-in
-    // dialog on that page itself (RequestCarForm's own gating), and the
-    // OAuth round trip lands them right back on this same pre-filled URL.
+    // No underlying car row to link to. Only "Request to add" links out (to
+    // Request a Car, with the free text an admin already wrote here as the
+    // starting point, so the visitor isn't retyping what they just read) —
+    // the card itself isn't clickable, so it drops `.card`'s cursor-pointer/
+    // hover-lift (misleading on a non-clickable surface) and the image's
+    // hover-zoom `group`. Signed-out visitors get the sign-in dialog on
+    // that page itself (RequestCarForm's own gating), and the OAuth round
+    // trip lands them right back on this same pre-filled URL.
     return (
-      <Link href={`/request-car?car=${encodeURIComponent(car.title)}`} className="no-underline">
-        <article className="card group">
-          <div className="aspect-video bg-bg-elevated relative overflow-hidden flex items-center justify-center">
-            <img
-              src={PLACEHOLDER_HERO_IMAGE}
-              alt=""
-              className="w-full h-full object-cover block transition-transform duration-500 group-hover:scale-105"
-            />
+      <article className="card cursor-default hover:shadow-none hover:translate-y-0">
+        <div className="aspect-video bg-bg-elevated relative overflow-hidden flex items-center justify-center">
+          <img
+            src={PLACEHOLDER_HERO_IMAGE}
+            alt=""
+            className="w-full h-full object-cover block"
+          />
+        </div>
+        <div className="p-4">
+          <h3 className="text-paragraph font-bold text-text-primary leading-tight mb-1.5 truncate">{car.title}</h3>
+          <div className="text-body text-text-tertiary">
+            We haven&rsquo;t profiled this car yet.{' '}
+            <Link href={`/request-car?car=${encodeURIComponent(car.title)}`} className="text-accent hover:underline">
+              Request to add
+            </Link>
           </div>
-          <div className="p-4">
-            <h3 className="text-paragraph font-bold text-text-primary leading-tight mb-1.5 truncate">{car.title}</h3>
-            <div className="text-body text-text-tertiary">We haven&rsquo;t profiled this car yet</div>
-          </div>
-        </article>
-      </Link>
+        </div>
+      </article>
     )
   }
 
