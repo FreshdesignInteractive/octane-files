@@ -357,6 +357,28 @@ $$;
 
 GRANT EXECUTE ON FUNCTION search_generations(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INT, INT) TO anon, authenticated;
 
+-- get_filterable_makes() — the Browse page's Make dropdown (FilterBar.tsx)
+-- should only ever list a make if it has at least one live (non-archived)
+-- generation; a make whose only cars are archived (or that has models but
+-- no generations at all) has no reason to appear as a filter option. A
+-- flat `SELECT name FROM makes` can't express that, and a PostgREST nested
+-- embed filter (makes -> models -> generations) isn't reliable 2 levels
+-- deep in this codebase — same reasoning that pushed search_generations()
+-- into a dedicated RPC rather than a client-side embed query.
+CREATE OR REPLACE FUNCTION get_filterable_makes()
+RETURNS TABLE (name TEXT)
+LANGUAGE sql STABLE
+AS $$
+  SELECT DISTINCT mk.name
+  FROM makes mk
+  JOIN models md ON md.make_id = mk.id
+  JOIN generations g ON g.model_id = md.id
+  WHERE g.archived_at IS NULL
+  ORDER BY mk.name;
+$$;
+
+GRANT EXECUTE ON FUNCTION get_filterable_makes() TO anon, authenticated;
+
 -- Step 16: atomic bulk-import functions for the admin CSV importer — see
 -- imports/step16_bulk_import_functions.sql for the full commented version
 -- (COALESCE(incoming, existing) empty-vs-absent handling, pre-flight

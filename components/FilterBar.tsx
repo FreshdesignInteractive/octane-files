@@ -16,7 +16,13 @@ export default function FilterBar() {
 
   useEffect(() => {
     const supabase = createClient()
-    supabase.from('makes').select('name').order('name').then(({ data }: { data: { name: string }[] | null }) => {
+    // get_filterable_makes(), not a flat `.from('makes')` select — a make
+    // with zero live (non-archived) generations shouldn't appear as a
+    // filter option (see imports/step45_filterable_makes_rpc.sql). A
+    // PostgREST nested-embed filter (makes -> models -> generations) isn't
+    // reliable at 2 levels deep in this codebase — same reasoning that
+    // pushed search_generations() into a dedicated RPC.
+    supabase.rpc('get_filterable_makes').then(({ data }: { data: { name: string }[] | null }) => {
       setMakes((data ?? []).map(m => m.name))
     })
   }, [])
