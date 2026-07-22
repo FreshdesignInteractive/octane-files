@@ -6,6 +6,10 @@ import type { Car, CarRelation } from '@/lib/types'
 const NA = '—'
 
 function formatMoney(n: number) {
+  if (n >= 1_000_000) {
+    const millions = n / 1_000_000
+    return `$${millions % 1 === 0 ? millions.toFixed(0) : millions.toFixed(1)}M`
+  }
   return n >= 1000 ? `$${(n / 1000).toFixed(0)}k` : `$${n}`
 }
 
