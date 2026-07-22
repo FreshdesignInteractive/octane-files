@@ -10,6 +10,11 @@ export type FilterOption = { value: string; label: string }
 // instead of growing past a usable height — not literally "20 rows" since
 // that would make the panel taller than most viewports below the trigger,
 // but the same generous "show a lot, scroll for the rest" behavior.
+//
+// showAllOption defaults to true for the filter dropdowns (Make/Country/
+// Class/Era), which can be cleared back to "everything". Sort has no such
+// state — one of its options is always active — so it passes false to skip
+// the leading "All ___" row rather than forking a second dropdown component.
 export default function FilterDropdown({
   label,
   allLabel,
@@ -19,18 +24,26 @@ export default function FilterDropdown({
   isOpen,
   onOpen,
   onClose,
+  showAllOption = true,
+  align = 'left',
+  widthClassName = 'w-full sm:w-auto',
+  triggerPrefix,
 }: {
   label: string
-  allLabel: string
+  allLabel?: string
   options: FilterOption[]
   activeValue: string
   onChange: (value: string) => void
   isOpen: boolean
   onOpen: () => void
   onClose: () => void
+  showAllOption?: boolean
+  align?: 'left' | 'right'
+  widthClassName?: string
+  triggerPrefix?: string
 }) {
   const ref = useRef<HTMLDivElement>(null)
-  const allOptions: FilterOption[] = [{ value: '', label: allLabel }, ...options]
+  const allOptions: FilterOption[] = showAllOption ? [{ value: '', label: allLabel ?? '' }, ...options] : options
   const activeOption = allOptions.find(o => o.value === activeValue) ?? allOptions[0]
 
   useEffect(() => {
@@ -48,15 +61,15 @@ export default function FilterDropdown({
   }, [isOpen, onClose])
 
   return (
-    <div ref={ref} className="relative w-full sm:w-auto">
+    <div ref={ref} className={`relative ${widthClassName}`}>
       <button
         type="button"
         onClick={() => (isOpen ? onClose() : onOpen())}
         aria-label={label}
         aria-expanded={isOpen}
-        className={`btn-secondary w-full sm:w-auto justify-between gap-2 px-4 h-10 ${isOpen ? 'bg-bg-elevated' : ''}`}
+        className={`btn-secondary ${widthClassName} justify-between gap-2 px-4 h-10 ${isOpen ? 'bg-bg-elevated' : ''}`}
       >
-        {activeOption.label}
+        {triggerPrefix ? <span className="text-text-tertiary">{triggerPrefix}</span> : null}{activeOption.label}
         <svg
           width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
           strokeLinecap="round" strokeLinejoin="round"
@@ -67,7 +80,7 @@ export default function FilterDropdown({
       </button>
 
       {isOpen && (
-        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] left-0 w-full sm:w-auto sm:min-w-48 bg-white border border-border rounded-lg shadow-dropdown z-[var(--z-overlay)] overflow-hidden">
+        <div className={`absolute top-[calc(100%+var(--spacing-dropdown-gap))] ${align === 'right' ? 'right-0' : 'left-0'} w-full sm:w-auto sm:min-w-48 bg-white border border-border rounded-lg shadow-dropdown z-[var(--z-overlay)] overflow-hidden`}>
           <div className="max-h-96 overflow-y-auto py-1">
             {allOptions.map(opt => {
               const isActive = opt.value === activeValue

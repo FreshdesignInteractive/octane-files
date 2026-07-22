@@ -22,6 +22,35 @@ export type CarClassValue = (typeof CAR_CLASSES)[number]['value']
 export const COUNTRIES = ['Australia', 'France', 'Germany', 'Italy', 'Japan', 'Sweden', 'UK', 'USA', 'Other'] as const
 export type Country = (typeof COUNTRIES)[number]
 
+// Era is derived from generations.year_start, never its own stored field —
+// a car's year is the single source of truth, so bucketing it into an era
+// happens on read (in search_generations()'s CASE, see supabase-schema.sql)
+// rather than being duplicated into a column that could drift out of sync.
+// Filtering matches on `value` (a stable key), never on `label` (display
+// text that can be reworded without breaking the filter). If these year
+// boundaries ever change, update the CASE in search_generations() too —
+// it has a comment pointing back here.
+export const ERAS = [
+  { value: 'pre_war',        label: 'Pre-War (Pre-1945)',        yearStart: null, yearEnd: 1944 },
+  { value: 'post_war',       label: 'Post-War (1946–1959)',      yearStart: 1946, yearEnd: 1959 },
+  { value: 'golden_era',     label: 'Golden Era (1960–1974)',    yearStart: 1960, yearEnd: 1974 },
+  { value: 'modern_classic', label: 'Modern Classic (1975–1999)', yearStart: 1975, yearEnd: 1999 },
+  { value: 'contemporary',   label: 'Contemporary (2000+)',      yearStart: 2000, yearEnd: null },
+] as const
+export type EraValue = (typeof ERAS)[number]['value']
+
+// Browse page sort order. 'make_asc' is the default (and is omitted from the
+// URL rather than written out, like an unset filter). Matched by `value` in
+// search_generations()'s ORDER BY, never by `label` — same reasoning as ERAS.
+export const SORTS = [
+  { value: 'make_asc',  label: 'A–Z' },
+  { value: 'make_desc', label: 'Z–A' },
+  { value: 'year_asc',  label: 'Oldest' },
+  { value: 'year_desc', label: 'Newest' },
+] as const
+export type SortValue = (typeof SORTS)[number]['value']
+export const DEFAULT_SORT: SortValue = 'make_asc'
+
 export const BODY_STYLES = [
   'Sedan', 'Coupe', 'Convertible', 'Wagon', 'Hatchback', 'Liftback',
   'Roadster', 'Spider', 'Targa', 'Pickup', 'SUV', 'Coupe Utility', 'Fastback',

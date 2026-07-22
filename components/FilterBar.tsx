@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
-import { CAR_CLASSES, COUNTRIES } from '@/lib/car-schema'
+import { CAR_CLASSES, COUNTRIES, ERAS, SORTS, DEFAULT_SORT } from '@/lib/car-schema'
 import FilterDropdown from '@/components/FilterDropdown'
 
-type MenuKey = 'make' | 'country' | 'class'
+type MenuKey = 'make' | 'country' | 'class' | 'era' | 'sort'
 
 export default function FilterBar() {
   const router = useRouter()
@@ -24,7 +24,9 @@ export default function FilterBar() {
   const activeClass   = params.get('class') ?? ''
   const activeCountry = params.get('country') ?? ''
   const activeMake    = params.get('make') ?? ''
-  const hasActiveFilter = !!(activeClass || activeCountry || activeMake)
+  const activeEra     = params.get('era') ?? ''
+  const activeSort    = params.get('sort') || DEFAULT_SORT
+  const hasActiveFilter = !!(activeClass || activeCountry || activeMake || activeEra || activeSort !== DEFAULT_SORT)
 
   const update = useCallback((key: string, value: string) => {
     const p = new URLSearchParams(params.toString())
@@ -33,6 +35,13 @@ export default function FilterBar() {
     router.push(`/?${p.toString()}`, { scroll: false })
   }, [params, router])
 
+  // Sort always has a value (unlike the filters, which can clear to "All"),
+  // so picking the default explicitly should still drop it from the URL —
+  // same "default is omitted" convention the filters already follow.
+  const updateSort = useCallback((value: string) => {
+    update('sort', value === DEFAULT_SORT ? '' : value)
+  }, [update])
+
   function resetFilters() {
     router.push('/', { scroll: false })
   }
@@ -40,6 +49,8 @@ export default function FilterBar() {
   const makeOptions = makes.map(m => ({ value: m, label: m }))
   const countryOptions = COUNTRIES.map(c => ({ value: c, label: c }))
   const classOptions = CAR_CLASSES.map(c => ({ value: c.value, label: c.label }))
+  const eraOptions = ERAS.map(e => ({ value: e.value, label: e.label }))
+  const sortOptions = SORTS.map(s => ({ value: s.value, label: s.label }))
 
   return (
     <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -74,20 +85,48 @@ export default function FilterBar() {
           onOpen={() => setOpenMenu('class')}
           onClose={() => setOpenMenu(null)}
         />
+        <FilterDropdown
+          label="Era"
+          allLabel="All Eras"
+          options={eraOptions}
+          activeValue={activeEra}
+          onChange={v => update('era', v)}
+          isOpen={openMenu === 'era'}
+          onOpen={() => setOpenMenu('era')}
+          onClose={() => setOpenMenu(null)}
+        />
       </div>
 
-      <button
-        type="button"
-        onClick={resetFilters}
-        disabled={!hasActiveFilter}
-        className="btn-secondary w-full sm:w-auto justify-center gap-2 px-4 h-10 flex-shrink-0"
-      >
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="1 4 1 10 7 10" />
-          <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
-        </svg>
-        Reset Filters
-      </button>
+      {/* Sort + Reset: right-aligned as a pair on desktop; on mobile they
+          share one full-width row (flex-1 each) instead of each getting
+          their own full-width row like the filters above. */}
+      <div className="flex gap-3 flex-shrink-0">
+        <FilterDropdown
+          label="Sort"
+          options={sortOptions}
+          activeValue={activeSort}
+          onChange={updateSort}
+          isOpen={openMenu === 'sort'}
+          onOpen={() => setOpenMenu('sort')}
+          onClose={() => setOpenMenu(null)}
+          showAllOption={false}
+          align="right"
+          widthClassName="flex-1 sm:flex-none sm:w-auto"
+          triggerPrefix="Sort: "
+        />
+        <button
+          type="button"
+          onClick={resetFilters}
+          disabled={!hasActiveFilter}
+          className="btn-secondary flex-1 sm:flex-none sm:w-auto justify-center gap-2 px-4 h-10"
+        >
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="1 4 1 10 7 10" />
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+          </svg>
+          Reset
+        </button>
+      </div>
     </div>
   )
 }

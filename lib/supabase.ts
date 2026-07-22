@@ -17,7 +17,7 @@ import type {
   UserCar, UserCarSummary,
   Like, Comment,
 } from './types'
-import { CAR_CLASSES } from './car-schema'
+import { CAR_CLASSES, DEFAULT_SORT } from './car-schema'
 
 // ─── Cars (public encyclopedia — makes/models/generations) ──────────────────
 // "Car" here means a generations row. Archived rows (the 130-car delta
@@ -160,6 +160,8 @@ export async function getModels(params?: {
   class?: string
   country?: string
   make?: string
+  era?: string
+  sort?: string
   search?: string
   limit?: number
   offset?: number
@@ -173,6 +175,8 @@ export async function getModels(params?: {
     filter_class: params?.class || null,
     filter_country: params?.country || null,
     filter_make: params?.make || null,
+    filter_era: params?.era || null,
+    sort_by: params?.sort || DEFAULT_SORT,
     result_limit: limit,
     result_offset: offset,
   })

@@ -287,11 +287,32 @@ CREATE TRIGGER makes_name_change_reindex
 -- one call, used by lib/supabase.ts's getModels() instead of a PostgREST
 -- embed query (which can't do rank-ordering or reliably order on a
 -- 2-level-nested embedded column).
+-- filter_era buckets g.year_start into the same 5 ranges as lib/car-schema.ts's
+-- ERAS constant, matched by key (e.g. 'golden_era'), never by display label.
+-- If the year boundaries in ERAS ever change, update the CASE below too —
+-- year_start stays the only stored fact; era is always derived from it.
+--
+-- sort_by is the Browse page's Sort control (lib/car-schema.ts's SORTS,
+-- matched by key, never by label — same reasoning as filter_era). When
+-- search_query is present, relevance rank still comes first; sort_by only
+-- breaks ties between equally-relevant results rather than overriding
+-- search. `make, model` is the final tiebreaker in all cases so identical
+-- loads never reorder.
+--
+-- Each argument-list change is a different overload to Postgres, so the
+-- previous signature is dropped explicitly before CREATE OR REPLACE —
+-- otherwise the old version lingers alongside the new one instead of being
+-- replaced.
+DROP FUNCTION IF EXISTS search_generations(TEXT, TEXT, TEXT, TEXT, INT, INT);
+DROP FUNCTION IF EXISTS search_generations(TEXT, TEXT, TEXT, TEXT, TEXT, INT, INT);
+
 CREATE OR REPLACE FUNCTION search_generations(
   search_query   TEXT DEFAULT NULL,
   filter_class   TEXT DEFAULT NULL,
   filter_country TEXT DEFAULT NULL,
   filter_make    TEXT DEFAULT NULL,
+  filter_era     TEXT DEFAULT NULL,
+  sort_by        TEXT DEFAULT 'make_asc',
   result_limit   INT DEFAULT 24,
   result_offset  INT DEFAULT 0
 )
@@ -313,16 +334,28 @@ AS $$
     AND (filter_class   IS NULL OR g.class::TEXT = filter_class)
     AND (filter_country IS NULL OR mk.country = filter_country)
     AND (filter_make    IS NULL OR mk.name = filter_make)
+    AND (filter_era IS NULL OR CASE filter_era
+           WHEN 'pre_war'        THEN g.year_start < 1945
+           WHEN 'post_war'       THEN g.year_start BETWEEN 1946 AND 1959
+           WHEN 'golden_era'     THEN g.year_start BETWEEN 1960 AND 1974
+           WHEN 'modern_classic' THEN g.year_start BETWEEN 1975 AND 1999
+           WHEN 'contemporary'   THEN g.year_start >= 2000
+           ELSE TRUE
+         END)
     AND (search_query    IS NULL OR search_query = '' OR g.search_vector @@ websearch_to_tsquery('english', search_query))
   ORDER BY
     CASE WHEN search_query IS NOT NULL AND search_query != ''
       THEN ts_rank(g.search_vector, websearch_to_tsquery('english', search_query))
     END DESC NULLS LAST,
-    g.year_start ASC
+    CASE WHEN sort_by = 'make_asc'  THEN mk.name      END ASC,
+    CASE WHEN sort_by = 'make_desc' THEN mk.name      END DESC,
+    CASE WHEN sort_by = 'year_asc'  THEN g.year_start END ASC,
+    CASE WHEN sort_by = 'year_desc' THEN g.year_start END DESC,
+    mk.name ASC, md.name ASC
   LIMIT result_limit OFFSET result_offset;
 $$;
 
-GRANT EXECUTE ON FUNCTION search_generations(TEXT, TEXT, TEXT, TEXT, INT, INT) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION search_generations(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INT, INT) TO anon, authenticated;
 
 -- Step 16: atomic bulk-import functions for the admin CSV importer — see
 -- imports/step16_bulk_import_functions.sql for the full commented version

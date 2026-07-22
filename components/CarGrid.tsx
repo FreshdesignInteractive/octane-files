@@ -9,14 +9,22 @@ import type { CarSummary } from '@/lib/types'
 const INITIAL = 24
 const PAGE    = 12
 
-function makeUrl(cls: string, country: string, make: string, q: string, offset: number, limit: number) {
+// An options object (not positional params) so a future filter or sort
+// addition can't silently land in the wrong slot the way a positional list
+// invites — see the Era filter's CarGrid bug this was hardened after.
+function makeUrl(query: {
+  cls: string; country: string; make: string; era: string; sort: string; q: string
+  offset: number; limit: number
+}) {
   const p = new URLSearchParams()
-  if (cls)     p.set('class',   cls)
-  if (country) p.set('country', country)
-  if (make)    p.set('make',    make)
-  if (q)       p.set('q',       q)
-  p.set('offset', String(offset))
-  p.set('limit',  String(limit))
+  if (query.cls)     p.set('class',   query.cls)
+  if (query.country) p.set('country', query.country)
+  if (query.make)    p.set('make',    query.make)
+  if (query.era)     p.set('era',     query.era)
+  if (query.sort)    p.set('sort',    query.sort)
+  if (query.q)       p.set('q',       query.q)
+  p.set('offset', String(query.offset))
+  p.set('limit',  String(query.limit))
   return `/api/models?${p}`
 }
 
@@ -25,6 +33,8 @@ export default function CarGrid() {
   const activeClass   = params.get('class')   ?? ''
   const activeCountry = params.get('country') ?? ''
   const activeMake    = params.get('make')    ?? ''
+  const activeEra     = params.get('era')     ?? ''
+  const activeSort    = params.get('sort')    ?? ''
   const activeSearch  = params.get('q')       ?? ''
 
   const [cars, setCars]       = useState<CarSummary[]>([])
@@ -35,7 +45,7 @@ export default function CarGrid() {
   useEffect(() => {
     let cancelled = false
     setLoading(true)
-    fetch(makeUrl(activeClass, activeCountry, activeMake, activeSearch, 0, INITIAL))
+    fetch(makeUrl({ cls: activeClass, country: activeCountry, make: activeMake, era: activeEra, sort: activeSort, q: activeSearch, offset: 0, limit: INITIAL }))
       .then(r => r.json())
       .then(({ data, total }: { data: CarSummary[]; total: number }) => {
         if (cancelled) return
@@ -45,11 +55,11 @@ export default function CarGrid() {
       })
       .catch(() => { if (!cancelled) setLoading(false) })
     return () => { cancelled = true }
-  }, [activeClass, activeCountry, activeMake, activeSearch])
+  }, [activeClass, activeCountry, activeMake, activeEra, activeSort, activeSearch])
 
   function loadMore() {
     start(async () => {
-      const res  = await fetch(makeUrl(activeClass, activeCountry, activeMake, activeSearch, cars.length, PAGE))
+      const res  = await fetch(makeUrl({ cls: activeClass, country: activeCountry, make: activeMake, era: activeEra, sort: activeSort, q: activeSearch, offset: cars.length, limit: PAGE }))
       const json = await res.json() as { data: CarSummary[]; total: number }
       setCars(prev => [...prev, ...json.data])
     })

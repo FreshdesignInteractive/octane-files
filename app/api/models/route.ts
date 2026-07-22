@@ -7,6 +7,8 @@ export async function GET(req: NextRequest) {
     class:   p.get('class')   ?? undefined,
     country: p.get('country') ?? undefined,
     make:    p.get('make')    ?? undefined,
+    era:     p.get('era')     ?? undefined,
+    sort:    p.get('sort')    ?? undefined,
     search:  p.get('q')       ?? undefined,
     limit:   Number(p.get('limit')  ?? 12),
     offset:  Number(p.get('offset') ?? 0),
