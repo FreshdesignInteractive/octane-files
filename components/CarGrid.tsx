@@ -28,7 +28,7 @@ function makeUrl(query: {
   return `/api/models?${p}`
 }
 
-export default function CarGrid() {
+export default function CarGrid({ noResultsHint }: { noResultsHint?: string } = {}) {
   const params        = useSearchParams()
   const activeClass   = params.get('class')   ?? ''
   const activeCountry = params.get('country') ?? ''
@@ -82,7 +82,7 @@ export default function CarGrid() {
   }
 
   if (cars.length === 0) {
-    return <NoCarsFound />
+    return <NoCarsFound hint={noResultsHint} />
   }
 
   return (

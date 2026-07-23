@@ -2,15 +2,19 @@ import Link from 'next/link'
 
 // Shared "nothing matched" empty state — the Browse grid (no filter/search
 // results) and the header search dialog (no typeahead matches) both need
-// the exact same message and CTA, just at different scales. `compact`
-// shrinks the icon/heading/spacing for the dialog's much smaller footprint;
-// the copy itself never changes. `onLinkClick` lets a modal close itself
-// when "Send a request" is clicked, same as every other link inside it.
+// the same message and CTA, just at different scales and with different
+// framing for that first line: Browse has actual filter dropdowns to
+// adjust, the dialog is search-only and has no filters at all. `compact`
+// shrinks the icon/heading/spacing for the dialog's much smaller footprint.
+// `onLinkClick` lets a modal close itself when "Send a request" is
+// clicked, same as every other link inside it.
 export default function NoCarsFound({
   compact = false,
+  hint = 'Try adjusting your filters or request a car to be added.',
   onLinkClick,
 }: {
   compact?: boolean
+  hint?: string
   onLinkClick?: () => void
 }) {
   return (
@@ -25,7 +29,7 @@ export default function NoCarsFound({
         No cars found
       </h2>
       <p className={compact ? 'text-body text-text-secondary mb-1' : 'text-paragraph text-text-secondary mb-2'}>
-        Try adjusting your filters or request a car to be added.
+        {hint}
       </p>
       <p className={compact ? 'text-body text-text-secondary' : 'text-paragraph text-text-secondary'}>
         We curate every car to meet collector standards. Missing one?{' '}
