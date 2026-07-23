@@ -126,9 +126,17 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--color-bg-elevated); }
-::-webkit-scrollbar-thumb { background: var(--color-border-mid); border-radius: 3px; }
+/* Scoped away from html/body deliberately: styling ::-webkit-scrollbar at
+   all opts an element out of the OS's native overlay scrollbar (the
+   auto-hide-until-you-scroll behavior every other site keeps on Mac) and
+   switches it to a permanently-rendered classic one. That's fine — even
+   desirable — for an inner panel like a dropdown's own scroll region, but
+   applying it unscoped meant the whole page lost its native overlay
+   scrollbar too. This still styles every actual inner scrollable element;
+   it only excludes the root document scrollbar itself. */
+:where(:not(html, body))::-webkit-scrollbar { width: 6px; }
+:where(:not(html, body))::-webkit-scrollbar-track { background: var(--color-bg-elevated); }
+:where(:not(html, body))::-webkit-scrollbar-thumb { background: var(--color-border-mid); border-radius: 3px; }
 
 /* For a horizontally-scrolling row (the admin edit page's sticky section
    nav) where even the thin styled scrollbar above still reads as visual
