@@ -1,4 +1,5 @@
 import { notFound } from 'next/navigation'
+import Link from 'next/link'
 import type { Metadata } from 'next'
 import SiteHeader from '@/components/SiteHeader'
 import SiteFooter from '@/components/SiteFooter'
@@ -55,7 +56,13 @@ export default async function MarquePage({ params }: { params: Promise<{ slug: s
   return (
     <>
       <SiteHeader />
-      <main className="detail-container pt-15 pb-20 flex-1">
+      <main className="detail-container pt-8 pb-20 flex-1">
+        <div className="flex items-center gap-1 text-xs mb-6">
+          <Link href="/marques" className="text-accent no-underline">Marques</Link>
+          <span className="text-text-tertiary">&rsaquo;</span>
+          <span className="text-text-primary">{name}</span>
+        </div>
+
         <div className="max-w-170 mb-10">
           <h1 className="text-heading font-bold text-text-primary mb-2">{name}</h1>
           <div className="text-body text-text-tertiary">{make.country}</div>

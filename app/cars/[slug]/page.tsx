@@ -100,7 +100,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
         {/* Hero — breadcrumb + title above a flat image, no gradient overlay */}
         <div className="detail-container pt-8 pb-6">
           <div className="flex items-center gap-1 text-xs mb-3">
-            <Link href="/browse" className="text-accent no-underline">Browse</Link>
+            <Link href="/browse" className="text-accent no-underline">Browse Cars</Link>
             <span className="text-text-tertiary">&rsaquo;</span>
             <span className="text-text-primary">{name}</span>
           </div>

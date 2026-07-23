@@ -10,7 +10,7 @@ export const revalidate = 3600
 // (dead route, kept only as an empty dir) and is deliberately excluded.
 // '' is the portal homepage; '/browse' is the car listing (moved off '/'
 // once the homepage became a placeholder portal page).
-const STATIC_PATHS = ['', '/browse', '/about', '/contact', '/garage', '/terms', '/privacy', '/request-car', '/report']
+const STATIC_PATHS = ['', '/browse', '/marques', '/about', '/contact', '/garage', '/terms', '/privacy', '/request-car', '/report']
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [cars, makes] = await Promise.all([getSitemapCars(), getSitemapMakes()])

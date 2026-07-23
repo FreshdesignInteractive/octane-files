@@ -184,7 +184,11 @@ export default function SiteHeader() {
             <SearchTrigger />
 
             <Link href="/browse" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
-              Browse
+              Browse Cars
+            </Link>
+
+            <Link href="/marques" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
+              Marques
             </Link>
 
             {profile === undefined ? null : profile === null ? (

@@ -259,6 +259,20 @@ export async function getSitemapMakes(): Promise<{ slug: string; updated_at: str
   return (data as { slug: string; updated_at: string }[] | null) ?? []
 }
 
+// Marques with at least one live car — backs the /marques hub grid.
+// get_filterable_makes() is the same RPC FilterBar.tsx's Make dropdown
+// uses (see imports/step47_filterable_makes_detailed.sql for why this is
+// an RPC rather than a nested embed query); FilterBar only reads `.name`
+// off each row, this reads the rest.
+export async function getFilterableMakes(): Promise<
+  { name: string; full_name: string | null; slug: string; country: string }[]
+> {
+  const db = buildClient()
+  const { data, error } = await db.rpc('get_filterable_makes')
+  if (error) throw error
+  return data ?? []
+}
+
 // Live catalog count for the About page's stats band — never hardcode that
 // figure, it drifts every time a car is added or archived.
 export async function getLiveCarCount(): Promise<number> {

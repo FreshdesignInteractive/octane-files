@@ -371,19 +371,30 @@ $$;
 
 GRANT EXECUTE ON FUNCTION search_generations(TEXT, TEXT, TEXT, TEXT, TEXT, TEXT, INT, INT) TO anon, authenticated;
 
--- get_filterable_makes() — the Browse page's Make dropdown (FilterBar.tsx)
--- should only ever list a make if it has at least one live (non-archived)
--- generation; a make whose only cars are archived (or that has models but
--- no generations at all) has no reason to appear as a filter option. A
--- flat `SELECT name FROM makes` can't express that, and a PostgREST nested
--- embed filter (makes -> models -> generations) isn't reliable 2 levels
--- deep in this codebase — same reasoning that pushed search_generations()
--- into a dedicated RPC rather than a client-side embed query.
+-- get_filterable_makes() — a make should only ever be publicly listed (the
+-- Browse page's Make dropdown in FilterBar.tsx, and the /marques hub grid)
+-- if it has at least one live (non-archived) generation; a make whose only
+-- cars are archived (or that has models but no generations at all) has
+-- nothing to show. A flat `SELECT * FROM makes` can't express that, and a
+-- PostgREST nested embed filter (makes -> models -> generations) isn't
+-- reliable 2 levels deep in this codebase — same reasoning that pushed
+-- search_generations() into a dedicated RPC rather than a client-side
+-- embed query.
+--
+-- Returns full_name/slug/country too, not just name — FilterBar.tsx still
+-- only reads `.name` (unaffected by the wider shape), and /marques' server
+-- component reads the rest. Ordered by `name` (the short marque name,
+-- matching what FilterBar's dropdown actually displays) — the Marques hub
+-- page re-sorts by full_name itself rather than relying on this order, so
+-- a marque like Porsche (full legal name starts with "Dr.") doesn't file
+-- alphabetically somewhere unexpected in the filter dropdown.
+DROP FUNCTION IF EXISTS get_filterable_makes();
+
 CREATE OR REPLACE FUNCTION get_filterable_makes()
-RETURNS TABLE (name TEXT)
+RETURNS TABLE (name TEXT, full_name TEXT, slug TEXT, country TEXT)
 LANGUAGE sql STABLE
 AS $$
-  SELECT DISTINCT mk.name
+  SELECT DISTINCT mk.name, mk.full_name, mk.slug, mk.country
   FROM makes mk
   JOIN models md ON md.make_id = mk.id
   JOIN generations g ON g.model_id = md.id
