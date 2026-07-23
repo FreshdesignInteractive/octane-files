@@ -87,7 +87,7 @@ function SearchDialog({ onClose, pathname }: { onClose: () => void; pathname: st
   return (
     <div
       onClick={onClose}
-      className="fixed inset-0 z-[var(--z-overlay)] bg-overlay flex items-start justify-center p-6 pt-[15vh]"
+      className="fixed inset-0 z-[var(--z-overlay)] bg-overlay flex items-start justify-center p-3 sm:p-6 sm:pt-[15vh]"
     >
       <div
         onClick={e => e.stopPropagation()}
@@ -102,7 +102,10 @@ function SearchDialog({ onClose, pathname }: { onClose: () => void; pathname: st
             value={query}
             onChange={e => { setQuery(e.target.value); setActiveIndex(-1) }}
             onKeyDown={handleKeyDown}
-            className="w-full h-14 pl-11 pr-11 text-body text-text-primary outline-none border-none rounded-t-2xl"
+            // text-base (16px), not text-body (13px) — iOS Safari
+            // auto-zooms the whole page on focusing any input under 16px,
+            // which is exactly the "page zooms in" bug this fixes.
+            className="w-full h-14 pl-11 pr-11 text-base text-text-primary outline-none border-none rounded-t-2xl"
           />
           {query && (
             <button
