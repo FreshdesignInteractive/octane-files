@@ -38,7 +38,7 @@ export default function FilterBar() {
     const p = new URLSearchParams(params.toString())
     if (value) p.set(key, value)
     else p.delete(key)
-    router.push(`/?${p.toString()}`, { scroll: false })
+    router.push(`/browse?${p.toString()}`, { scroll: false })
   }, [params, router])
 
   // Sort always has a value (unlike the filters, which can clear to "All"),
@@ -49,7 +49,7 @@ export default function FilterBar() {
   }, [update])
 
   function resetFilters() {
-    router.push('/', { scroll: false })
+    router.push('/browse', { scroll: false })
   }
 
   const makeOptions = makes.map(m => ({ value: m, label: m }))

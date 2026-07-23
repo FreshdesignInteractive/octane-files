@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useTransition } from 'react'
 import { useSearchParams } from 'next/navigation'
-import Link from 'next/link'
 import CarCard from './CarCard'
+import NoCarsFound from './NoCarsFound'
 import type { CarSummary } from '@/lib/types'
 
 const INITIAL = 24
@@ -82,20 +82,7 @@ export default function CarGrid() {
   }
 
   if (cars.length === 0) {
-    return (
-      <div className="text-center py-20">
-        {/* eslint-disable-next-line @next/next/no-img-element -- static local asset, same as the logo in SiteHeader */}
-        <img src="/Missing.svg" alt="" className="w-36 h-36 mx-auto mb-6" />
-        <h2 className="text-heading font-bold text-text-primary mb-2">No cars found</h2>
-        <p className="text-paragraph text-text-secondary mb-2">
-          Try adjusting your filters or request a car to be added.
-        </p>
-        <p className="text-paragraph text-text-secondary">
-          We curate every car to meet collector standards. Missing one?{' '}
-          <Link href="/request-car" className="text-accent underline">Send a request</Link>.
-        </p>
-      </div>
-    )
+    return <NoCarsFound />
   }
 
   return (

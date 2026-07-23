@@ -240,7 +240,7 @@ export default async function AboutPage() {
                 Start with the car you never got over.
               </p>
               <div className="flex flex-wrap items-center justify-center gap-4">
-                <Link href="/" className="btn-primary h-11 px-6">Explore the encyclopedia</Link>
+                <Link href="/browse" className="btn-primary h-11 px-6">Explore the encyclopedia</Link>
               </div>
             </ScrollReveal>
           </div>

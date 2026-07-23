@@ -81,7 +81,7 @@ export default function GaragePage() {
         ) : cars === null ? null : cars.length === 0 ? (
           <div className="text-center py-20">
             <p className="text-paragraph text-text-secondary mb-6">You haven&apos;t saved any cars yet.</p>
-            <Link href="/" className="btn-primary h-10 px-7 no-underline">
+            <Link href="/browse" className="btn-primary h-10 px-7 no-underline">
               Browse cars
             </Link>
           </div>

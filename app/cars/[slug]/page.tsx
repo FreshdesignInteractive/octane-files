@@ -100,7 +100,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
         {/* Hero — breadcrumb + title above a flat image, no gradient overlay */}
         <div className="detail-container pt-8 pb-6">
           <div className="flex items-center gap-1 text-xs mb-3">
-            <Link href="/" className="text-accent no-underline">Browse</Link>
+            <Link href="/browse" className="text-accent no-underline">Browse</Link>
             <span className="text-text-tertiary">&rsaquo;</span>
             <span className="text-text-primary">{name}</span>
           </div>
@@ -154,7 +154,7 @@ export default async function CarPage({ params }: { params: Promise<{ slug: stri
 
           {/* Back */}
           <div className="mt-15 pt-8 border-t border-border">
-            <Link href="/" className="text-body text-text-secondary no-underline inline-flex items-center gap-2">
+            <Link href="/browse" className="text-body text-text-secondary no-underline inline-flex items-center gap-2">
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polyline points="15,18 9,12 15,6"/>
               </svg>

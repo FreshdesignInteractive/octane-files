@@ -342,7 +342,21 @@ AS $$
            WHEN 'contemporary'   THEN g.year_start >= 2000
            ELSE TRUE
          END)
-    AND (search_query    IS NULL OR search_query = '' OR g.search_vector @@ websearch_to_tsquery('english', search_query))
+    -- Matches identity fields only (make/model/code/nickname) — NOT the
+    -- full g.search_vector, which also indexes introduction/why_collectible
+    -- prose (weight B). Matching prose too meant searching "Mustang" also
+    -- returned the Camaro, Challenger, Firebird, Javelin, and Shelby GT350
+    -- — every car whose bio happens to *mention* a Mustang rivalry — none
+    -- of which is a result anyone typing "Mustang" actually wants. Ranking
+    -- below still uses the full search_vector, so prose relevance can
+    -- still influence order among identity-matched rows; it just can't
+    -- pull in a row on its own anymore.
+    AND (search_query IS NULL OR search_query = '' OR
+         (setweight(to_tsvector('english', coalesce(mk.name, '')), 'A') ||
+          setweight(to_tsvector('english', coalesce(md.name, '')), 'A') ||
+          setweight(to_tsvector('english', coalesce(g.code, '')), 'A') ||
+          setweight(to_tsvector('english', coalesce(g.nickname, '')), 'A')
+         ) @@ websearch_to_tsquery('english', search_query))
   ORDER BY
     CASE WHEN search_query IS NOT NULL AND search_query != ''
       THEN ts_rank(g.search_vector, websearch_to_tsquery('english', search_query))

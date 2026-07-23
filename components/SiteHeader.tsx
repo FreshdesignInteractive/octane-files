@@ -2,52 +2,49 @@
 
 import Link from 'next/link'
 import { useEffect, useState, useRef, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase-browser'
 import { checkIsAdmin } from '@/lib/is-admin'
 import SignInDialog from '@/components/SignInDialog'
+import NoCarsFound from '@/components/NoCarsFound'
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js'
 import type { Profile, CarSummary } from '@/lib/types'
 import { PLACEHOLDER_HERO_IMAGE } from '@/lib/placeholder-images'
 
-function HeaderSearch() {
+function SearchIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" />
+    </svg>
+  )
+}
+
+// The full search experience, in an overlay opened on demand — same
+// trigger-opens-a-dimmed-modal shell as SignInDialog, so this isn't new
+// modal mechanics, just a new use of the existing pattern. Everything below
+// (whole-catalog fetch + local typeahead filtering, Enter-to-run-a-full-
+// catalog-search) is unchanged from when this lived inline in the header;
+// only the container changed from "always visible" to "opens on demand".
+function SearchDialog({ onClose, pathname }: { onClose: () => void; pathname: string }) {
   const router = useRouter()
   const params = useSearchParams()
   const inputRef = useRef<HTMLInputElement>(null)
-  const wrapRef = useRef<HTMLDivElement>(null)
-  // Always starts empty — search is ephemeral, not something that persists
-  // across a reload. A hard refresh (or a bookmarked/shared link with a
-  // stale ?q=) strips the param below rather than restoring it into the box.
   const [query, setQuery] = useState('')
   const [catalog, setCatalog] = useState<CarSummary[]>([])
-  const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
 
-  // Typing only drives the dropdown, locally — it never touches the URL or
-  // the page behind it. The page only changes on a deliberate action:
-  // picking a suggestion, or pressing Enter to run a full catalog search.
-  // (Previously this pushed a new URL on every keystroke, which made the
-  // homepage grid run its own full-text search in parallel and blank out
-  // to "No cars found" while the dropdown — correct — still showed matches.)
-  function handleType(value: string) {
-    setQuery(value)
-    setOpen(value.trim() !== '')
-    setActiveIndex(-1)
-  }
-
+  // Full-text search always lands on /browse. If the dialog was opened
+  // while already on /browse, its other active filters (make/class/era/
+  // sort) carry over — opened from anywhere else, it starts from a clean
+  // ?q= only, ignoring whatever unrelated params that other page has.
   function runFullSearch(value: string) {
-    const p = new URLSearchParams(params.toString())
+    const p = new URLSearchParams(pathname === '/browse' ? params.toString() : '')
     if (value) p.set('q', value)
     else p.delete('q')
-    router.push(`/?${p.toString()}`, { scroll: false })
+    onClose()
+    router.push(`/browse?${p.toString()}`, { scroll: false })
   }
 
-  // Fetches the whole (small, ~300-row) catalog once on mount and filters
-  // client-side — same pattern the admin car-picker already uses. No
-  // per-keystroke network requests, no debounce, no race conditions, and
-  // plain substring matching means "corv" finds "Corvette" immediately —
-  // full-text search (used for the homepage grid below) only matches whole
-  // stemmed words, which isn't what a typeahead should do.
   useEffect(() => {
     let cancelled = false
     fetch('/api/models?limit=500')
@@ -57,106 +54,133 @@ function HeaderSearch() {
     return () => { cancelled = true }
   }, [])
 
-  // Runs once per real page load (this component lives in the root layout,
-  // so it only remounts on a hard refresh, not on client-side navigation).
+  useEffect(() => { inputRef.current?.focus() }, [])
+
   useEffect(() => {
-    if (params.get('q')) {
-      const p = new URLSearchParams(params.toString())
-      p.delete('q')
-      router.replace(p.toString() ? `/?${p.toString()}` : '/', { scroll: false })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount-only, deliberately not re-running on every params change
-  }, [])
+    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [onClose])
 
   const q = query.trim().toLowerCase()
   const suggestions = q
     ? catalog.filter(c => `${c.make} ${c.model} ${c.generation}`.toLowerCase().includes(q)).slice(0, 6)
     : []
 
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) setOpen(false)
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
-
   function selectCar(slug: string) {
-    setOpen(false)
+    onClose()
     router.push(`/cars/${slug}`)
   }
 
-  function clearSearch() {
-    setQuery('')
-    setOpen(false)
-    runFullSearch('') // in case a full search was already active, reset the grid too
-    inputRef.current?.focus()
-  }
-
   function handleKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (open && suggestions.length > 0) {
+    if (suggestions.length > 0) {
       if (e.key === 'ArrowDown') { e.preventDefault(); setActiveIndex(i => Math.min(i + 1, suggestions.length - 1)); return }
       if (e.key === 'ArrowUp') { e.preventDefault(); setActiveIndex(i => Math.max(i - 1, 0)); return }
       if (e.key === 'Enter' && activeIndex >= 0) { e.preventDefault(); selectCar(suggestions[activeIndex].slug); return }
-      if (e.key === 'Escape') { setOpen(false); return }
     }
     if (e.key === 'Enter' && query.trim()) {
       e.preventDefault()
-      setOpen(false)
       runFullSearch(query)
     }
   }
 
   return (
-    <div ref={wrapRef} className="relative w-1/2 max-w-130 min-w-30">
-      <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"
-        width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-      </svg>
-      <input
-        ref={inputRef}
-        type="text"
-        placeholder="Make, Model or Generation..."
-        value={query}
-        onChange={e => handleType(e.target.value)}
-        onFocus={() => { if (suggestions.length > 0) setOpen(true) }}
-        onKeyDown={handleKeyDown}
-        className="w-full h-9 bg-bg-elevated border border-border rounded-full pl-9 pr-9 text-body text-text-primary outline-none transition-colors focus:border-border-mid focus:bg-white"
-      />
-      {query && (
-        <button
-          type="button"
-          onClick={clearSearch}
-          aria-label="Clear search"
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary bg-transparent border-none cursor-pointer p-0 flex items-center"
-        >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-          </svg>
-        </button>
-      )}
-      {open && suggestions.length > 0 && (
-        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] left-0 right-0 bg-white border border-border rounded-lg shadow-dropdown z-[var(--z-overlay)] overflow-hidden">
-          {suggestions.map((car, i) => (
-            <Link
-              key={car.id}
-              href={`/cars/${car.slug}`}
-              onClick={() => setOpen(false)}
-              onMouseEnter={() => setActiveIndex(i)}
-              className={`flex items-center gap-3 px-3 py-2 no-underline transition-colors hover:bg-bg-elevated ${i === activeIndex ? 'bg-bg-elevated' : ''}`}
+    <div
+      onClick={onClose}
+      className="fixed inset-0 z-[var(--z-overlay)] bg-overlay flex items-start justify-center p-6 pt-[15vh]"
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        className="bg-white rounded-2xl w-full max-w-150 shadow-modal overflow-hidden"
+      >
+        <div className="relative border-b border-border">
+          <SearchIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none" />
+          <input
+            ref={inputRef}
+            type="text"
+            placeholder="Make, Model or Generation..."
+            value={query}
+            onChange={e => { setQuery(e.target.value); setActiveIndex(-1) }}
+            onKeyDown={handleKeyDown}
+            className="w-full h-14 pl-11 pr-11 text-body text-text-primary outline-none border-none rounded-t-2xl"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => { setQuery(''); setActiveIndex(-1); inputRef.current?.focus() }}
+              aria-label="Clear search"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-primary bg-transparent border-none cursor-pointer p-0 flex items-center"
             >
-              <div className="w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-elevated flex items-center justify-center">
-                {/* eslint-disable-next-line @next/next/no-img-element -- hero_image can be any manually-pasted external URL, not just Supabase/Wikimedia; next/image throws on unlisted hostnames, a plain img never does */}
-                <img src={car.hero_image || PLACEHOLDER_HERO_IMAGE} alt="" className="w-full h-full object-cover" />
-              </div>
-              <span className="text-body text-text-primary">
-                {car.make} {car.model} {car.generation}
-              </span>
-            </Link>
-          ))}
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          )}
         </div>
-      )}
+
+        {suggestions.length > 0 ? (
+          <div className="max-h-96 overflow-y-auto py-1">
+            {suggestions.map((car, i) => (
+              <Link
+                key={car.id}
+                href={`/cars/${car.slug}`}
+                onClick={onClose}
+                onMouseEnter={() => setActiveIndex(i)}
+                className={`flex items-center gap-3 px-4 py-2.5 no-underline transition-colors hover:bg-bg-elevated ${i === activeIndex ? 'bg-bg-elevated' : ''}`}
+              >
+                <div className="w-9 h-9 rounded overflow-hidden flex-shrink-0 bg-bg-elevated flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element -- hero_image can be any manually-pasted external URL, not just Supabase/Wikimedia; next/image throws on unlisted hostnames, a plain img never does */}
+                  <img src={car.hero_image || PLACEHOLDER_HERO_IMAGE} alt="" className="w-full h-full object-cover" />
+                </div>
+                <span className="text-body text-text-primary">
+                  {car.make} {car.model} {car.generation}
+                </span>
+              </Link>
+            ))}
+          </div>
+        ) : q ? (
+          <NoCarsFound compact onLinkClick={onClose} />
+        ) : (
+          <p className="text-body text-text-tertiary px-4 py-6 text-center m-0">
+            Start typing a make, model, or generation.
+          </p>
+        )}
+      </div>
     </div>
+  )
+}
+
+// Always-mounted trigger (button + ⌘K/Ctrl+K listener) for the dialog
+// above. Kept as its own component, inside the same Suspense boundary the
+// dialog needs for useSearchParams, so opening/closing the dialog doesn't
+// require a second Suspense boundary of its own.
+function SearchTrigger() {
+  const pathname = usePathname()
+  const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    function handler(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault()
+        setOpen(o => !o)
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
+
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex items-center gap-1.5 bg-transparent border-none cursor-pointer p-0 text-body text-text-secondary hover:text-text-primary transition-colors"
+      >
+        <SearchIcon />
+        Search
+      </button>
+      {open && <SearchDialog onClose={() => setOpen(false)} pathname={pathname} />}
+    </>
   )
 }
 
@@ -293,15 +317,18 @@ export default function SiteHeader() {
             <img src="/of-logo.svg" alt="Octane Files" className="h-8 w-auto" />
           </Link>
 
-          {/* Search — centered, 50% width */}
-          <div className="flex-1 flex justify-center">
-            <Suspense fallback={<div className="w-1/2 h-9 rounded-full bg-bg-elevated" />}>
-              <HeaderSearch />
-            </Suspense>
-          </div>
+          {/* Pushes the nav group to the right — search is now a modal
+              trigger, not a persistent inline box, so there's no reason to
+              reserve center space for it (more room for future portal nav
+              items, per the NerdWallet-style direction). */}
+          <div className="flex-1" />
 
           <nav className="flex items-center gap-6 flex-shrink-0">
-            <Link href="/" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
+            <Suspense fallback={<span className="w-15 h-5" />}>
+              <SearchTrigger />
+            </Suspense>
+
+            <Link href="/browse" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
               Browse
             </Link>
 

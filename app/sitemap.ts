@@ -8,7 +8,9 @@ export const revalidate = 3600
 // or ?make=... search URL (those are filter states, not distinct pages),
 // never /admin/* (also disallowed in robots.ts). /login has no page.tsx
 // (dead route, kept only as an empty dir) and is deliberately excluded.
-const STATIC_PATHS = ['', '/about', '/contact', '/garage', '/terms', '/privacy', '/request-car', '/report']
+// '' is the portal homepage; '/browse' is the car listing (moved off '/'
+// once the homepage became a placeholder portal page).
+const STATIC_PATHS = ['', '/browse', '/about', '/contact', '/garage', '/terms', '/privacy', '/request-car', '/report']
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const [cars, makes] = await Promise.all([getSitemapCars(), getSitemapMakes()])
