@@ -59,8 +59,11 @@ export default function FilterBar() {
   const sortOptions = SORTS.map(s => ({ value: s.value, label: s.label }))
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-      <div className="flex flex-col sm:flex-row gap-3 flex-1">
+    // lg:, not sm: — see FilterDropdown's own widthClassName default
+    // comment. Below lg:, everything stacks full-width; there's no
+    // cramped in-between row.
+    <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+      <div className="flex flex-col lg:flex-row gap-3 flex-1">
         <FilterDropdown
           label="Make"
           allLabel="All Makes"
@@ -103,7 +106,7 @@ export default function FilterBar() {
         />
       </div>
 
-      {/* Sort + Reset: right-aligned as a pair on desktop; on mobile they
+      {/* Sort + Reset: right-aligned as a pair on desktop; below lg:, they
           share one full-width row (flex-1 each) instead of each getting
           their own full-width row like the filters above. */}
       <div className="flex gap-3 flex-shrink-0">
@@ -117,14 +120,14 @@ export default function FilterBar() {
           onClose={() => setOpenMenu(null)}
           showAllOption={false}
           align="right"
-          widthClassName="flex-1 sm:flex-none sm:w-auto"
+          widthClassName="flex-1 lg:flex-none lg:w-auto"
           triggerPrefix="Sort: "
         />
         <button
           type="button"
           onClick={resetFilters}
           disabled={!hasActiveFilter}
-          className="btn-secondary flex-1 sm:flex-none sm:w-auto justify-center gap-2 px-4 h-10"
+          className="btn-secondary flex-1 lg:flex-none lg:w-auto justify-center gap-2 px-4 h-10"
         >
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <polyline points="1 4 1 10 7 10" />

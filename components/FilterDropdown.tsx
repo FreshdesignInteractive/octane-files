@@ -26,7 +26,13 @@ export default function FilterDropdown({
   onClose,
   showAllOption = true,
   align = 'left',
-  widthClassName = 'w-full sm:w-auto',
+  // lg:, not sm: — 6 controls (4 filters + Sort + Reset) need more room
+  // than a single-item header nav does to sit on one row without
+  // shrinking below their own label's width and wrapping ("All" / "Makes"
+  // on two lines). Below lg:, the already-safe stacked mobile layout
+  // handles any width gracefully; there's no in-between width where a
+  // cramped horizontal row is the best available option.
+  widthClassName = 'w-full lg:w-auto',
   triggerPrefix,
 }: {
   label: string
@@ -80,7 +86,7 @@ export default function FilterDropdown({
       </button>
 
       {isOpen && (
-        <div className={`absolute top-[calc(100%+var(--spacing-dropdown-gap))] ${align === 'right' ? 'right-0' : 'left-0'} w-full sm:w-auto sm:min-w-48 bg-white border border-border rounded-lg shadow-dropdown z-[var(--z-overlay)] overflow-hidden`}>
+        <div className={`absolute top-[calc(100%+var(--spacing-dropdown-gap))] ${align === 'right' ? 'right-0' : 'left-0'} w-full lg:w-auto lg:min-w-48 bg-white border border-border rounded-lg shadow-dropdown z-[var(--z-overlay)] overflow-hidden`}>
           <div className="max-h-96 overflow-y-auto py-1">
             {allOptions.map(opt => {
               const isActive = opt.value === activeValue

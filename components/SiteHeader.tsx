@@ -239,9 +239,15 @@ export default function SiteHeader() {
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white">
-        {/* px-4 on mobile, px-10 from sm: up — the header was overflowing
-            narrow viewports at the desktop padding. */}
-        <div className="w-full px-4 sm:px-10 h-14 flex items-center gap-4">
+        {/* .site-container, not a one-off px-* scheme — every page's own
+            content (Browse's filter bar, the grid below it, etc.) already
+            uses this exact class, so the header's horizontal padding stays
+            pixel-identical to the content's at every viewport width by
+            construction. A hand-tuned header-only padding scheme would
+            only ever coincidentally match .site-container's max-w-page +
+            mx-auto centering, and silently drift apart the moment either
+            one's tokens changed. */}
+        <div className="site-container h-14 flex items-center gap-4">
           {/* Logo — always icon mark */}
           <Link href="/" className="flex items-center no-underline flex-shrink-0">
             <img src="/of-logo.svg" alt="Octane Files" className="h-8 w-auto" />
