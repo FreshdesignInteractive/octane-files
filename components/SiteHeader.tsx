@@ -41,6 +41,63 @@ function SearchTrigger() {
   )
 }
 
+// Mobile-only (sm:hidden at the call site) — collapses Browse Cars/Marques/
+// Garage into one menu so the header stops overflowing narrow viewports.
+// Search and the sign-in-or-avatar control stay outside it (see SiteHeader's
+// mobile <nav> below), same "search + hamburger + account" shape on every
+// page regardless of sign-in state. Garage only appears here when signed
+// in — same gating the desktop nav already applies to its own Garage link,
+// just relocated rather than changed.
+function NavMenu({ isSignedIn }: { isSignedIn: boolean }) {
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [])
+
+  const links = [
+    { href: '/browse', label: 'Browse Cars' },
+    { href: '/marques', label: 'Marques' },
+    ...(isSignedIn ? [{ href: '/garage', label: 'Garage' }] : []),
+  ]
+
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen(o => !o)}
+        aria-label="Menu"
+        aria-expanded={open}
+        className="bg-transparent border-none cursor-pointer p-0 flex items-center text-text-secondary hover:text-text-primary transition-colors"
+      >
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
+        </svg>
+      </button>
+
+      {open && (
+        <div className="absolute top-[calc(100%+var(--spacing-dropdown-gap))] right-0 bg-white rounded-xl shadow-dropdown min-w-45 z-[var(--z-overlay)] overflow-hidden">
+          {links.map(link => (
+            <Link
+              key={link.href}
+              href={link.href}
+              onClick={() => setOpen(false)}
+              className="w-full flex items-center px-4 py-3 text-sm text-text-primary no-underline transition-colors hover:bg-bg-elevated"
+            >
+              {link.label}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function AvatarMenu({ profile, isAdmin, onSignOut }: { profile: NonNullable<Profile>, isAdmin: boolean, onSignOut: () => void }) {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -165,10 +222,26 @@ export default function SiteHeader() {
     window.location.href = '/'
   }
 
+  // Shared between the desktop and mobile nav below — the account control
+  // itself (Sign In button, or the avatar menu) never differs between the
+  // two, only what else sits alongside it does (see NavMenu's comment).
+  const authControl = profile === undefined ? null : profile === null ? (
+    <button
+      onClick={() => setShowSignIn(true)}
+      className="btn-secondary px-3.5 py-1.5"
+    >
+      Sign In
+    </button>
+  ) : (
+    <AvatarMenu profile={profile} isAdmin={isAdmin} onSignOut={signOut} />
+  )
+
   return (
     <>
       <header className="sticky top-0 z-50 border-b border-border-subtle bg-white">
-        <div className="w-full px-10 h-14 flex items-center gap-4">
+        {/* px-4 on mobile, px-10 from sm: up — the header was overflowing
+            narrow viewports at the desktop padding. */}
+        <div className="w-full px-4 sm:px-10 h-14 flex items-center gap-4">
           {/* Logo — always icon mark */}
           <Link href="/" className="flex items-center no-underline flex-shrink-0">
             <img src="/of-logo.svg" alt="Octane Files" className="h-8 w-auto" />
@@ -180,7 +253,8 @@ export default function SiteHeader() {
               items, per the NerdWallet-style direction). */}
           <div className="flex-1" />
 
-          <nav className="flex items-center gap-6 flex-shrink-0">
+          {/* Desktop: every nav item shown inline. */}
+          <nav className="hidden sm:flex items-center gap-6 flex-shrink-0">
             <SearchTrigger />
 
             <Link href="/browse" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
@@ -191,21 +265,22 @@ export default function SiteHeader() {
               Marques
             </Link>
 
-            {profile === undefined ? null : profile === null ? (
-              <button
-                onClick={() => setShowSignIn(true)}
-                className="btn-secondary px-3.5 py-1.5"
-              >
-                Sign In
-              </button>
-            ) : (
-              <>
-                <Link href="/garage" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
-                  Garage
-                </Link>
-                <AvatarMenu profile={profile} isAdmin={isAdmin} onSignOut={signOut} />
-              </>
+            {profile && (
+              <Link href="/garage" className="text-body text-text-secondary no-underline hover:text-text-primary transition-colors">
+                Garage
+              </Link>
             )}
+
+            {authControl}
+          </nav>
+
+          {/* Mobile: Browse Cars/Marques/Garage collapse into NavMenu's
+              hamburger; Search and the account control stay visible next
+              to it, same as desktop. */}
+          <nav className="flex sm:hidden items-center gap-4 flex-shrink-0">
+            <SearchTrigger />
+            <NavMenu isSignedIn={!!profile} />
+            {authControl}
           </nav>
         </div>
       </header>
