@@ -201,16 +201,16 @@ const DISTINCTIONS: { key: 'is_icon' | 'homologation_special' | 'poster_car'; na
   },
 ]
 
-// "In the files" isn't a DB flag and isn't admin-editable — every car in
-// the catalog earns it unconditionally (being in a curated encyclopedia is
+// "Octane Files Select" isn't a DB flag and isn't admin-editable — every car
+// in the catalog earns it unconditionally (being in a curated encyclopedia is
 // itself the distinction), so it's never part of the earned/not-earned
 // filter above. Always appended last, after any real earned flags — a car
 // with none of the other three still shows this alone, but one with any of
 // them shows it bringing up the rear, not first (the mockup had it first,
 // which was a mockup ordering mistake, not the intended design).
-const MADE_THE_CUT = {
-  name: 'In the files',
-  definition: 'Selected for its history, engineering, or cultural weight.',
+const OCTANE_FILES_SELECT = {
+  name: 'Octane Files Select',
+  definition: 'Renowned for its history, engineering, or cultural weight.',
   icon: (
     <>
       <path d="m3 17 2 2 4-4" />
@@ -279,9 +279,9 @@ export const TABS = [
 
 export default function CarDetailTabs({ car }: { car: Car }) {
   const hasVariantsTrims = !!car.variants_to_know || car.trims?.length > 0
-  // In the files is always last — every car gets it unconditionally, so it
-  // never displaces an actually-earned flag from the front of the list.
-  const earnedDistinctions = [...DISTINCTIONS.filter(d => car[d.key]), MADE_THE_CUT]
+  // Octane Files Select is always last — every car gets it unconditionally,
+  // so it never displaces an actually-earned flag from the front of the list.
+  const earnedDistinctions = [...DISTINCTIONS.filter(d => car[d.key]), OCTANE_FILES_SELECT]
   const relatedCars = car.relations?.filter(r => r.relation_type === 'related') ?? []
   const rivalCars = car.relations?.filter(r => r.relation_type === 'rival') ?? []
   // Always all 3 tiers, regardless of which values are actually entered —
@@ -301,10 +301,10 @@ export default function CarDetailTabs({ car }: { car: Car }) {
           </div>
         </FieldSection>
 
-        {/* Distinctions — always renders now: In the files is unconditional,
-            so every car has at least one earned distinction. Legend/
-            Homologation Special/Poster Car (if any) come first, in their
-            fixed order; In the files is always appended last. */}
+        {/* Distinctions — always renders now: Octane Files Select is
+            unconditional, so every car has at least one earned distinction.
+            Legend/Homologation Special/Poster Car (if any) come first, in
+            their fixed order; Octane Files Select is always appended last. */}
         <FieldSection id="distinctions" label="Distinctions" card subtext="What sets this car apart, from being selected for the Octane Files to becoming a legend.">
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             {earnedDistinctions.map(d => (
