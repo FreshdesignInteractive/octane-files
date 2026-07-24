@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import CarCard from '@/components/CarCard'
 import CollapsibleText from '@/components/CollapsibleText'
 import { RADAR_AXES, DESIRABILITY_TIERS, VALUE_TRAJECTORIES } from '@/lib/car-schema'
@@ -166,38 +167,27 @@ function RelationCards({ entries }: { entries: CarRelation[] }) {
 
 // Fixed site copy, not per-car data — same definition for every car that
 // earns a given distinction, so this lives in code rather than as
-// per-row DB text (mirrors DESIRABILITY_TIER_DEFINITIONS below). Icons are
-// stroked white to sit inside a filled accent circle (see the Distinctions
-// FieldSection) rather than the plain currentColor-stroke style the
-// sidebar's fact-row icons use.
-const DISTINCTIONS: { key: 'is_icon' | 'homologation_special' | 'poster_car'; name: string; definition: string; icon: React.ReactNode }[] = [
+// per-row DB text (mirrors DESIRABILITY_TIER_DEFINITIONS below). icon is a
+// path into /public — each is a standalone full-color ribbon-medal graphic
+// (native 40x53), not a stroke icon meant to sit inside a colored shape.
+const DISTINCTIONS: { key: 'is_icon' | 'homologation_special' | 'poster_car'; name: string; definition: string; icon: string }[] = [
   {
     key: 'is_icon',
     name: 'Legend',
     definition: 'A car that transcended the hobby, known far beyond the people who drive them.',
-    icon: <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />,
+    icon: '/distinction-legend.svg',
   },
   {
     key: 'homologation_special',
     name: 'Homologation Special',
     definition: 'Built for the road only because racing rules demanded it.',
-    icon: (
-      <>
-        <path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z" />
-        <line x1="4" y1="22" x2="4" y2="15" />
-      </>
-    ),
+    icon: '/distinction-homologation-special.svg',
   },
   {
     key: 'poster_car',
     name: 'Poster Car',
     definition: 'The car on the bedroom wall, the one people dreamed about before they could drive.',
-    icon: (
-      <>
-        <path d="M12 17v5" />
-        <path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z" />
-      </>
-    ),
+    icon: '/distinction-poster-car.svg',
   },
 ]
 
@@ -211,15 +201,7 @@ const DISTINCTIONS: { key: 'is_icon' | 'homologation_special' | 'poster_car'; na
 const OCTANE_FILES_SELECT = {
   name: 'Octane Files Select',
   definition: 'Renowned for its history, engineering, or cultural weight.',
-  icon: (
-    <>
-      <path d="m3 17 2 2 4-4" />
-      <path d="m3 7 2 2 4-4" />
-      <path d="M13 6h8" />
-      <path d="M13 12h8" />
-      <path d="M13 18h8" />
-    </>
-  ),
+  icon: '/distinction-of-select.svg',
 }
 
 const VALUE_TRAJECTORY_DISPLAY: Record<string, string> = {
@@ -309,11 +291,7 @@ export default function CarDetailTabs({ car }: { car: Car }) {
           <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
             {earnedDistinctions.map(d => (
               <div key={d.name} className="flex items-start gap-3">
-                <span className="w-10 h-10 mt-0.5 rounded-full bg-accent flex items-center justify-center shrink-0">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    {d.icon}
-                  </svg>
-                </span>
+                <Image src={d.icon} alt="" width={40} height={53} className="w-10 h-auto shrink-0" />
                 <div>
                   <div className="text-body font-semibold text-text-primary mb-0.5">{d.name}</div>
                   <div className="text-body text-text-secondary leading-relaxed">{d.definition}</div>
